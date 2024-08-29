@@ -495,3 +495,50 @@ Find the hash of the lost commit or branch using the reflog and then checkout to
 ```shell script
 $ git checkout <commit_or_branch_hash>
 ```
+
+### 撤回提交的Commit
+
+
+- 1. **取消上次的提交但保留更改**：
+   使用以下命令取消上次的提交，并将更改保留在工作区和暂存区：
+
+   ```shell script
+   $ git reset --soft HEAD~1
+   ```
+
+   这会将你上次的提交撤回，并将更改保留在暂存区。
+
+- 2. **修改 `.gitignore` 文件**：
+   确保你的 `.gitignore` 文件中包含 `node_modules/` 目录，防止它再次被提交。
+
+   ```shell script
+   $ node_modules/
+   ```
+
+- 3. **从暂存区移除 `node_modules`**：
+   你可以使用以下命令从暂存区中移除 `node_modules` 文件夹：
+
+   ```shell script
+   $ git rm -r --cached node_modules
+   ```
+
+   这个命令会从 Git 的暂存区中移除 `node_modules` 目录，但是它仍然会保留在你的本地文件系统中。
+
+- 4. **重新提交你的更改**：
+   现在你可以重新提交你的更改：
+
+   ```shell script
+   $ git add .
+   $ git commit -m "Remove node_modules from commit"
+   ```
+
+- 5. **强制推送到远程仓库**：
+   如果你已经将错误的提交推送到了远程仓库，你可能需要强制推送更改：
+
+   ```shell script
+   $ git push --force
+   ```
+
+   注意：使用 `--force` 推送会覆盖远程仓库的历史记录，请小心使用。
+
+{.marker-timeline}
