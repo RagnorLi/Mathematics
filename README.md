@@ -27,5 +27,5 @@
 
 ## 📃 License
 
-The project is licensed under the [GPL-3.0](https://github.com/Fechin/reference/blob/main/LICENSE) License and is maintained
+The project is licensed under the [MIT](https://github.com/RagnorLixiaomeng/Mathematics/blob/main/LICENSE) License and is maintained
 by [Ragnor](https://github.com/Ragnor).
