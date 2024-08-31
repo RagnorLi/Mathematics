@@ -6,6 +6,9 @@ background:
   bg-gradient-to-r from-pink-500 via-violet-400 to-blue-400 hover:from-pink-700 hover:via-violet-600 hover:to-blue-500
 tags:
   - ai
+plugins:
+  - katex
+  - copyCode
 categories:
   - DataScience 
 intro: |
@@ -349,8 +352,6 @@ intro: |
 
 {.show-header .left-text}
 
-
-
 ### 模型验证与泛化能力评估
 
 - **模型泛化能力评估**：要评估模型对新数据的泛化能力，最直接的方法是将其部署在生产环境中，通过实际使用来观察模型的表现。
@@ -438,3 +439,595 @@ intro: |
 
 {.show-header .left-text}
 
+
+
+## End-to-End Machine Learning Project
+
+### 使用真实数据
+
+| 特征名称               | 描述                             |
+|------------------------|----------------------------------|
+| longitude              | 经度                             |
+| latitude               | 纬度                             |
+| housing_median_age     | 房屋中位年龄                     |
+| total_rooms            | 房间总数                         |
+| total_bedrooms         | 卧室总数                         |
+| population             | 人口数量                         |
+| households             | 家庭户数                         |
+| median_income          | 中位收入                         |
+| median_house_value     | 中位房屋价值                     |
+| ocean_proximity        | 靠近海洋的距离                   |
+
+{.show-header .left-text}
+
+![加利福尼亚房价预测数据](../assets/attachment/hands_on_machine_learning/加利福尼亚房价预测数据.png)
+
+{.marker-none}
+
+### 项目整体视角 {.col-span-2}
+
+#### Step-01 问题框架化
+
+- **明确业务目标**：首先要了解构建模型的最终业务目标是什么。模型的预测结果如何帮助企业决策，这决定了问题的定义、模型的选择、评估标准以及调整模型的力度。
+
+- **当前解决方案**：询问现有解决方案的表现如何，以此作为参考来确定模型的性能要求，并指导问题的解决。现有解决方案可能依赖人工估算，这种方法耗时且不准确，因此公司需要一个模型来预测地区房价。
+
+- **数据管道**：机器学习过程通常由多个异步运行的数据处理组件组成。这些组件串联起来处理数据，逐步生成模型的最终预测结果。每个组件独立工作，彼此通过数据存储交互。
+  ![一个机器学习的pipline](../assets/attachment/hands_on_machine_learning/一个机器学习的pipline.png)
+  - **District Data**（区域数据）： 图的最左边是输入数据，即每个地区的相关数据，比如人口、收入、房价等。这些数据是整个流程的起点。
+
+  - **District Pricing**（区域定价）： 中间的组件代表了一个机器学习模型或算法，它利用输入的区域数据来预测每个地区的房价（即中间的“District Pricing”框）。这个组件是整个管道的核心，负责生成模型的主要输出。
+
+  - **Investment Analysis**（投资分析）： 区域房价预测完成后，预测结果会被输入到下一个组件，即投资分析系统。这个系统会根据预测的房价和其他输入信号来判断是否在某个地区投资。这一步是决定最终投资决策的关键。
+
+  - **Investments**（投资）： 图的最右侧是最终的输出——投资决策。基于之前的分析，系统决定在某些地区进行投资。
+
+  尽管这个管道图看起来非常简单甚至宏观，但它反映了一个非常普遍且重要的概念：将复杂的任务分解为简单的步骤，通过管道连接起来，从而形成一个整体系统。这种方法在数据科学、机器学习以及广泛的商业应用中都非常有用。
+
+- **问题类型**：明确需要解决的问题是监督学习、无监督学习，还是强化学习任务，并确定是分类问题还是回归问题。波士顿房价预测问题是一个典型的多元回归问题。
+
+- **学习类型**：对于当前问题，由于数据量适中且无需快速响应变化的实时数据，因此选择批量学习（Batch Learning）是合适的。如果数据量很大，可以考虑使用在线学习或MapReduce方法来分布式处理数据。
+
+{.marker-timeline}
+
+#### Step-02 选择模型性能度量指标
+
+**选择的性能度量指标：** 均方根误差 (RMSE)
+
+**选择原因：**
+
+- **度量原理**：`KaTeX:RMSE` 衡量预测值与实际值之间的平方差的平均值的平方根，强调大误差。这对于房价预测中的大误差非常重要。
+- **适用性**：房价数据通常具有正态分布特性，```KaTeX:RMSE``` 适合这种数据分布。
+- **行业标准**：```KaTeX:RMSE``` 是回归问题中广泛使用的标准度量指标，尤其是在房价预测等领域。
+
+**为什么不选择其他指标：**
+
+- **MAE**：虽然对异常值不敏感，但在房价预测中需要对大误差给予更多的关注，```KaTeX:RMSE``` 在这方面表现更优。
+- **R² 决定系数**：```KaTeX:R^2``` 表示模型的拟合程度，但可能在数据分布异常时误导，不如 ```KaTeX:RMSE``` 直观。
+
+因此，在加利福尼亚房价预测项目中，```KaTeX:RMSE``` 是最合适的选择。
+
+[性能度量指标选择表](/machine-learning.html#machine-learning-performance-measure) {.link-arrow}
+
+#### Step-03 验证你的假设
+
+`杜绝自己想象`
+
+- **列出并验证假设**：列出并验证所有已经做出的假设，这可以帮助你在早期发现严重问题。
+- **场景示例**：例如，假设你的系统输出的区域价格将被下游的机器学习系统使用，而你假设这些价格会被直接使用。然而，如果下游系统将价格转换为分类（如“便宜”、“中等”或“昂贵”），并使用这些类别而不是实际价格，那么你的假设可能就不成立。
+- **任务类型错误**：如果仅需预测类别，那么问题应被设定为分类任务而非回归任务，避免在错误的任务类型上浪费时间。
+- **与下游系统团队沟通**：在与下游系统团队沟通后，确认他们确实需要的是实际价格而非类别。这个步骤验证了你最初的假设是正确的。
+- **开始编码**：当确认假设正确后，你可以放心地开始编写代码。
+
+{.marker-timeline}
+
+### Step-01 使用Google Colab
+
+![google_colab_open](../assets/attachment/hands_on_machine_learning/google_colab_open.png)
+
+或者，本地clone [handson-ml3] (https://github.com/ageron/handson-ml3) 到本地
+
+```shell script
+$ jupyter notebook
+```
+
+### Step-02 编码环境检查
+
+
+```python
+print("Welcome to Machine Learning! ragnor.li")
+```
+
+```python
+import sys
+assert sys.version_info >= (3, 7)
+```
+
+```python
+from packaging import version
+import sklearn
+
+assert version.parse(sklearn.__version__) >= version.parse("1.0.1")
+```
+
+### Step-03 数据集下载
+
+```python
+from pathlib import Path
+import pandas as pd
+import tarfile
+import urllib.request
+
+def load_housing_data():
+    tarball_path = Path("datasets/housing.tgz")
+    if not tarball_path.is_file():
+        Path("datasets").mkdir(parents=True, exist_ok=True)
+        url = "https://github.com/ageron/data/raw/main/housing.tgz"
+        urllib.request.urlretrieve(url, tarball_path)
+        with tarfile.open(tarball_path) as housing_tarball:
+            housing_tarball.extractall(path="datasets")
+    return pd.read_csv(Path("datasets/housing/housing.csv"))
+
+housing = load_housing_data()
+```
+
+### Step-04 杀猪先瞅瞅心里有个底 {.col-span-3}
+
+
+#### 整体特征瞅一眼
+
+`housing.head()` 显示数据框的前五行。用于快速查看数据的前几行记录，了解数据的整体结构。`尤其要把数据实例的特征代表的实际业务含义研究清楚`
+
+|index|longitude|latitude|housing\_median\_age|total\_rooms|total\_bedrooms|population|households|median\_income|median\_house\_value|ocean\_proximity|
+|---|---|---|---|---|---|---|---|---|---|---|
+|0|-122\.23|37\.88|41\.0|880\.0|129\.0|322\.0|126\.0|8\.3252|452600\.0|NEAR BAY|
+|1|-122\.22|37\.86|21\.0|7099\.0|1106\.0|2401\.0|1138\.0|8\.3014|358500\.0|NEAR BAY|
+|2|-122\.24|37\.85|52\.0|1467\.0|190\.0|496\.0|177\.0|7\.2574|352100\.0|NEAR BAY|
+|3|-122\.25|37\.85|52\.0|1274\.0|235\.0|558\.0|219\.0|5\.6431|341300\.0|NEAR BAY|
+|4|-122\.25|37\.85|52\.0|1627\.0|280\.0|565\.0|259\.0|3\.8462|342200\.0|NEAR BAY|
+
+{.show-header .left-text}
+
+
+#### 数据集中实例数据类型与缺失检查
+
+`housing.info()` 显示数据框的基本信息，包括行数、列数、每列的非空值数量和数据类型。用于检查数据框的结构和识别缺失数据。
+
+```text
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 20640 entries, 0 to 20639
+Data columns (total 10 columns):
+ #   Column              Non-Null Count  Dtype  
+---  ------              --------------  -----  
+ 0   longitude           20640 non-null  float64
+ 1   latitude            20640 non-null  float64
+ 2   housing_median_age  20640 non-null  float64
+ 3   total_rooms         20640 non-null  float64
+ 4   total_bedrooms      20433 non-null  float64
+ 5   population          20640 non-null  float64
+ 6   households          20640 non-null  float64
+ 7   median_income       20640 non-null  float64
+ 8   median_house_value  20640 non-null  float64
+ 9   ocean_proximity     20640 non-null  object 
+dtypes: float64(9), object(1)
+memory usage: 1.6+ MB
+```
+
+`检查结果如下：`
+
+| 序号 | 要点                                                         |
+|------|--------------------------------------------------------------|
+| 1    | 数据集中共有 20,640 个实例（样本）。           |
+| 2    | `total_bedrooms` 属性中有 207 个地区缺少值，需要处理。       |
+| 3    | 除 `ocean_proximity` 属性外，所有其他属性都是数值型的。      |
+| 4    | `ocean_proximity` 属性的数据类型是 `object`，即文本属性。    |
+| 5    | `ocean_proximity` 列中的值是重复的，表明它可能是分类属性。   |
+| 6    | 可以使用 `value_counts()` 方法来查找类别及其分布。           |
+
+{.show-header .left-text}
+
+
+#### 数据集中不同类别特征的分布情况
+
+`housing["ocean_proximity"].value_counts()` 统计ocean_proximity列中每个类别的频次。用于了解数据集中不同类别的分布情况。
+
+```text
+<1H OCEAN     9136
+INLAND        6551
+NEAR OCEAN    2658
+NEAR BAY      2290
+ISLAND           5
+Name: ocean_proximity, dtype: int64
+```
+
+#### 快速了解数值数据的分布和主要统计特征
+
+`housing.describe()` 生成数据框数值列的汇总统计信息，包括计数、平均值、标准差、最小值、四分位数和最大值。用于快速了解数值数据的分布和主要统计特征。
+
+
+|index|longitude|latitude|housing\_median\_age|total\_rooms|total\_bedrooms|population|households|median\_income|median\_house\_value|
+|---|---|---|---|---|---|---|---|---|---|
+|count|20640\.0|20640\.0|20640\.0|20640\.0|20433\.0|20640\.0|20640\.0|20640\.0|20640\.0|
+|mean|-119\.56970445736432|35\.63186143410853|28\.639486434108527|2635\.7630813953488|537\.8705525375618|1425\.4767441860465|499\.5396802325581|3\.8706710029069766|206855\.81690891474|
+|std|2\.0035317235025882|2\.1359523974571153|12\.58555761211165|2181\.615251582795|421\.3850700740322|1132\.462121765341|382\.32975283161073|1\.8998217179452688|115395\.61587441387|
+|min|-124\.35|32\.54|1\.0|2\.0|1\.0|3\.0|1\.0|0\.4999|14999\.0|
+|25%|-121\.8|33\.93|18\.0|1447\.75|296\.0|787\.0|280\.0|2\.5633999999999997|119600\.0|
+|50%|-118\.49|34\.26|29\.0|2127\.0|435\.0|1166\.0|409\.0|3\.5347999999999997|179700\.0|
+|75%|-118\.01|37\.71|37\.0|3148\.0|647\.0|1725\.0|605\.0|4\.74325|264725\.0|
+|max|-114\.31|41\.95|52\.0|39320\.0|6445\.0|35682\.0|6082\.0|15\.0001|500001\.0|
+
+{.show-header .left-text}
+
+`分析结果如下`
+
+| 要点                        | 解释                                                                                                                             |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| `housing.describe()`         | 提供数据集中每个数值属性的统计摘要，包括计数、平均值、最小值、最大值以及四分位数（25%、50%、75%）。                                                    |
+| `count`                     | 统计数据集中每个属性的非空值数量。                                                                                                 |
+| `mean`                      | 计算每个属性的平均值。                                                                                                             |
+| `std`                       | 显示标准差，衡量数据的离散程度。                                                                                                   |
+| `min` 和 `max`               | 分别表示数据集中每个属性的最小值和最大值。                                                                                          |
+| `25%`, `50%`, `75%`          | 表示数据的四分位数：25%表示第一个四分位数（Q1），50%是中位数，75%表示第三个四分位数（Q3）。                                                   |
+| 百分位（percentile）的意义      | 百分位数指的是在一组观察值中某个百分比以下的值。比如，25%的区的 `housing_median_age` 小于18，50%小于29，75%小于37。                                     |
+| `hist()` 方法                | 可以为每个数值属性绘制直方图，显示每个属性值在不同范围内的实例数量。直方图是了解数据类型的快速方式。                                                   |
+| 绘制直方图的选项               | 可以为单个属性绘制直方图，或者使用 `hist()` 方法为整个数据集中的所有数值属性同时绘制直方图。                                               |
+
+{.show-header .left-text}
+
+#### 可视化单特征的数据分布情况
+
+- 对 housing 数据集中的几个特征绘制直方图，并将这些图保存为高分辨率的 PNG 文件
+
+```python
+
+# extra code – code to save the figures as high-res PNGs for the book
+
+IMAGES_PATH = Path() / "images" / "end_to_end_project"
+IMAGES_PATH.mkdir(parents=True, exist_ok=True)
+
+def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
+    path = IMAGES_PATH / f"{fig_id}.{fig_extension}"
+    if tight_layout:
+        plt.tight_layout()
+    plt.savefig(path, format=fig_extension, dpi=resolution)
+    
+    
+    
+import matplotlib.pyplot as plt
+
+# extra code – the next 5 lines define the default font sizes
+plt.rc('font', size=14)
+plt.rc('axes', labelsize=14, titlesize=14)
+plt.rc('legend', fontsize=14)
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+
+housing.hist(bins=50, figsize=(12, 8))
+save_fig("attribute_histogram_plots")  # extra code
+plt.show()
+
+```
+
+![attribute_histogram_plots](../assets/attachment/hands_on_machine_learning/attribute_histogram_plots.png)
+
+`图形中观察出来的秘密`
+
+| ID  | 要点内容                       | 详细描述                                                                                                           | 如何分析得出                                                                 |
+|-----|----------------------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| 1   | 中位数收入未以美元表示                | 中位数收入属性的值似乎并不代表美元，而是缩放后的数值范围，如15和0.5等，并不是实际的收入金额。                                     | 通过观察“median_income”的直方图，发现数值范围在0到15之间，这明显不是美元的典型表示范围。            |
+| 2   | 房价上限影响模型预测                 | 房价和房龄的直方图显示，它们被封顶在某个特定的值，如500,000美元，这可能导致模型在预测时遇到限制。                                      | “median_house_value”和“housing_median_age”的直方图中，数据堆积在最大值处，这意味着数据被封顶。  |
+| 3   | 属性具有不同的尺度                   | 数据集中不同属性的范围和分布差异较大，某些属性如“total_rooms”数值较大，而“median_income”数值较小。                               | 从每个属性的直方图观察到，各属性的数值范围差异明显，这意味着它们的尺度不同，可能需要缩放。                              |
+| 4   | 直方图右偏，数据分布不对称             | 大多数属性的直方图显示出右偏分布，即大部分数据集中在左侧，而尾部拉长，这种分布可能会影响模型训练的效果。                                         | 通过观察直方图，可以看到许多属性的分布呈现右偏，特别是像“median_income”，这是数据分布不对称的特征。               |
+| 5   | 在进一步分析数据前创建测试集            | 分析数据前需要创建一个测试集，以确保模型评估时有未见过的数据，这对于验证模型的泛化能力非常重要。                                               | 这是数据科学中的一个常见做法，目的是确保模型评估的公正性和可靠性。虽然不是从图表中直接得出，但这是一个关键的分析步骤。       |
+
+{.show-header .left-text}
+
+### Step-05 分割测试集 {.col-span-3}
+
+#### 数据集划分
+
+```python
+import numpy as np
+
+def shuffle_and_split_data(data, test_ratio):
+    # 生成一个与数据集长度相同的随机排列的索引数组，确保数据的顺序被打乱，随机打乱后，训练集和测试集的分布更接近真实情况，这样训练出来的模型能够更好地适应新数据，从而提高模型的泛化能力。
+    shuffled_indices = np.random.permutation(len(data))
+    
+    # 计算测试集的大小，test_ratio 确定测试集占总数据集的比例
+    test_set_size = int(len(data) * test_ratio)
+    
+    # 根据打乱后的索引数组，选取前 test_set_size 个索引作为测试集的索引
+    test_indices = shuffled_indices[:test_set_size]
+    
+    # 剩下的索引作为训练集的索引
+    train_indices = shuffled_indices[test_set_size:]
+    
+    # 根据训练集和测试集的索引，分别返回训练集和测试集的数据
+    return data.iloc[train_indices], data.iloc[test_indices]
+
+```
+
+You can then use this function like this:
+
+```python
+train_set, test_set = shuffle_and_split_data(housing, 0.2)
+len(train_set)
+len(test_set)
+```
+
+#### 稳定测试集创建与可靠模型评估
+
+在机器学习项目中，测试集的主要目的是评估模型在未见过的数据上的表现，从而判断模型的泛化能力。如果你每次运行程序时生成的测试集不同，意味着测试集的数据每次都在变化，这会导致以下问题：
+
+- **模型可能见过全部数据**：如果每次运行程序时，测试集的数据都不一样，随着多次运行，模型最终可能会见到整个数据集的所有数据。这样，测试集不再是真正意义上的“未见过”的数据，从而无法有效地评估模型的泛化能力。
+
+- **无法比较模型的性能**：如果测试集每次都不同，那么模型在每次训练后的表现也会因为测试数据不同而有所变化。这使得你无法有效地比较模型在不同运行中的表现，因为测试集本身的差异就会导致性能评估的结果不一致。
+
+- **不稳定的模型评估**：由于测试集的变化，你得到的模型性能评估结果每次都不一样，无法判断模型的实际能力。这种不稳定性会让你难以得出可靠的结论。
+
+{.marker-round}
+
+因此，为了保证测试集的稳定性和模型评估的可靠性，必须避免在每次运行程序时生成不同的测试集。解决方案包括：
+- 在第一次运行程序时保存测试集，然后在后续运行中重新加载这个测试集。
+- 使用随机数种子（`np.random.seed(42)`）确保打乱数据的顺序是可重复的。
+- 使用更稳定的方法来划分训练集和测试集，比如基于数据实例的唯一标识符进行划分。
+
+{.marker-round}
+
+
+`要将代码逻辑串联成问题的形式，可以按照以下的顺序来构建：`
+
+- **如何判断一个实例是否应该进入测试集？**
+  - 使用 `is_id_in_test_set(identifier, test_ratio)` 函数，传入实例的标识符 (`identifier`) 和测试集比例 (`test_ratio`)，判断该实例是否应该进入测试集。判断的依据是根据实例标识符的哈希值，若其值小于 `test_ratio * 2**32`，则该实例属于测试集。
+
+   ```python
+   from zlib import crc32
+
+   def is_id_in_test_set(identifier, test_ratio):
+       return crc32(np.int64(identifier)) < test_ratio * 2**32
+   ```
+
+- **如何基于标识符将数据分为训练集和测试集？**
+  - 使用 `split_data_with_id_hash(data, test_ratio, id_column)` 函数，通过对数据集中指定列的标识符进行哈希值判断，将数据集划分为训练集和测试集。
+
+   ```python
+   def split_data_with_id_hash(data, test_ratio, id_column):
+       ids = data[id_column]
+       in_test_set = ids.apply(lambda id_: is_id_in_test_set(id_, test_ratio))
+       return data.loc[~in_test_set], data.loc[in_test_set]
+   ```
+
+- **如果数据集没有唯一标识符列，如何创建唯一标识符？**
+  - 如果数据集中没有标识符列，可以使用行索引作为标识符。首先通过 `reset_index()` 方法添加一个索引列，然后使用该索引列来划分数据集。
+
+   ```python
+   housing_with_id = housing.reset_index()  # adds an `index` column
+   train_set, test_set = split_data_with_id_hash(housing_with_id, 0.2, "index")
+   ```
+
+- **如何处理数据集在更新时行索引可能不稳定的问题？**
+  - 为了避免行索引在数据集更新时的不稳定性，可以使用较为稳定的特征（如地理位置的经度和纬度）来生成唯一标识符。通过将经度和纬度组合，可以构造一个唯一标识符列。
+
+   ```python
+   housing_with_id["id"] = housing["longitude"] * 1000 + housing["latitude"]
+   train_set, test_set = split_data_with_id_hash(housing_with_id, 0.2, "id")
+   ```
+
+- **Scikit-Learn 提供了多种将数据集分割成多个子集的函数**
+
+  - 其中最简单的函数是 `train_test_split()`，它与之前定义的 `shuffle_and_split_data()` 函数功能类似。
+
+  - **`train_test_split()` 函数的两个额外功能**：
+    - **`random_state` 参数**：允许设置随机生成器的种子，以确保每次运行生成相同的随机分割。
+    - **支持多数据集同步分割**：如果有多个行数相同的数据集（例如，特征和标签的 DataFrame），可以同时传递这些数据集，`train_test_split()` 会使用相同的索引将它们进行同步分割。
+  
+  ```python
+  from sklearn.model_selection import train_test_split
+  train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+  ```
+  - **代码示例**：使用 `train_test_split()` 将 `housing` 数据集分成训练集和测试集，测试集大小为数据集的20%（`test_size=0.2`），并通过设置 `random_state=42` 来确保分割的稳定性。
+
+{.marker-timeline}
+
+
+#### 分层抽样以确保数据集特征分布一致性
+
+- **使用 Scikit-Learn 的 `train_test_split` 函数来划分数据集**
+
+  - **目的**: 将数据集随机划分为训练集和测试集，同时确保划分的一致性。
+  - **关键点**: 使用 `random_state=42` 来确保每次运行代码时，划分的结果一致，这样可以保证模型评估的可重复性。
+     ```python
+     from sklearn.model_selection import train_test_split
+     train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
+     ```
+
+- **理解纯随机采样的潜在偏差**
+
+  - **问题**: 纯随机采样可能会导致数据集中某些重要特征的分布不均（例如，人口中的性别比例）。
+  - **解决方案**: 使用分层抽样（Stratified Sampling）确保训练集和测试集中重要特征的分布与整个数据集一致。通过在划分数据集时考虑这些特征，可以避免偏差。
+  - **示例**: 在性别比例为51.1%女性和48.9%男性的情况下，如果不使用分层抽样，测试集中的性别比例可能会与总体不符，导致结果偏差。
+
+- **创建收入分类属性并绘制直方图**
+  ![加利福尼亚收入中位数分层](../assets/attachment/hands_on_machine_learning/加利福尼亚收入中位数分层.png)
+  - **目的**: 将连续的收入数据分为多个类别，以便在数据划分时使用分层抽样。
+  - **关键点**: 使用 `pd.cut` 将收入数据划分为五个类别，并通过绘制直方图观察每个类别的分布情况，确保这些类别在数据集中具有足够的代表性。
+     ```python
+     housing["income_cat"] = pd.cut(housing["median_income"],
+                                    bins=[0., 1.5, 3.0, 4.5, 6., np.inf],
+                                    labels=[1, 2, 3, 4, 5])
+     ```
+
+- **使用分层抽样划分数据集**
+
+  - **目的**: 使用分层抽样确保训练集和测试集中重要特征（如收入）的比例与整个数据集一致。
+  - **关键点**: 通过 `StratifiedShuffleSplit` 生成多次划分，并选择第一个划分作为训练集和测试集。分层抽样能够更好地保持数据集中重要特征的代表性。
+     ```python
+     from sklearn.model_selection import StratifiedShuffleSplit
+     splitter = StratifiedShuffleSplit(n_splits=10, test_size=0.2, random_state=42)
+     for train_index, test_index in splitter.split(housing, housing["income_cat"]):
+         strat_train_set_n = housing.iloc[train_index]
+         strat_test_set_n = housing.iloc[test_index]
+     ```
+
+- **验证分层抽样的效果**
+
+  - **目的**: 确保分层抽样的效果达到预期，即测试集中的特征分布与整个数据集一致。
+  - **关键点**: 通过计算测试集中每个收入类别的比例，验证分层抽样是否按照预期工作。比较使用分层抽样和随机抽样生成的测试集中的分布差异，确保分层抽样的有效性。
+     ```python
+     strat_test_set["income_cat"].value_counts() / len(strat_test_set)
+     >>>
+     3 0.350533
+     2 0.318798
+     4 0.176357
+     5 0.114341
+     1 0.039971
+     Name: income_cat, dtype: float64
+     ```
+    - 类别 `3` 占比 `35.05%`
+    - 类别 `2` 占比 `31.88%`
+    - 类别 `4` 占比 `17.64%`
+    - 类别 `5` 占比 `11.44%`
+    - 类别 `1` 占比 `3.99%`
+    
+- **随机抽样 vs 分层抽象效果**
+
+  - 创建分层抽样的测试集
+  首先，你需要创建一个基于分层抽样的测试集，并计算各个类别在测试集中的分布情况。
+
+  ```python
+  from sklearn.model_selection import train_test_split
+  
+  # 创建收入类别的分类标签
+  housing["income_cat"] = pd.cut(housing["median_income"],
+                                 bins=[0., 1.5, 3.0, 4.5, 6., np.inf],
+                                 labels=[1, 2, 3, 4, 5])
+  
+  # 使用分层抽样创建测试集
+  strat_train_set, strat_test_set = train_test_split(housing, test_size=0.2, stratify=housing["income_cat"], random_state=42)
+  
+  # 计算分层抽样测试集的收入类别分布
+  strat_test_proportions = strat_test_set["income_cat"].value_counts() / len(strat_test_set)
+  ```
+
+  - 创建随机抽样的测试集
+  然后，你可以通过纯随机抽样创建另一个测试集，并计算其收入类别的分布情况。
+
+  ```python
+  # 使用随机抽样创建测试集
+  random_train_set, random_test_set = train_test_split(housing, test_size=0.2, random_state=42)
+  
+  # 计算随机抽样测试集的收入类别分布
+  random_test_proportions = random_test_set["income_cat"].value_counts() / len(random_test_set)
+  ```
+
+  - 比较测试集与总体数据集的分布
+  你可以将分层抽样和随机抽样的结果与整个数据集的分布进行对比，生成图表或表格。
+
+  ```python
+  # 计算整个数据集的收入类别分布
+  overall_proportions = housing["income_cat"].value_counts() / len(housing)
+  
+  # 创建对比表格
+  comparison = pd.DataFrame({
+      "Overall %": overall_proportions,
+      "Stratified %": strat_test_proportions,
+      "Random %": random_test_proportions,
+  }).sort_index()
+  
+  # 计算误差
+  comparison["Strat. Error %"] = 100 * (comparison["Stratified %"] - comparison["Overall %"]) / comparison["Overall %"]
+  comparison["Rand. Error %"] = 100 * (comparison["Random %"] - comparison["Overall %"]) / comparison["Overall %"]
+  
+  # 输出结果
+  print(comparison)
+  ```
+
+  - 图表展示
+  生成对比图表：
+
+  ```python
+  comparison.plot(kind='bar', figsize=(10, 6))
+  plt.show()
+  ```
+  ![加利福尼亚房价预测-随机抽样vs分层抽样](../assets/attachment/hands_on_machine_learning/加利福尼亚房价预测-随机抽样vs分层抽样.png)
+
+  - **Overall %**：整个数据集中各个收入类别的比例。这是“真实”分布，用于比较其他抽样方法的效果。
+  - **Stratified %**：分层抽样后，测试集中各收入类别的比例。如果分层抽样效果好，这些比例应该与Overall %非常接近。
+  - **Random %**：随机抽样后，测试集中各收入类别的比例。由于随机性，这些比例可能与Overall %有较大的偏差。
+  - **Strat. Error %**：分层抽样后各收入类别比例与Overall %的偏差。偏差越小，分层抽样效果越好。
+  - **Rand. Error %**：随机抽样后各收入类别比例与Overall %的偏差。通常偏差较大，说明随机抽样在保持特征分布一致性方面效果较差。
+
+
+- **删除不再需要的 `income_cat` 列**
+
+  - **目的**: 清理数据，删除不再需要的辅助列。
+  - **关键点**: 删除 `income_cat` 列，确保后续分析和模型训练时的数据整洁。
+     ```python
+     for set_ in (strat_train_set, strat_test_set):
+         set_.drop(["income_cat"], axis=1, inplace=True)
+     ```
+
+{.marker-timeline}
+
+
+
+
+
+
+
+
+
+## Machine Learning Project CheckList 
+
+### CheckList Table {.col-span-3}
+
+| ID  | English Steps                                        | 中文                       |
+|-----|------------------------------------------------------|--------------------------|
+| 1   | Frame the problem and look at the big picture.       | 确定问题并从整体上看待问题。           |
+| 2   | Get the data.                                        | 获取数据。                    |
+| 3   | Explore the data to gain insights.                   | 探索数据以获得洞察。               |
+| 4   | Prepare the data to better expose the underlying data patterns to machine learning algorithms. | 准备数据，以便更好地揭示数据模式给机器学习算法。 |
+| 5   | Explore many different models and shortlist the best ones. | 探索多种不同的模型，并挑选出最好的几个。     |
+| 6   | Fine-tune your models and combine them into a great solution. | 微调模型，并将它们结合成一个出色的解决方案。   |
+| 7   | Present your solution.                               | 展示你的解决方案。                |
+| 8   | Launch, monitor, and maintain your system.           | 部署、监控并维护你的系统。            |
+
+{.show-header .left-text}
+
+## Machine learning Real-world Data 
+
+### Data Source Table {.col-span-3}
+
+| ID  | 分类                                    | 数据源                                      | 中文说明                           |
+|-----|-----------------------------------------|---------------------------------------------|------------------------------------|
+| 1   | **Popular open data repositories**      | [OpenML.org](https://www.openml.org)        | 一个开放机器学习数据集的平台       |
+| 2   |                                         | [Kaggle.com](https://www.kaggle.com)        | 数据科学竞赛和数据集的平台         |
+| 3   |                                         | [PapersWithCode.com](https://www.paperswithcode.com) | 提供机器学习论文及相关代码和数据集的平台 |
+| 4   |                                         | [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php) | 加州大学尔湾分校的机器学习数据集库 |
+| 5   |                                         | [Amazon’s AWS datasets](https://registry.opendata.aws) | 亚马逊AWS提供的开放数据集         |
+| 6   |                                         | [TensorFlow datasets](https://www.tensorflow.org/datasets) | TensorFlow框架下的开放数据集      |
+| 7   | **Meta portals**                        | [DataPortals.org](https://www.dataportals.org) | 列出开放数据集门户网站的汇总平台 |
+| 8   |                                         | [OpenDataMonitor.eu](http://www.opendatamonitor.eu) | 监控和分析开放数据集的平台        |
+| 9   | **Other pages listing data repositories** | [Wikipedia’s list of machine learning datasets](https://en.wikipedia.org/wiki/List_of_datasets_for_machine-learning_research) | 维基百科的机器学习数据集列表       |
+| 10  |                                         | [Quora.com](https://www.quora.com)         | 知识问答平台，有时包含数据集资源   |
+| 11  |                                         | [The datasets subreddit](https://www.reddit.com/r/datasets/) | Reddit上的数据集讨论和分享社区   |
+
+{.show-header .left-text}
+
+## Machine Learning Performance Measure
+
+### 性能度量指标选择表 {.col-span-3}
+
+| **序号** | **性能度量指标** | **适用场景** | **优点** | **缺点** | **数学定义** | **度量原理** |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | **均方根误差 (RMSE)** | 回归问题 | 对大误差敏感，适用于正态分布的数据 | 对异常值非常敏感 | ```KaTeX:RMSE = \sqrt{\frac{1}{m} \sum_{i=1}^{m} \left[h(x^{(i)}) - y^{(i)}\right]^2}``` | 衡量预测值与实际值之间的平方差的平均值的平方根，强调大误差 |
+| 2 | **平均绝对误差 (MAE)** | 回归问题 | 对异常值不敏感，更适用于含有异常值的数据 | 不如 ```KaTeX:RMSE``` 强调大误差 | ```KaTeX:MAE = \frac{1}{m} \sum_{i=1}^{m} \mid h(x^{(i)}) - y^{(i)}\mid``` | 计算预测值与实际值之间的绝对差的平均值，强调所有误差的平均水平 |
+| 3 | **R² 决定系数** | 回归问题 | 易于理解，表示模型的解释能力 | 在数据异常分布时可能误导 | ```KaTeX:R^2 = 1 - \frac{\sum_{i=1}^{m} \left[y^{(i)} - \hat{y}^{(i)}\right]^2}{\sum_{i=1}^{m} \left[y^{(i)} - \bar{y}\right]^2}``` | 衡量模型解释方差的比例，表示模型对实际数据的拟合程度 |
+| 4 | **对数损失 (Log Loss)** | 二分类问题 | 对模型概率输出的评估有效 | 对分类错误非常敏感 | ```KaTeX:Log Loss = -\frac{1}{m} \sum_{i=1}^{m} \left[y^{(i)}\log(\hat{y}^{(i)}) + (1-y^{(i)})\log(1-\hat{y}^{(i)})\right]``` | 衡量分类模型输出的概率分布与实际标签之间的差异 |
+| 5 | **准确率 (Accuracy)** | 分类问题 | 简单直观，适用于类均衡数据 | 对类不平衡数据敏感 | ```KaTeX:Accuracy = \frac{TP + TN}{TP + TN + FP + FN}``` | 衡量预测正确的样本占总样本的比例 |
+| 6 | **精确率 (Precision)** | 分类问题（尤其关注正类） | 适用于需要减少误报的场景 | 对正负类不均衡数据不敏感 | ```KaTeX:Precision = \frac{TP}{TP + FP}``` | 衡量预测为正的样本中实际为正的比例 |
+| 7 | **召回率 (Recall)** | 分类问题（尤其关注正类） | 适用于减少漏报的场景 | 对负类不敏感，可能导致更多误报 | ```KaTeX:Recall = \frac{TP}{TP + FN}``` | 衡量实际为正的样本中被正确预测为正的比例 |
+| 8 | **F1 Score** | 分类问题 | 结合了精确率和召回率的优点 | 对类别不均衡数据有效 | ```KaTeX:F1 = 2 \cdot \frac{Precision \cdot Recall}{Precision + Recall}``` | 综合精确率和召回率的调和平均，平衡两者的重要性 |
+
+
+{.show-header .left-text}
