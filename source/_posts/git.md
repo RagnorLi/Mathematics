@@ -542,3 +542,9 @@ $ git checkout <commit_or_branch_hash>
    注意：使用 `--force` 推送会覆盖远程仓库的历史记录，请小心使用。
 
 {.marker-timeline}
+
+
+### 重写整个历史提交
+
+`邮箱错了导致绿点不亮`
+

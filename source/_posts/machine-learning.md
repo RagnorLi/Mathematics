@@ -439,11 +439,9 @@ intro: |
 
 {.show-header .left-text}
 
-
-
 ## End-to-End Machine Learning Project
 
-### 使用真实数据
+### Setup 数据采集
 
 | 特征名称               | 描述                             |
 |------------------------|----------------------------------|
@@ -464,7 +462,7 @@ intro: |
 
 {.marker-none}
 
-### 项目整体视角 {.col-span-2}
+### Step-00 项目整体视角 {.col-span-2}
 
 #### Step-01 问题框架化
 
@@ -968,6 +966,1341 @@ len(test_set)
      ```
 
 {.marker-timeline}
+
+### Step-06 探索并可视化数据以获取洞见
+
+我们进入到这一步后不再重点关注测试集，而训练集如果很大，你就要抽取一个缩小版的训练集，不大就copy一份做探索，记住`永远不要污染源数据`。
+
+#### 1. 如何准备训练数据集以便进一步探索？
+
+**问题：** 如何在不影响原始数据的情况下，准备训练数据集进行探索？
+
+**解答：**
+- 在进行数据探索和可视化之前，首先要确保训练集与测试集分开，并对训练集进行复制，以便进行各种数据变换而不影响原始数据。
+
+```python
+# 复制训练数据集
+housing = strat_train_set.copy()
+```
+
+#### 2. 如何可视化地理数据？
+
+`因为数据集是房价，而其中的经纬度就代表了地理位置，其实不用巧思就可以得出用经纬度绘制地图来可视化并探索数据是好的！`
+
+**问题：** 如何创建一个地理散点图来可视化房屋数据的分布？
+
+**解答：**
+- 使用 `latitude` 和 `longitude` 来绘制房屋数据的地理分布，便于观察房屋的地理位置特征。
+
+```python
+# 绘制地理散点图
+housing.plot(kind="scatter", x="longitude", y="latitude", grid=True)
+plt.show()
+```
+
+**图解：**
+- ![加利福尼亚-经纬度绘制数据初探](../assets/attachment/hands_on_machine_learning/加利福尼亚-经纬度绘制数据初探.png)此图展示了加利福尼亚的房屋数据，但无法明确显示密集区域。
+
+#### 3. 如何增强地理数据的可视化效果以更好地识别密集区域？
+
+`通过观察图，很明显的一个问题是 it's hard to see any particular pattern!`
+
+**问题：** 如何调整可视化参数来突出显示数据点密集区域？
+
+**解答：**
+- 通过设置 `alpha` 参数，可以更清晰地看到数据点密集区域。
+
+```python
+# 调整 alpha 参数以增强可视化效果
+housing.plot(kind="scatter", x="longitude", y="latitude", grid=True, alpha=0.2)
+plt.show()
+```
+
+**图解：**
+- ![加利福尼亚-数据点密集情况显示](../assets/attachment/hands_on_machine_learning/加利福尼亚-数据点密集情况显示.png)使用 `alpha=0.2` 之后，图中清楚地显示了数据点的密集区域，如湾区、洛杉矶及圣地亚哥周围。
+
+#### 4. 如何结合人口密度和房价进行地理数据的可视化？
+
+**问题：** 如何结合人口密度和房价绘制房屋价格的地理分布图？
+
+**解答：**
+- 使用不同颜色和圆圈大小来表示人口密度和房屋价格，可以更深入地分析地理位置对房价的影响。
+
+```python
+# 综合人口密度和房价的地理散点图
+housing.plot(kind="scatter", x="longitude", y="latitude", grid=True,
+             s=housing["population"]/100, label="population",
+             c="median_house_value", cmap="jet", colorbar=True,
+             legend=True, sharex=False, figsize=(10, 7))
+plt.show()
+```
+
+**图解：**
+- ![加利福尼亚-深入表示地理位置人口密度](../assets/attachment/hands_on_machine_learning/加利福尼亚-深入表示地理位置人口密度.png)图中使用颜色表示房价（从蓝色到红色），圆圈大小表示人口密度。可以观察到房价与海洋距离和人口密度的关系。
+
+### Step-07 寻找数据特征之间的关联性
+
+
+#### 1. 如何计算和查看数据集中的相关性？
+
+**问题：** 如何计算和查看房价与其他特征之间的相关性？
+
+**解答：**
+- 可以使用 Pandas 的 `corr()` 方法来计算数据集中的标准相关系数（也称为皮尔森相关系数）。这有助于理解哪些特征与目标变量（如房价）有较强的相关性。
+
+```python
+# 计算相关系数矩阵
+corr_matrix = housing.corr()
+
+# 查看与房价的相关性并排序
+corr_matrix["median_house_value"].sort_values(ascending=False)
+```
+
+```text
+median_house_value    1.000000
+median_income         0.688380
+total_rooms           0.137455
+housing_median_age    0.102175
+households            0.071426
+total_bedrooms        0.054635
+population           -0.020153
+longitude            -0.050859
+latitude             -0.139584
+Name: median_house_value, dtype: float6
+```
+
+**结果解读：**
+- 中位收入与房价的相关性最高，为 0.688，表明收入越高，房价越高。房间总数、房龄等特征的相关性较弱。
+
+#### 2. 如何可视化特征之间的相关性？
+
+**问题：** 如何通过散点矩阵（scatter matrix）来可视化多个特征之间的相关性？
+
+**解答：**
+- 使用 Pandas 的 `scatter_matrix()` 方法可以绘制多特征的散点矩阵，帮助分析各个特征之间的关系。
+
+```python
+from pandas.plotting import scatter_matrix
+
+# 选择感兴趣的特征
+attributes = ["median_house_value", "median_income", "total_rooms", "housing_median_age"]
+
+# 绘制散点矩阵
+scatter_matrix(housing[attributes], figsize=(12, 8))
+plt.show()
+```
+
+**图解：**
+- ![加利福尼亚-通过散点矩阵可视化多个特征之间的相关性](../assets/attachment/hands_on_machine_learning/加利福尼亚-通过散点矩阵可视化多个特征之间的相关性.png)该图展示了多个特征之间的关系，例如中位收入与房价之间的强相关性。
+
+#### 3. 如何进一步分析中位收入与房价的关系？
+
+**问题：** 如何进一步深入分析中位收入与房价之间的关系？
+
+**解答：**
+- 为了更详细地分析，可以放大中位收入与房价的散点图。
+
+```python
+# 放大中位收入与房价的散点图
+housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1, grid=True)
+plt.show()
+```
+
+**图解：**
+- ![加利福尼亚房价-深入分析中位收入与房价散点图](../assets/attachment/hands_on_machine_learning/加利福尼亚房价-深入分析中位收入与房价散点图.png)图中显示了中位收入与房价的强相关性，并展示了房价的上限现象（约为 $500,000），以及其他可能影响模型的房价“横线”。
+
+#### 4. 标准相关系数的局限性是什么？
+
+**问题：** 标准相关系数的局限性有哪些？
+
+**解答：**
+- 标准相关系数只衡量线性相关性，对于非线性关系可能无法捕捉。例如，某些变量可能呈现明显的非线性关系，而相关系数为0，误导性地认为它们之间无关。
+
+**图解：**
+- ![特征相关性嗅探-标准相关系数图](../assets/attachment/hands_on_machine_learning/特征相关性嗅探-标准相关系数图.png)图中展示了不同数据集的标准相关系数，显示了线性和非线性关系的差异。注意某些非线性关系下，相关系数为零，但实际上变量之间有强相关性。
+
+### Step-08 继续探索组合特征
+
+#### 1. 如何通过组合特征来增强模型的表现？
+
+**问题：** 如何通过组合现有的特征来创建新的、有潜力的特征以增强模型的预测能力？
+
+**解答：**：在对数据进行机器学习建模之前，可以尝试创建一些新的特征组合。例如，仅仅知道一个区域的总房间数并不足够，因为这忽略了区域内有多少个家庭。更有用的指标可能是每户的房间数、卧室与房间的比例，以及每户的人口数。
+
+```python
+# 创建新的特征组合
+housing["rooms_per_house"] = housing["total_rooms"] / housing["households"]
+housing["bedrooms_ratio"] = housing["total_bedrooms"] / housing["total_rooms"]
+housing["people_per_house"] = housing["population"] / housing["households"]
+```
+
+**目的：**：这些新特征旨在更准确地反映区域内住房条件，可能与房价有更强的相关性。
+
+#### 2. 这些新特征与房价的相关性如何？
+
+**问题：** 创建的新特征与房价的相关性如何？
+
+**解答：**：在创建新特征之后，可以再次计算与房价的相关性，以查看这些新特征是否提供了更有价值的信息。
+
+```python
+# 计算相关系数矩阵并查看与房价的相关性
+corr_matrix = housing.corr()
+corr_matrix["median_house_value"].sort_values(ascending=False)
+```
+
+```text
+median_house_value    1.000000
+median_income         0.688380
+rooms_per_house       0.143663
+total_rooms           0.137455
+housing_median_age    0.102175
+households            0.071426
+total_bedrooms        0.054635
+population           -0.020153
+people_per_house     -0.038224
+longitude            -0.050859
+latitude             -0.139584
+bedrooms_ratio       -0.256397
+Name: median_house_value, dtype: float64
+```
+
+**结果解读：**
+- 新特征 `bedrooms_ratio` 与房价的相关性为 -0.256，这比 `total_rooms` 和 `total_bedrooms` 的相关性更强，表明这个特征在解释房价方面更有用。
+
+#### 3. 这些新特征的意义是什么？
+
+**问题：** 这些新特征有什么意义？
+
+**解答：**：`bedrooms_ratio` 特征表明，卧室与房间数的比例越低，房价可能越高，可能是因为这些房屋具有更大的房间且更加昂贵。`rooms_per_house` 特征显示每户的房间数量，比总房间数更能反映房屋的大小和价值。
+
+{.marker-none}
+
+### Step-09 数据清洗
+
+#### 1. 如何为机器学习算法准备数据？
+
+**问题：** 为什么要将数据准备过程封装成函数，而不是手动进行？
+
+**解答：**
+- 封装数据准备过程有以下几个优点：
+  1. 可以轻松地在任何数据集上重现这些转换。
+  2. 可以逐步建立一个转换函数库，在未来的项目中复用。
+  3. 可以在实时系统中使用这些函数来转换新数据，再将其传递给算法。
+  4. 可以轻松尝试多种转换组合，找到最佳的转换方法。
+
+**代码示例：**
+```python
+# 分离预测变量和标签
+housing = strat_train_set.drop("median_house_value", axis=1)
+housing_labels = strat_train_set["median_house_value"].copy()
+```
+
+#### 2. 如何清理数据中的缺失值？
+
+**问题：** 如何处理数据集中缺失的特征值？
+
+**解答：**
+- 处理缺失值的三种常见方法：
+  1. 删除对应的行。
+  2. 删除包含缺失值的列。
+  3. 用某个值（如0、平均值、中位数等）填补缺失值。
+
+**代码示例：**
+```python
+# 方法1：删除对应的行
+housing.dropna(subset=["total_bedrooms"], inplace=True)
+
+# 方法2：删除包含缺失值的列
+housing.drop("total_bedrooms", axis=1, inplace=True)
+
+# 方法3：用中位数填补缺失值
+median = housing["total_bedrooms"].median()
+housing["total_bedrooms"].fillna(median, inplace=True)
+```
+
+**Scikit-Learn 实现：**
+```python
+from sklearn.impute import SimpleImputer
+
+# 使用中位数策略填补缺失值
+imputer = SimpleImputer(strategy="median")
+
+# 选择数值属性
+housing_num = housing.select_dtypes(include=[np.number])
+
+# 拟合填补器并应用到训练数据
+imputer.fit(housing_num)
+X = imputer.transform(housing_num)
+
+# 将 NumPy 数组转换回 Pandas DataFrame
+housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+```
+
+#### 3. Scikit-Learn 的设计原则是什么？
+
+**问题：** Scikit-Learn 的设计原则有哪些？
+
+**解答：**
+- Scikit-Learn 的设计具有一致性、简单性和可复用性。其核心设计原则包括：
+  - **一致性**：所有对象都有一致的简单接口。
+  - **估计器（Estimators）**：用于估计参数的对象，如 `SimpleImputer`。
+  - **转换器（Transformers）**：用于数据转换的对象，通过 `fit_transform()` 方法实现。
+  - **预测器（Predictors）**：用于预测的对象，通过 `predict()` 方法生成预测。
+  - **检查（Inspection）**：所有超参数和学习到的参数都可以通过公共实例变量访问。
+  - **类的非泛滥性**：数据集表示为 NumPy 数组或 SciPy 稀疏矩阵，而非自定义类。
+  - **组合性**：重用已有模块，轻松创建管道。
+  - **合理默认值**：为大多数参数提供合理的默认值，便于快速创建模型。
+
+通过了解这些原则，可以更好地使用 Scikit-Learn 进行机器学习建模。
+
+### Step-10 处理文本和分类属性
+
+#### 1. 如何处理文本和分类属性？
+
+**问题：** 如何将文本或分类属性转换为数值，以便用于机器学习模型？
+
+**解答：**
+- 当数据集中包含文本或分类属性时，通常需要将这些属性转换为数值，以便机器学习算法可以处理它们。Scikit-Learn 提供了 `OrdinalEncoder` 和 `OneHotEncoder` 来执行这种转换。
+
+- 使用 `OrdinalEncoder` 进行编码
+
+  **代码示例：**
+  ```python
+  from sklearn.preprocessing import OrdinalEncoder
+  
+  # 提取分类属性
+  housing_cat = housing[["ocean_proximity"]]
+  
+  # 使用 OrdinalEncoder 进行编码
+  ordinal_encoder = OrdinalEncoder()
+  housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
+  ```
+
+  **结果：** 这个编码过程将分类属性转换为数值，其中每个分类对应一个数字。比如 `"NEAR BAY"` 可能被编码为 `3`，`"INLAND"` 被编码为 `1`。
+
+- 使用 `OneHotEncoder` 进行编码
+
+  **问题：** 为什么使用 `OneHotEncoder` 可能更好？
+
+  **解答：** ：`OrdinalEncoder` 将分类属性转换为有序的整数，可能会导致算法错误地认为这些值之间有某种顺序关系。`OneHotEncoder` 通过为每个类别创建一个独立的二进制特征，避免了这种问题。
+
+  **代码示例：**
+  ```python
+  from sklearn.preprocessing import OneHotEncoder
+  
+  # 使用 OneHotEncoder 进行编码
+  cat_encoder = OneHotEncoder()
+  housing_cat_1hot = cat_encoder.fit_transform(housing_cat)
+  ```
+
+  **结果：**：`OneHotEncoder` 生成一个稀疏矩阵，其中每一行只有一个值为1，其余为0。这样可以避免误解类别之间的关系。
+
+{.marker-round}
+
+#### 2. 如何获取编码后的类别列表？
+
+**问题：** 如何获取 `OneHotEncoder` 或 `OrdinalEncoder` 编码后的类别列表？
+
+**解答：** ：Scikit-Learn 的编码器对象具有 `categories_` 属性，可以用来获取编码后的类别列表。
+
+**代码示例：**
+```python
+# 获取编码后的类别列表
+ordinal_encoder.categories_
+cat_encoder.categories_
+```
+
+#### 3. 如何将稀疏矩阵转换为稠密矩阵？
+
+**问题：** 如何将 `OneHotEncoder` 生成的稀疏矩阵转换为稠密矩阵？
+
+**解答：** ：稀疏矩阵可以通过 `toarray()` 方法转换为稠密的 NumPy 数组。
+
+**代码示例：**
+```python
+# 将稀疏矩阵转换为稠密矩阵
+housing_cat_1hot_dense = housing_cat_1hot.toarray()
+```
+
+#### 3. Pandas 中的 `get_dummies()` 与 `OneHotEncoder` 有何不同？
+
+**问题：** Pandas 的 `get_dummies()` 方法和 Scikit-Learn 的 `OneHotEncoder` 有何不同？
+
+**解答：**：Pandas 的 `get_dummies()` 直接将分类变量转换为独热编码，但它无法记住训练时的类别。这意味着在处理新数据时可能会出现不同的列。而 `OneHotEncoder` 可以记住训练时的类别，确保在推理阶段数据格式一致。
+
+**代码示例：**
+```python
+import pandas as pd
+
+# 使用 Pandas 的 get_dummies 方法
+df_test = pd.DataFrame({"ocean_proximity": ["INLAND", "NEAR BAY"]})
+pd.get_dummies(df_test)
+```
+
+#### 4. 如何处理未知类别？
+
+**问题：** 如果在推理阶段遇到训练阶段未出现的类别，如何处理？
+
+**解答：**：`OneHotEncoder` 提供了 `handle_unknown` 参数，可以选择忽略未知类别或者在遇到未知类别时引发错误。
+
+**代码示例：**
+```python
+# 处理未知类别
+cat_encoder.handle_unknown = "ignore"
+cat_encoder.transform(df_test_unknown)
+```
+
+#### 5. 如何将编码后的数据转换回 DataFrame？
+
+**问题：** 如何将 `OneHotEncoder` 编码后的数据转换回 Pandas DataFrame？
+
+**解答：**
+- 可以使用编码器的 `get_feature_names_out()` 方法获取列名，并结合编码后的数组转换为 DataFrame。
+
+**代码示例：**
+```python
+# 将编码后的数据转换回 DataFrame
+df_output = pd.DataFrame(cat_encoder.transform(df_test_unknown),
+                         columns=cat_encoder.get_feature_names_out(),
+                         index=df_test_unknown.index)
+```
+
+{.marker-none}
+
+### Step-11 特征缩放和转换
+
+#### 1. 为什么要进行特征缩放和转换？
+
+**问题：** 为什么在训练机器学习模型之前需要对数据进行特征缩放和转换？
+
+**解答：**
+- 大多数机器学习算法在输入数值属性具有非常不同的尺度时表现不佳。因此，需要对数据进行特征缩放，使所有属性在相似的范围内。常见的缩放方法有两种：**最小最大缩放**和**标准化**。
+
+#### 2. 如何进行最小最大缩放？
+
+**问题：** 如何使用 `MinMaxScaler` 进行最小最大缩放？
+
+**解答：**
+- 最小最大缩放将每个属性的值调整到0到1的范围内（或自定义范围）。这可以通过减去最小值并除以最大值和最小值之间的差值来实现。
+
+**代码示例：**
+```python
+from sklearn.preprocessing import MinMaxScaler
+
+min_max_scaler = MinMaxScaler(feature_range=(-1, 1))
+housing_num_min_max_scaled = min_max_scaler.fit_transform(housing_num)
+```
+
+#### 3. 如何进行标准化？
+
+**问题：** 如何使用 `StandardScaler` 进行标准化？
+
+**解答：**
+- 标准化通过减去均值并除以标准差，使属性具有零均值和单位标准差。这对于处理包含异常值的数据特别有用。
+
+**代码示例：**
+```python
+from sklearn.preprocessing import StandardScaler
+
+std_scaler = StandardScaler()
+housing_num_std_scaled = std_scaler.fit_transform(housing_num)
+```
+
+#### 4. 如何处理具有重尾分布的特征？
+
+**问题：** 如何处理具有重尾分布的特征，以便更好地进行缩放？
+
+**解答：**
+- 对于具有重尾分布的特征，可以先对其进行转换（如取对数），以缩小重尾并使分布更对称。
+
+**代码示例：**
+```python
+import numpy as np
+
+housing["population_log"] = np.log1p(housing["population"])
+```
+
+**图解**：
+- ![数据处理-重尾分布处理](../assets/attachment/hands_on_machine_learning/数据处理-重尾分布处理.png) 展示了如何通过对数变换使特征更接近高斯分布。在处理重尾分布时，通过如对数变换（logarithmic transformation）可以使分布更加对称，进而更适合缩放。
+
+#### 5. 如何处理具有多峰分布的特征？
+
+**问题：** 如何处理具有多峰分布的特征？
+
+**解答：**
+- 对于多峰分布的特征，可以考虑将其分箱（bucketizing），即将其划分为大致相等的桶，并用桶的索引替换每个特征值。
+
+**代码示例：**
+```python
+housing["age_bucket"] = pd.cut(housing["housing_median_age"],
+                               bins=[0, 20, 40, 60, 80],
+                               labels=[1, 2, 3, 4])
+```
+
+#### 6. 如何创建基于 RBF 的新特征？
+
+**问题：** 如何使用径向基函数（RBF）创建新特征？
+
+**解答：**
+- 可以使用 RBF 创建一个新特征，表示与某一固定点的相似度，这对于处理多峰分布的特征特别有用。
+
+**代码示例：**
+```python
+from sklearn.metrics.pairwise import rbf_kernel
+
+age_simil_35 = rbf_kernel(housing[["housing_median_age"]], [[35]], gamma=0.1)
+```
+
+**图解**：
+-  ![使用RBF径向奇函数创建新特征](../assets/attachment/hands_on_machine_learning/使用RBF径向奇函数创建新特征.png)展示了使用 RBF 核函数计算与特定年龄（例如35岁）的相似度。图中显示了随着年龄的增加，相似度如何变化。通过调整 `gamma` 参数，可以控制相似度的衰减速度。
+
+#### 7. 如何对目标值进行缩放并使用反转？
+
+**问题：** 如何对目标值进行缩放并使用反转缩放恢复原始值？
+
+**解答：**
+- 对于目标值（如房价）的缩放，可以使用 `StandardScaler` 并在预测后使用 `inverse_transform` 方法恢复原始值。
+
+**代码示例：**
+```python
+from sklearn.preprocessing import StandardScaler
+
+target_scaler = StandardScaler()
+scaled_labels = target_scaler.fit_transform(housing_labels.to_frame())
+
+# 训练模型
+model = LinearRegression()
+model.fit(housing[["median_income"]], scaled_labels)
+
+# 预测并反转缩放
+scaled_predictions = model.predict(some_new_data)
+predictions = target_scaler.inverse_transform(scaled_predictions)
+```
+
+#### 8. 如何简化目标值的缩放过程？
+
+**问题：** 如何简化目标值的缩放和预测过程？
+
+**解答：**
+- 使用 `TransformedTargetRegressor` 可以简化这个过程，它会自动缩放目标值并进行预测。
+
+**代码示例：**
+```python
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.linear_model import LinearRegression
+
+model = TransformedTargetRegressor(LinearRegression(), transformer=StandardScaler())
+model.fit(housing[["median_income"]], housing_labels)
+predictions = model.predict(some_new_data)
+```
+
+### Step-12 自定义化转换器
+
+#### 1. 如何创建自定义的转换器（Custom Transformers）？
+
+**问题：** 如何创建自定义的转换器以执行特定的特征转换？
+
+**解答：**
+- 虽然 Scikit-Learn 提供了许多有用的转换器，但有时需要编写自己的转换器来执行特定的任务，例如自定义转换、清理操作或组合特定的属性。
+
+#### 2. 编写不需要训练的转换器
+
+对于不需要训练的转换器，可以编写一个接受 NumPy 数组作为输入并输出转换后数组的函数。例如，之前讨论过的对重尾分布的特征进行对数转换，可以使用 `FunctionTransformer` 来实现：
+
+**代码示例：**
+```python
+from sklearn.preprocessing import FunctionTransformer
+import numpy as np
+
+log_transformer = FunctionTransformer(np.log, inverse_func=np.exp)
+log_pop = log_transformer.transform(housing[["population"]])
+```
+
+**说明：**
+- 这里使用了 `FunctionTransformer`，其中 `inverse_func` 参数是可选的，可以指定一个反向转换函数（例如，用于在 `TransformedTargetRegressor` 中进行反向转换）。
+
+#### 3. 创建带有超参数的转换器
+
+你可以编写一个包含超参数的转换器。比如，创建一个计算与某个固定点相似性的转换器：
+
+**代码示例：**
+```python
+from sklearn.metrics.pairwise import rbf_kernel
+
+rbf_transformer = FunctionTransformer(rbf_kernel,
+                                      kw_args=dict(Y=[[35.]], gamma=0.1))
+age_simil_35 = rbf_transformer.transform(housing[["housing_median_age"]])
+```
+
+#### 4. 编写可训练的转换器
+
+如果你希望转换器能够训练并学习一些参数，则需要编写一个自定义类。Scikit-Learn 依赖于鸭子类型，所以这个类不需要继承自特定的基类，但需要实现 `fit()`、`transform()` 和 `fit_transform()` 方法。
+
+**代码示例：**
+```python
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.utils.validation import check_array, check_is_fitted
+
+class StandardScalerClone(BaseEstimator, TransformerMixin):
+    def __init__(self, with_mean=True):
+        self.with_mean = with_mean
+
+    def fit(self, X, y=None):
+        X = check_array(X)
+        self.mean_ = X.mean(axis=0)
+        self.scale_ = X.std(axis=0)
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def transform(self, X):
+        check_is_fitted(self)
+        X = check_array(X)
+        return (X - self.mean_) / self.scale_
+```
+
+**说明：**
+- 这个自定义转换器模仿了 `StandardScaler` 的行为，可以通过 `fit()` 学习数据的均值和标准差，并在 `transform()` 中进行标准化。
+
+#### 5、实例：使用 K-Means 进行聚类相似性转换
+
+**问题：** 如何创建一个使用 K-Means 进行聚类并计算相似度的转换器？
+
+**解答：**
+- 你可以创建一个自定义转换器，使用 K-Means 算法找到数据集的聚类中心，然后使用 RBF 核函数计算每个样本到每个聚类中心的相似性。
+
+**代码示例：**
+```python
+from sklearn.cluster import KMeans
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.metrics.pairwise import rbf_kernel
+
+class ClusterSimilarity(BaseEstimator, TransformerMixin):
+    def __init__(self, n_clusters=10, gamma=1.0, random_state=None):
+        self.n_clusters = n_clusters
+        self.gamma = gamma
+        self.random_state = random_state
+
+    def fit(self, X, y=None, sample_weight=None):
+        self.kmeans_ = KMeans(n_clusters=self.n_clusters, random_state=self.random_state)
+        self.kmeans_.fit(X, sample_weight=sample_weight)
+        return self
+
+    def transform(self, X):
+        return rbf_kernel(X, self.kmeans_.cluster_centers_, gamma=self.gamma)
+
+    def get_feature_names_out(self, names=None):
+        return [f"Cluster {i} similarity" for i in range(self.n_clusters)]
+```
+
+**图解**： ![自定义转换器处理特定任务](../assets/attachment/hands_on_machine_learning/自定义转换器处理特定任务.png)展示了通过 K-Means 聚类找到的 10 个聚类中心，以及每个样本到最近聚类中心的相似性。图中不同颜色表示不同的相似性程度，聚类中心用黑色标识。
+
+{.marker-none}
+
+### Step-13 构建转换管道 {.col-span-2}
+
+#### 1. 如何构建转换管道？
+
+**问题：** 如何在 Scikit-Learn 中构建一个转换管道？
+
+**解答：**
+- 在处理数据时，可能需要多个转换步骤并按正确顺序执行。Scikit-Learn 提供了 `Pipeline` 类来帮助构建这样的转换序列。
+
+#### 2.构建数值属性的转换管道
+
+**代码示例：**
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+
+num_pipeline = Pipeline([
+    ("impute", SimpleImputer(strategy="median")),
+    ("standardize", StandardScaler()),
+])
+```
+
+- 上述管道先填补缺失值，然后对数值特征进行标准化。
+
+#### 3.使用 `make_pipeline()` 简化管道创建
+
+**代码示例：**
+```python
+from sklearn.pipeline import make_pipeline
+
+num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+```
+
+- 使用 `make_pipeline()` 可以自动为每个转换器命名，这样代码会更加简洁。
+
+#### 4.构建处理数值与分类数据的混合管道
+
+**问题：** 如何在同一个管道中处理数值和分类数据？
+
+**解答：**
+- 可以使用 `ColumnTransformer` 类同时处理数值与分类数据。
+
+**代码示例：**
+```python
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+num_attribs = ["longitude", "latitude", "housing_median_age", "total_rooms", "total_bedrooms", "population", "households", "median_income"]
+cat_attribs = ["ocean_proximity"]
+
+cat_pipeline = make_pipeline(
+    SimpleImputer(strategy="most_frequent"),
+    OneHotEncoder(handle_unknown="ignore"))
+
+preprocessing = ColumnTransformer([
+    ("num", num_pipeline, num_attribs),
+    ("cat", cat_pipeline, cat_attribs),
+])
+```
+
+#### 5.使用 `make_column_selector()` 简化列选择
+
+**问题：** 如何自动选择数值或分类列并应用相应的管道？
+
+**解答：**
+- 可以使用 `make_column_selector()` 函数自动选择数值或分类列。
+
+**代码示例：**
+```python
+from sklearn.compose import make_column_selector, make_column_transformer
+
+preprocessing = make_column_transformer(
+    (num_pipeline, make_column_selector(dtype_include=np.number)),
+    (cat_pipeline, make_column_selector(dtype_include=object)),
+)
+```
+
+#### 6.如何构建综合数据预处理管道？
+
+**问题：** 如何构建一个可以处理所有数据预处理步骤的完整管道？
+
+**解答：**你需要构建一个单一的管道，它将执行你在前面章节中实验过的所有转换步骤。
+
+**该管道将执行以下步骤：**
+
+- **数值特征的缺失值填补**： 对于数值特征，缺失值将使用中位数进行填补，因为大多数机器学习算法不期望有缺失值。
+
+- **分类特征的缺失值填补**： 对于分类特征，缺失值将用最常见的类别来填补。
+
+- **分类特征的独热编码**： 将分类特征进行独热编码（One-Hot Encoding），因为大多数机器学习算法只接受数值输入。
+
+- **计算并添加比率特征**： 计算并添加几个比率特征，例如 `bedrooms_ratio`, `rooms_per_house`, `people_per_house`，这些比率特征可能会与目标变量（中位数房价）更好地相关，从而帮助机器学习模型。
+
+- **添加聚类相似度特征**： 添加几个聚类相似度特征。这些特征可能比经纬度更有助于模型。
+
+- **对长尾分布的特征进行对数变换**： 对具有长尾分布的特征进行对数变换，因为大多数机器学习模型更喜欢大致呈现均匀或高斯分布的特征。
+
+- **标准化所有数值特征**： 对所有数值特征进行标准化，因为大多数机器学习算法在所有特征具有相似尺度时表现更好。
+
+{.marker-round}
+
+**代码示例：**
+```python
+def column_ratio(X):
+    return X[:, [0]] / X[:, [1]]
+
+def ratio_name(function_transformer, feature_names_in):
+    return ["ratio"]  # 返回特征名
+
+# 构建管道代码
+def ratio_pipeline():
+    return make_pipeline(
+        SimpleImputer(strategy="median"),
+        FunctionTransformer(column_ratio, feature_names_out=ratio_name),
+        StandardScaler())
+
+log_pipeline = make_pipeline(
+    SimpleImputer(strategy="median"),
+    FunctionTransformer(np.log, feature_names_out="one-to-one"),
+    StandardScaler())
+
+cluster_simil = ClusterSimilarity(n_clusters=10, gamma=1., random_state=42)
+default_num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+
+preprocessing = ColumnTransformer([
+    ("bedrooms", ratio_pipeline(), ["total_bedrooms", "total_rooms"]),
+    ("rooms_per_house", ratio_pipeline(), ["total_rooms", "households"]),
+    ("people_per_house", ratio_pipeline(), ["population", "households"]),
+    ("log", log_pipeline(), ["total_bedrooms", "total_rooms", "population", "households", "median_income"]),
+    ("geo", cluster_simil, ["latitude", "longitude"]),
+    ("cat", cat_pipeline, make_column_selector(dtype_include=object)),
+], remainder=default_num_pipeline)  # 剩余的列使用默认数值管道
+
+housing_prepared = preprocessing.fit_transform(housing)
+```
+
+- 运行这个 `ColumnTransformer` 后，它会执行所有转换并输出一个包含24个特征的 NumPy 数组。
+
+{.marker-none}
+
+### Step-14 在训练集上训练和评估模型
+
+#### 1. 如何选择和训练机器学习模型？
+
+在你已经定义了问题、获取并探索了数据、创建了训练集并准备了预处理管道后，现在你可以选择并训练一个机器学习模型了。
+
+
+
+#### 2. 如何在训练集上训练和评估模型？
+
+```python
+from sklearn.linear_model import LinearRegression
+
+lin_reg = make_pipeline(preprocessing, LinearRegression())
+lin_reg.fit(housing, housing_labels)
+```
+
+这段代码训练了一个基本的线性回归模型，并应用于整个训练集。
+
+- **预测示例**：以下是使用训练好的模型进行预测，并将前五个预测结果与实际标签进行比较：
+
+```python
+housing_predictions = lin_reg.predict(housing)
+housing_predictions[:5].round(-2)  # -2 表示四舍五入到最近的百位
+# 输出: array([243700., 372400., 128800.,  94400., 323800.])
+
+housing_labels.iloc[:5].values
+# 输出: array([458300., 483800., 101700.,  96100., 361800.])
+```
+
+- **使用RMSE进行评估**：你可以计算均方根误差（RMSE）来评估模型的性能：
+
+```python
+from sklearn.metrics import mean_squared_error
+
+lin_rmse = mean_squared_error(housing_labels, housing_predictions, squared=False)
+lin_rmse
+# 输出: 68687.89176589991
+```
+
+这个结果表明模型的预测平均误差大约为$68,628。
+
+---
+
+#### 3. 如果模型在训练数据上表现欠拟合（underfitting），该怎么办？
+
+当模型出现欠拟合时，可能意味着特征没有提供足够的信息来做出良好的预测，或者模型本身的复杂度不足。你可以选择一个更强大的模型，例如决策树回归器（DecisionTreeRegressor）：
+
+```python
+from sklearn.tree import DecisionTreeRegressor
+
+tree_reg = make_pipeline(preprocessing, DecisionTreeRegressor(random_state=42))
+tree_reg.fit(housing, housing_labels)
+```
+
+训练后，可以在训练集上评估该模型：
+
+```python
+housing_predictions = tree_reg.predict(housing)
+tree_rmse = mean_squared_error(housing_labels, housing_predictions, squared=False)
+tree_rmse
+# 输出: 0.0
+```
+
+这个结果（0.0的误差）通常意味着模型过拟合了训练数据，表现出不真实的完美拟合。
+
+
+{.marker-none}
+
+### Step-15 利用N折交叉验证改进评估
+
+#### 1.如何更好地评估模型性能？
+
+在机器学习中，评估模型性能是一个关键步骤。对于决策树模型，你可以通过拆分训练集和验证集来评估其性能。然而，Scikit-Learn 提供了更为有效的方法：**k-折交叉验证**。
+
+```python
+from sklearn.model_selection import cross_val_score
+
+tree_rmses = -cross_val_score(tree_reg, housing, housing_labels,
+                              scoring="neg_root_mean_squared_error", cv=10)
+```
+
+##### 代码解释：
+- `cross_val_score` 方法会将训练集拆分为10个不重叠的子集（折），然后它会训练和评估决策树模型10次，每次使用一个不同的折进行评估，其余9个折进行训练。
+- `scoring="neg_root_mean_squared_error"` 表示我们使用的是负的均方根误差（RMSE）作为评估标准。因为Scikit-Learn的评估函数期望越大越好，所以我们取反来得到正确的RMSE。
+
+##### 结果：
+通过这个方法，你可以得到模型的平均RMSE和标准差。这些信息有助于更好地理解模型的稳定性和表现。
+
+#### 2.为什么交叉验证结果比单一验证集更可靠？
+
+与使用单一验证集相比，交叉验证提供了更可靠的模型性能估计。通过10折交叉验证，你可以得到模型的稳定性（通过标准差来衡量），而不仅仅是一个单一的性能度量。
+
+例如：
+
+```python
+>>> pd.Series(tree_rmses).describe()
+```
+
+**输出：**
+```
+count    10.000000
+mean     66868.027288
+std      2060.966425
+min      63649.536493
+25%      65338.078316
+50%      66801.953094
+75%      68229.934454
+max      70094.778246
+dtype: float64
+```
+
+通过这些统计数据，你可以看到模型的RMSE均值和标准差，这对评估模型的可靠性非常重要。
+
+#### 3.如何使用随机森林进一步改进模型性能？
+
+如果发现决策树模型表现不佳，可以尝试使用**随机森林模型**。随机森林通过训练多个决策树并对其预测结果取平均值来提高模型的准确性和鲁棒性。
+
+```python
+from sklearn.ensemble import RandomForestRegressor
+
+forest_reg = make_pipeline(preprocessing,
+                           RandomForestRegressor(random_state=42))
+forest_rmses = -cross_val_score(forest_reg, housing, housing_labels,
+                                scoring="neg_root_mean_squared_error", cv=10)
+```
+
+##### 结果：
+```python
+>>> pd.Series(forest_rmses).describe()
+```
+
+**输出：**
+```
+count    10.000000
+mean     47019.561281
+std      1033.957120
+min      45458.112527
+25%      46464.031184
+50%      46967.596354
+75%      47325.694987
+max      49243.765795
+dtype: float64
+```
+
+**分析：**
+随机森林模型的RMSE均值显著低于决策树模型，表明其预测精度更高。然而，依然存在过拟合的风险（训练误差较低，但验证误差较高），可以通过简化模型、正则化或增加更多数据来缓解。
+
+{.marker-none}
+
+### Step-16 微调-通过网格搜索优化模型的超参数
+
+网格搜索（Grid Search）是用于系统地搜索最佳超参数组合的一种方法。它通过遍历指定的超参数组合，并使用交叉验证评估每个组合的性能，最终找到表现最好的超参数集。
+
+#### 1. 如何设置和执行网格搜索？
+
+要使用Scikit-Learn的`GridSearchCV`类进行网格搜索，您需要定义一个包含超参数范围的字典，并将其传递给`GridSearchCV`。以下是一个使用随机森林回归器（`RandomForestRegressor`）的示例：
+
+```python
+from sklearn.model_selection import GridSearchCV
+
+full_pipeline = Pipeline([
+    ("preprocessing", preprocessing),
+    ("random_forest", RandomForestRegressor(random_state=42)),
+])
+
+param_grid = [
+    {'preprocessing__geo__n_clusters': [5, 8, 10],
+     'random_forest__max_features': [4, 6, 8]},
+    {'preprocessing__geo__n_clusters': [10, 15],
+     'random_forest__max_features': [6, 8, 10]},
+]
+
+grid_search = GridSearchCV(full_pipeline, param_grid, cv=3,
+                           scoring='neg_root_mean_squared_error')
+grid_search.fit(housing, housing_labels)
+```
+
+**解释：**
+
+- `param_grid`定义了超参数的搜索范围。比如`preprocessing__geo__n_clusters`代表的是嵌套在管道中的`geo`步骤的`n_clusters`超参数。
+- 通过`cv=3`参数，`GridSearchCV`将执行三折交叉验证。
+
+#### 2. 如何获取最佳超参数组合？
+
+在执行完网格搜索后，您可以通过`best_params_`属性获取最佳的超参数组合：
+
+```python
+grid_search.best_params_
+```
+
+例如，结果可能显示为：
+
+```python
+{'preprocessing__geo__n_clusters': 15, 'random_forest__max_features': 6}
+```
+
+这意味着最优的组合是`n_clusters=15`和`max_features=6`。
+
+#### 3. 如何获取所有的交叉验证结果？
+
+所有的交叉验证结果都可以通过`cv_results_`属性获取。您可以将其转换为`DataFrame`格式以便更直观地查看：
+
+```python
+cv_res = pd.DataFrame(grid_search.cv_results_)
+cv_res.sort_values(by="mean_test_score", ascending=False, inplace=True)
+cv_res.head()
+```
+
+这将输出每个超参数组合的得分，并按照得分降序排列，以便您能够更方便地分析哪些组合效果最好。
+
+#### 4. 提示与优化
+
+- **提示：** 如果设置的`n_clusters`值接近或达到搜索范围的上限，可能意味着还可以进一步优化。在这种情况下，可以考虑扩大超参数搜索范围。
+
+- **性能优化：** 由于网格搜索需要测试大量组合，时间和计算资源消耗较大。如果计算成本过高，可以通过减少搜索范围或使用随机搜索来进行优化。
+
+#### 5. 总结
+
+通过使用`GridSearchCV`，可以自动化并系统地搜索最佳超参数组合，这对于提高模型的性能非常有用。此过程不仅帮助您找到表现最好的模型配置，还能提供有关模型不同配置的详细评估信息。
+
+
+{.marker-none}
+
+### Step-17 微调-通过随机搜索优化模型的超参数
+
+随机搜索（Randomized Search）是一种用于超参数优化的方法，通过在给定的超参数空间中随机采样一定数量的参数组合，从而找到最佳的模型配置。相比网格搜索，随机搜索在高维超参数空间中更加高效，尤其适用于某些超参数对模型性能影响较大的情况。
+
+#### 1. 如何设置和执行随机搜索？
+
+要使用Scikit-Learn的`RandomizedSearchCV`类进行随机搜索，您需要定义一个包含超参数分布的字典，并将其传递给`RandomizedSearchCV`。以下是一个使用随机森林回归器（`RandomForestRegressor`）的示例：
+
+```python
+from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import randint
+
+# 定义预处理和模型的完整管道
+full_pipeline = Pipeline([
+    ("preprocessing", preprocessing),
+    ("random_forest", RandomForestRegressor(random_state=42)),
+])
+
+# 定义超参数分布
+param_distributions = {
+    'preprocessing__geo__n_clusters': randint(5, 20),
+    'random_forest__max_features': randint(4, 11),
+    'random_forest__n_estimators': randint(100, 1000),
+    'random_forest__max_depth': randint(10, 50),
+}
+
+# 设置随机搜索
+random_search = RandomizedSearchCV(
+    full_pipeline, 
+    param_distributions,
+    n_iter=20, 
+    cv=3,
+    scoring='neg_root_mean_squared_error',
+    random_state=42,
+    n_jobs=-1
+)
+
+# 执行随机搜索
+random_search.fit(housing, housing_labels)
+```
+
+##### 代码解释：
+
+- **管道定义**：`full_pipeline` 包含预处理步骤和随机森林回归器。
+- **参数分布**：`param_distributions` 使用`randint`定义了超参数的取值范围。
+  - `preprocessing__geo__n_clusters`: 聚类数，从5到19。
+  - `random_forest__max_features`: 最大特征数，从4到10。
+  - `random_forest__n_estimators`: 树的数量，从100到999。
+  - `random_forest__max_depth`: 树的最大深度，从10到49。
+- **RandomizedSearchCV 参数**：
+  - `n_iter=20`: 随机采样20组参数组合。
+  - `cv=3`: 3折交叉验证。
+  - `scoring='neg_root_mean_squared_error'`: 使用负RMSE作为评分指标。
+  - `random_state=42`: 确保结果可复现。
+  - `n_jobs=-1`: 使用所有可用的CPU核心并行计算。
+
+#### 2. 如何获取最佳超参数组合？
+
+完成随机搜索后，可以通过`best_params_`属性获取最佳的超参数组合：
+
+```python
+best_params = random_search.best_params_
+print(best_params)
+```
+
+**示例输出：**
+```
+{
+    'preprocessing__geo__n_clusters': 15,
+    'random_forest__max_features': 6,
+    'random_forest__n_estimators': 500,
+    'random_forest__max_depth': 30
+}
+```
+
+这表示最佳的超参数组合是：`n_clusters=15`，`max_features=6`，`n_estimators=500`，和`max_depth=30`。
+
+#### 3. 如何查看所有随机搜索的结果？
+
+所有的随机搜索结果都存储在`cv_results_`属性中。您可以将其转换为`DataFrame`格式，并按照得分进行排序：
+
+```python
+cv_res = pd.DataFrame(random_search.cv_results_)
+cv_res = cv_res.sort_values(by="mean_test_score", ascending=False)
+print(cv_res.head())
+```
+
+#### 4. 随机搜索的优势和优化提示
+
+- **优势：**
+  - **效率高**：在高维超参数空间中，比网格搜索更加高效。
+  - **探索性强**：能够探索更多样化的参数组合，增加找到最佳参数的机会。
+
+- **优化提示：**
+  - **合理设定`n_iter`**：根据计算资源和时间限制，平衡探索范围和搜索深度。
+  - **使用分布而非固定列表**：通过概率分布定义超参数的取值范围，提升搜索效率。
+  - **并行化计算**：通过设置`n_jobs=-1`，利用多核CPU加速搜索过程。
+
+#### 6. 示例结果分析
+
+假设通过随机搜索得到的最佳模型的RMSE为46,500，而网格搜索得到的RMSE为47,000，说明随机搜索在本实例中表现略优。同时，通过查看`cv_results_`，可以分析哪些超参数对模型性能影响较大，从而进一步优化模型。
+
+#### 7. 为什么选择随机搜索而不是网格搜索？
+
+- **搜索空间效率**：随机搜索在高维空间中能够更有效地探索，而网格搜索在参数数量多时计算量激增。
+- **时间成本**：随机搜索通常比网格搜索更快，特别是在参数空间较大时。
+- **灵活性**：随机搜索可以适应不同类型的超参数分布，而网格搜索通常基于固定的参数列表。
+
+#### 8. 总结
+
+使用`RandomizedSearchCV`可以在较短时间内有效地搜索超参数空间，找到表现优秀的模型配置。与网格搜索相比，随机搜索在处理高维或广泛的超参数空间时更具优势，适合大规模机器学习模型的调优。
+
+{.marker-none}
+
+### Step-18 微调-通过集成方法优化模型的超参数
+
+集成方法是通过组合多个表现良好的模型来进一步提高系统性能的一种技术。通常情况下，集成模型的表现要优于其中的单个模型，特别是在这些模型的错误类型各不相同时。这种方法在机器学习中非常常见，例如随机森林就是通过组合多个决策树模型来提高预测精度。
+
+#### 1. 为什么选择集成方法？
+
+- **多样性带来的优势**：当多个模型的预测错误类型不同，通过将它们的预测结果进行组合，可以减小整体的误差。
+- **增强稳定性**：集成模型通常比单一模型更具稳定性和鲁棒性，减少了过拟合的风险。
+- **更高的准确性**：集成方法往往能提升模型的准确性，尤其是当单个模型的表现各有千秋时。
+
+#### 2. 如何实现简单的集成模型？
+
+假设你已经训练了一个`k-最近邻`模型和一个`随机森林`模型，可以通过简单地将它们的预测结果进行平均来构建一个集成模型。代码示例如下：
+
+```python
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+import numpy as np
+
+# 假设已经定义了数据预处理管道
+# 训练k-最近邻模型
+knn_reg = KNeighborsRegressor(n_neighbors=5)
+knn_reg.fit(housing_prepared, housing_labels)
+
+# 训练随机森林模型
+forest_reg = RandomForestRegressor(n_estimators=500, random_state=42)
+forest_reg.fit(housing_prepared, housing_labels)
+
+# 获取两个模型的预测结果
+knn_predictions = knn_reg.predict(housing_prepared)
+forest_predictions = forest_reg.predict(housing_prepared)
+
+# 简单平均法构建集成模型
+ensemble_predictions = (knn_predictions + forest_predictions) / 2
+
+# 计算集成模型的均方误差
+ensemble_mse = mean_squared_error(housing_labels, ensemble_predictions)
+ensemble_rmse = np.sqrt(ensemble_mse)
+print("集成模型的RMSE:", ensemble_rmse)
+```
+
+##### 代码解释：
+
+- **k-最近邻模型**：`KNeighborsRegressor` 被用于预测。
+- **随机森林模型**：`RandomForestRegressor` 用于另一个独立的预测。
+- **集成预测**：通过对两个模型的预测结果取平均值，生成集成模型的最终预测。
+- **性能评估**：使用均方误差（MSE）和根均方误差（RMSE）评估集成模型的性能。
+
+#### 3. 背景总结
+
+集成方法的基本思想是将多个模型的预测结果结合起来，以期望综合多模型的优势，减少单一模型的缺点。特别是对于那些复杂度高、数据维度大的任务，集成模型可以显著提高预测的准确性。
+
+- **常见的集成方法**：包括投票法（Voting）、平均法（Averaging）、和加权平均法（Weighted Averaging）。
+- **集成方法的扩展**：进一步的集成方法，如`Boosting`和`Bagging`，将通过训练多个弱学习器，并结合它们的预测结果来生成一个更强的预测模型。
+
+集成方法是一种强大的技术，尤其适合在复杂问题上提升模型的整体性能。通过合理的模型组合，你可以打造一个比单个模型更精确、稳定的预测系统。
+
+{.marker-none}
+
+### Step-19 分析最佳模型及其错误
+
+在构建和优化机器学习模型的过程中，分析最佳模型的表现以及它们的错误类型可以提供重要的洞察。这一过程可以帮助你更好地理解模型，并采取措施提高其性能。
+
+#### 1.如何查看模型中特征的重要性？
+
+你可以使用例如`RandomForestRegressor`这样的模型来查看每个特征对最终预测结果的重要性。以下是获取特征重要性分数的代码示例：
+
+```python
+# 获取最佳模型的特征重要性
+final_model = rnd_search.best_estimator_  # 包含预处理的模型
+feature_importances = final_model["random_forest"].feature_importances_
+feature_importances.round(2)
+```
+
+这将输出每个特征的重要性分数，分数越高表示该特征对模型预测的重要性越大。
+
+#### 2.如何按重要性顺序排列特征？
+
+要将特征按重要性顺序排列并与对应的特征名称对应，可以使用以下代码：
+
+```python
+# 将特征重要性排序并与特征名称对应
+sorted(zip(feature_importances, final_model["preprocessing"].get_feature_names_out()), reverse=True)
+```
+
+这段代码将返回一个包含特征名称及其对应的重要性分数的排序列表。
+
+#### 3.如何处理特征重要性较低的特征？
+
+在分析特征重要性之后，你可能会发现某些特征对模型的贡献较低。此时，可以尝试删除这些不重要的特征，从而简化模型，提高其泛化能力。Scikit-Learn 提供了`SelectFromModel` 这个transformer 来自动选择和删除不重要的特征：
+
+```python
+from sklearn.feature_selection import SelectFromModel
+
+# 自动删除不重要的特征
+selector = SelectFromModel(final_model["random_forest"], prefit=True)
+```
+
+这个transformer 会根据特征的重要性自动选择和删除对模型贡献较小的特征。
+
+#### 4.如何分析模型的具体错误类型？
+
+除了分析特征重要性，还应仔细查看模型所犯的具体错误，尝试理解这些错误的原因并寻找改进方法。例如，可以考虑添加更多特征、清理异常值或删除无用的特征。
+
+此外，还需要确保模型在不同类别的数据上表现良好。如果模型在某一类数据上表现不佳，可能需要针对这些数据进行专门的优化或数据增强，以避免模型在生产环境中产生有害的预测结果。
+
+
+{.marker-none}
+
+### Step-20 在测试集上评估模型性能 {.col-span-2}
+
+#### 1. 如何在测试集上评估你的模型性能？
+
+在模型调优之后，我们需要在测试集上评估模型，以验证其泛化性能。这一评估可以帮助我们了解模型在未见过的数据上的表现，确保模型不会过拟合或在新数据上表现不佳。
+
+**步骤：**
+
+1. **准备测试数据：** 首先，从测试集中分离出特征（X_test）和标签（y_test）。
+
+2. **生成预测：** 使用最终的模型对测试集进行预测，生成预测值。
+
+3. **计算误差：** 计算预测值和真实值之间的均方根误差（RMSE），这是评估模型性能的常用指标。
+
+```python
+# 分离特征和标签
+X_test = strat_test_set.drop("median_house_value", axis=1)
+y_test = strat_test_set["median_house_value"].copy()
+
+# 生成预测值
+final_predictions = final_model.predict(X_test)
+
+# 计算RMSE
+final_rmse = mean_squared_error(y_test, final_predictions, squared=False)
+print(final_rmse)  # 输出模型在测试集上的RMSE
+```
+
+#### 2. 如何验证模型的泛化能力？
+
+仅仅知道模型在测试集上的RMSE可能还不足以确定模型是否足够好。如果希望进一步验证模型的泛化能力，可以计算泛化误差的95%置信区间。这可以帮助你更好地理解模型在新数据上的表现是否可靠。
+
+**步骤：**
+
+1. **计算置信区间：** 使用`scipy.stats.t.interval()`来计算95%置信区间，确保模型预测的可靠性。
+
+```python
+from scipy import stats
+
+confidence = 0.95
+squared_errors = (final_predictions - y_test) ** 2
+confidence_interval = np.sqrt(stats.t.interval(confidence, len(squared_errors) - 1,
+                                               loc=squared_errors.mean(),
+                                               scale=stats.sem(squared_errors)))
+print(confidence_interval)  # 输出泛化误差的95%置信区间
+```
+
+**重要提示：** 如果你在训练过程中进行了大量的超参数调优，测试集的性能可能会略低于交叉验证的性能，因为模型可能对验证集的表现进行了过拟合。
+
+{.marker-none}
+
+### Step-21 上线、监控并维护模型
+
+**问题**：如何将机器学习模型上线，并确保其持续有效？
+
+上线一个机器学习模型需要几个关键步骤，包括准备生产环境、部署模型以及持续监控和维护。以下是具体的步骤和注意事项。
+
+#### **1. 准备模型并上线**
+
+要将模型部署到生产环境，最基本的方式是保存训练好的模型文件，并将其转移到生产环境中加载和使用。你可以使用`joblib`库来完成这一操作：
+
+```python
+import joblib
+
+joblib.dump(final_model, "my_california_housing_model.pkl")
+```
+
+这样，模型被保存为一个`.pkl`文件，可以在需要时加载并使用它进行预测。
+
+#### **2. 部署模型到生产环境**
+
+将模型转移到生产环境后，你可以加载它并使用，例如在一个Web应用中提供预测服务：
+
+```python
+import joblib
+
+# 导入模型依赖的自定义类和函数
+[...]
+# 加载模型
+final_model_reloaded = joblib.load("my_california_housing_model.pkl")
+
+# 使用新数据进行预测
+new_data = [...]  # 需要预测的新数据
+predictions = final_model_reloaded.predict(new_data)
+```
+
+你可以通过创建一个REST API服务，来让你的Web应用调用此服务以获取预测结果。这不仅能简化升级模型的过程，还能更好地处理负载均衡。
+
+**图解**： ![模型部署以api的方式给开发使用](../assets/attachment/hands_on_machine_learning/模型部署以api的方式给开发使用.png)展示了一个通过Web服务部署和使用模型的基本架构。
+
+#### **3. 监控模型的实时表现**
+
+上线并不是结束，你还需要持续监控模型的表现，防止模型失效。例如，你可以通过监测模型所参与的推荐系统中的商品销售情况，来推断模型的表现。如果推荐商品的销售数量显著下降，可能是模型或数据管道出现了问题。
+
+此外，你可能还需要进行人工分析。例如，训练一个图像分类模型来检测生产线上的产品缺陷时，可以定期让人类审核模型的分类结果，以确保模型表现未显著下降。
+
+#### **4. 维护和更新模型**
+
+- 定期收集并标注新数据，并重新训练模型。
+- 编写脚本，自动微调超参数和训练模型，并在需要时自动更新。
+- 保持输入数据的质量监控，检测并纠正任何数据漂移或异常。
+- 定期备份所有模型和数据，以便在模型失效时能快速回滚。
+
+{.marker-round}
+
+### exercise {.col-span-3}
+
+| ID  | Questions                                                                                                                                                                                                                                                                                                                                                         | 中文翻译                                                                                                          |
+|-----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| 1   | Try a support vector machine regressor (`sklearn.svm.SVR`) with various hyperparameters, such as kernel="linear" (with various values for the C hyperparameter) or kernel="rbf" (with various values for the C and gamma hyperparameters). Note that support vector machines don’t scale well to large datasets, so you should probably train your model on just the first 5,000 instances of the training set and use only 3-fold cross-validation, or else it will take hours. Don’t worry about what the hyperparameters mean for now; we’ll discuss them in Chapter 5. How does the best SVR predictor perform? | 尝试使用支持向量机回归器 (`sklearn.svm.SVR`) 进行训练，使用不同的超参数，如kernel="linear"（不同的C超参数值）或kernel="rbf"（不同的C和gamma超参数值）。注意，支持向量机不适合处理大规模数据集，因此你应该仅在前5000个训练集实例上训练模型，并且只使用3折交叉验证，否则会耗时很长。目前不用担心这些超参数的含义，我们将在第5章讨论它们。最佳SVR预测器表现如何？ |
+| 2   | Try replacing the `GridSearchCV` with a `RandomizedSearchCV`.                                                                                                                                                                                                                                                                                                    | 尝试将`GridSearchCV`替换为`RandomizedSearchCV`。                                                                   |
+| 3   | Try adding a `SelectFromModel` transformer in the preparation pipeline to select only the most important attributes.                                                                                                                                                                                                                                             | 尝试在预处理管道中添加`SelectFromModel`转换器，以仅选择最重要的属性。                                                 |
+| 4   | Try creating a custom transformer that trains a k-nearest neighbors regressor (`sklearn.neighbors.KNeighborsRegressor`) in its fit() method, and outputs the model’s predictions in its transform() method. Then add this feature to the preprocessing pipeline, using latitude and longitude as the inputs to this transformer. This will add a feature in the model that corresponds to the housing median price of the nearest districts. | 尝试创建一个自定义转换器，在其fit()方法中训练k近邻回归器 (`sklearn.neighbors.KNeighborsRegressor`)，并在其transform()方法中输出模型的预测结果。然后将此特性添加到预处理管道中，使用经纬度作为该转换器的输入。这将在模型中添加一个特征，该特征对应于最近区域的房价中位数。 |
+| 5   | Automatically explore some preparation options using `GridSearchCV`.                                                                                                                                                                                                                                                                                            | 使用`GridSearchCV`自动探索一些预处理选项。                                                                           |
+| 6   | Try to implement the `StandardScalerClone` class again from scratch, then add support for the `inverse_transform()` method: executing `scaler.inverse_transform(scaler.fit_transform(X))` should return an array very close to `X`. Then add support for feature names: set `feature_names_in_` in the fit() method if the input is a DataFrame. This attribute should be a NumPy array of column names. Lastly, implement the `get_feature_names_out()` method: it should have one optional input_features=None argument. If passed, the method should check that its length matches `n_features_in_`, and it should match `feature_names_in_` if it is defined; then input_features should be returned. If `input_features` is None, then the method should either return `feature_names_in_` if it is defined or `np.array(["x0", "x1", ...])` with length `n_features_in_` otherwise. | 尝试从头开始再次实现`StandardScalerClone`类，然后添加对`inverse_transform()`方法的支持：执行`scaler.inverse_transform(scaler.fit_transform(X))`应该返回一个非常接近`X`的数组。然后添加对特征名称的支持：如果输入是DataFrame，则在fit()方法中设置`feature_names_in_`。此属性应为列名的NumPy数组。最后，实现`get_feature_names_out()`方法：它应该有一个可选的`input_features=None`参数。如果传递了该参数，方法应检查其长度是否与`n_features_in_`匹配，并且如果定义了`feature_names_in_`，则应返回`input_features`。如果`input_features`为None，则方法应返回已定义的`feature_names_in_`，否则返回长度为`n_features_in_`的`np.array(["x0", "x1", ...])`。 |
+
+{.show-header .left-text}
 
 
 
