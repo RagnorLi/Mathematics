@@ -548,3 +548,34 @@ $ git checkout <commit_or_branch_hash>
 
 `邮箱错了导致绿点不亮`
 
+#### 1. **安装 `git filter-repo`**
+
+   如果你使用的是 macOS 或 Linux，可以通过以下命令安装：
+
+   ```bash
+   brew install git-filter-repo
+   ```
+
+   或者直接通过 pip 安装：
+
+   ```bash
+   pip install git-filter-repo
+   ```
+
+#### 2. **运行命令修改提交历史**
+
+   使用以下命令重写历史提交中的邮箱地址：
+
+   ```bash
+   git filter-repo --commit-callback '
+   if commit.author_email == b"旧的错误邮箱地址":
+       commit.author_email = b"正确的邮箱地址"
+       commit.author_name = b"RagnorLixiaomeng"
+   if commit.committer_email == b"旧的错误邮箱地址":
+       commit.committer_email = b"正确的邮箱地址"
+       commit.committer_name = b"RagnorLixiaomeng"
+   '
+   ```
+
+   替换 `"旧的错误邮箱地址和用户名"` 和 `"正确的邮箱地址及用户名"` 为实际的。
+
