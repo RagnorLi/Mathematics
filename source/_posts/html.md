@@ -1,6 +1,6 @@
 ---
 title: HTML
-date: 2021-07-20 19:16:42
+date: 2024-09-03 14:36:42
 background: bg-[#cc5534]
 tags:
   - web
@@ -12,7 +12,9 @@ plugins:
   - copyCode
 ---
 
-## Getting Started
+`互联网的骨架`
+
+## 快速开始
 
 ### hello.html {.col-span-2 .row-span-2}
 
@@ -33,7 +35,7 @@ plugins:
 
 Or try it out in the [jsfiddle](https://jsfiddle.net/Fechin/1e4wz20b/)
 
-### Comment
+### 注释
 
 ```html
 <!-- this is a comment -->
@@ -44,7 +46,7 @@ Or try it out in the [jsfiddle](https://jsfiddle.net/Fechin/1e4wz20b/)
 -->
 ```
 
-### Paragraph
+### 段落标签
 
 ```html
 <p>I'm from CheatSheets.zip</p>
@@ -53,7 +55,7 @@ Or try it out in the [jsfiddle](https://jsfiddle.net/Fechin/1e4wz20b/)
 
 See: [The Paragraph element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/p)
 
-### HTML link
+### HTML链接
 
 ```html
 <a href="https://cheatsheets.zip">CheatSheets</a>
@@ -74,7 +76,7 @@ See: [The Paragraph element](https://developer.mozilla.org/en-US/docs/Web/HTML/E
 
 See: [The \<a> Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attributes)
 
-### Image Tag
+### 图片标签
 
 ```html {.wrap}
 <img loading="lazy" src="https://xxx.png" alt="Describe image here" width="400" height="400" />
@@ -94,7 +96,7 @@ See: [The \<a> Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Ele
 
 See: [The Image Embed element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img)
 
-### Text Formatting Tags
+### 文本格式化标签
 
 ```html
 <b>Bold Text</b>
@@ -114,7 +116,7 @@ See: [The Image Embed element](https://developer.mozilla.org/en-US/docs/Web/HTML
 <blockquote>Text Block Quote</blockquote>
 ```
 
-### Headings
+### 标题
 
 ```html
 <h1>This is Heading 1</h1>
@@ -127,7 +129,7 @@ See: [The Image Embed element](https://developer.mozilla.org/en-US/docs/Web/HTML
 
 You should only have one h1 on your page
 
-### Section Divisions
+### 部分划分
 
 |                 |                                      |
 | --------------- | ------------------------------------ |
@@ -139,7 +141,7 @@ You should only have one h1 on your page
 
 These are the tags used to divide your page up into sections
 
-### Inline Frame {.row-span-2}
+### iFrame {.row-span-2}
 
 ```html {.wrap}
 <iframe
@@ -165,7 +167,7 @@ These are the tags used to divide your page up into sections
 
 See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe)
 
-### JavaScript in HTML
+### HTML中的JavaScript
 
 ```html
 <script type="text/javascript">
@@ -174,7 +176,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </script>
 ```
 
-#### External JavaScript
+#### 外置JS引入HTML
 
 ```html
 <body>
@@ -184,7 +186,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </body>
 ```
 
-### CSS in HTML
+### HTML中的CSS
 
 ```html
 <style type="text/css">
@@ -194,7 +196,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </style>
 ```
 
-#### External stylesheet
+#### 外置CSS引入HTML
 
 ```html
 <head>
@@ -203,9 +205,9 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </head>
 ```
 
-## HTML5 Tags
+## HTML5标签
 
-### Document
+### 文档
 
 ```html
 <body>
@@ -221,7 +223,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </body>
 ```
 
-### Header Navigation
+### 头部导航
 
 ```html
 <header>
@@ -235,7 +237,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 </header>
 ```
 
-### HTML5 Tags {.row-span-4}
+### HTML5标签 {.row-span-4}
 
 |                                                                                    |                                        |
 | ---------------------------------------------------------------------------------- | -------------------------------------- |
@@ -272,7 +274,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
 | [video](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video)           | Embeds video                           |
 | [wbr](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr)               | A line break opportunity               |
 
-### HTML5 Video
+### HTML5视频
 
 ```html {.wrap}
 <video controls="" width="100%">
@@ -288,7 +290,7 @@ See: [The Inline Frame element](https://developer.mozilla.org/en-US/docs/Web/HTM
     Sorry, your browser doesn't support embedded videos.
 </video>
 
-### HTML5 Audio
+### HTML5音频
 
 ```html {.wrap}
 <audio controls src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3">
@@ -333,7 +335,7 @@ audio element. </audio>
  <li>User <bdi>إيان</bdi>: 90 points</li>
 </ul>
 
-### HTML5 progress
+### HTML5进度条
 
 ```html
 <progress value="50" max="100"></progress>
@@ -341,17 +343,17 @@ audio element. </audio>
 
 <progress value="50" max="100" class="w-full"></progress>
 
-### HTML5 mark
+### HTML5标记
 
 ```html
-<p>I Love <mark>CheatSheets.zip</mark></p>
+<p>I Love <mark>Ragnor.li</mark></p>
 ```
 
 <p>I Love <mark>CheatSheets.zip</mark></p>
 
-## HTML Tables
+## HTML表格
 
-### Table Example {.row-span-2}
+### 表格实例 {.row-span-2}
 
 ```html
 <table>
@@ -374,7 +376,7 @@ audio element. </audio>
 </table>
 ```
 
-### HTML Table Tags {.row-span-2}
+### 表格标签 {.row-span-2}
 
 | Tag                                                                               | Description                      |
 | --------------------------------------------------------------------------------- | -------------------------------- |
@@ -389,7 +391,7 @@ audio element. </audio>
 | [\<tbody>](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody)       | Groups the body content          |
 | [\<tfoot>](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot)       | Groups the footer content        |
 
-### \<td> Attributes
+### \<td>属性
 
 | Attribute | Description                                   |
 | --------- | --------------------------------------------- |
@@ -399,7 +401,7 @@ audio element. </audio>
 
 See: [td\#Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td#attributes)
 
-### \<th> Attributes
+### \<th>属性
 
 | Attribute                                                                        | Description                                   |
 | -------------------------------------------------------------------------------- | --------------------------------------------- |
@@ -411,9 +413,9 @@ See: [td\#Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/
 
 See: [th\#Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th#attributes)
 
-## HTML Lists
+## HTML列表
 
-### Unordered list
+### 无序列表
 
 ```html
 <ul>
@@ -425,7 +427,7 @@ See: [th\#Attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/
 
 See: [The Unordered List element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ul)
 
-### Ordered list
+### 有序列表
 
 ```html
 <ol>
@@ -437,7 +439,7 @@ See: [The Unordered List element](https://developer.mozilla.org/en-US/docs/Web/H
 
 See: [The Ordered List element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ol)
 
-### Definition list
+### 自定义列表
 
 ```html
 <dl>
@@ -450,9 +452,9 @@ See: [The Ordered List element](https://developer.mozilla.org/en-US/docs/Web/HTM
 
 See: [The Description List element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dl)
 
-## HTML Forms
+## HTML表单
 
-### Form tags {.row-span-2}
+### 表单标签 {.row-span-2}
 
 ```html
 <form method="POST" action="api/login">
@@ -486,7 +488,7 @@ See: [The Description List element](https://developer.mozilla.org/en-US/docs/Web
 
 The HTML `<form>` element is used to collect and send information to an external source.
 
-### Form Attribute
+### 表单属性
 
 | Attribute  | Description                                                                                         |
 | ---------- | --------------------------------------------------------------------------------------------------- |
@@ -497,7 +499,7 @@ The HTML `<form>` element is used to collect and send information to an external
 | `onsubmit` | Runs when the form was submit                                                                       |
 | `onreset`  | Runs when the form was reset                                                                        |
 
-### Label tags
+### Label标签
 
 ```html
 <!-- Nested label -->
@@ -517,7 +519,7 @@ The HTML `<form>` element is used to collect and send information to an external
 
 `for` in a label references an input's `id` attribute
 
-### Input tags
+### 输入框标签
 
 ```html
 <label for="Name">Name:</label> <input type="text" name="Name" id="" />
@@ -532,7 +534,7 @@ The HTML `<form>` element is used to collect and send information to an external
 
 See: [HTML input Tags](/html#html-input-tags)
 
-### Textarea tags
+### 文本域标签
 
 ```html {.wrap}
 <textarea rows="2" cols="30" name="address" id="address"></textarea>
@@ -546,7 +548,7 @@ See: [HTML input Tags](/html#html-input-tags)
 
 Textarea is a multiple-line text input control
 
-### Radio Buttons
+### 单选按钮
 
 ```html
 <input type="radio" name="gender" id="m" />
@@ -566,7 +568,7 @@ Textarea is a multiple-line text input control
 
 Radio buttons are used to let the user select exactly one
 
-### Checkboxes
+### 复选框
 
 ```html
 <input type="checkbox" name="s" id="soc" />
@@ -586,7 +588,7 @@ Radio buttons are used to let the user select exactly one
 
 Checkboxes allows the user to select one or more
 
-### Select tags
+### 下拉框
 
 ```html
 <label for="city">City:</label>
@@ -610,7 +612,7 @@ Checkboxes allows the user to select one or more
 
 A select box is a dropdown list of options
 
-### Fieldset tags
+### 字段集标签
 
 ```html
 <fieldset>
@@ -634,7 +636,7 @@ A select box is a dropdown list of options
     </fieldset>
 </form>
 
-### Datalist tags(HTML5)
+### 数据列表标签(HTML5)
 
 ```html
 <label for="b">Choose a browser: </label>
@@ -664,7 +666,7 @@ A select box is a dropdown list of options
     </datalist>
 </form>
 
-### Submit and Reset Buttons
+### 提交和重置按钮
 
 ```html
 <form action="register.php" method="post">
@@ -686,9 +688,9 @@ A select box is a dropdown list of options
 
 `Submit` the data to server; `Reset` to default values
 
-## HTML input Tags {.cols-2}
+## HTML输入标签 {.cols-2}
 
-### Input Attributes {.row-span-2}
+### 输入属性 {.row-span-2}
 
 The input tag is an empty element, identifying the particular type of field information to obtain from a user.
 
@@ -729,7 +731,7 @@ The input tag is an empty element, identifying the particular type of field info
 Also see:
 [Attributes for the \<input> element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#attributes)
 
-### Input types
+### 输入类型
 
 |                   |                                                                                                                                          |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -744,7 +746,7 @@ Also see:
 | `type="button"`   | <input type="button" class="border border-slate-400" value="button">                                                                     |
 | `type="submit"`   | <input type="submit" class="border border-slate-400">                                                                                    |
 
-#### New Input Types in HTML5
+#### HTML5中的新输入类型
 
 |                         |                                                                      |
 | ----------------------- | -------------------------------------------------------------------- |
@@ -761,7 +763,7 @@ Also see:
 | `type="search"`         | <input type="search" class="border border-slate-400">                |
 | `type="range"`          | <input type="range" class="border border-slate-400">                 |
 
-### Input CSS selectors
+### 输入框CSS选择器
 
 |               |                           |
 | ------------- | ------------------------- |
@@ -769,9 +771,9 @@ Also see:
 
 See: [Input pseudo classes](/css#input-pseudo-classes)
 
-## HTML meta Tags {.cols-2}
+## HTML元标签 {.cols-2}
 
-### Meta tags {.row-span-3}
+### 元标签 {.row-span-3}
 
 The meta tag describes meta data within an HTML document. It explains additional material about the HTML.
 
@@ -841,7 +843,7 @@ The meta tag describes meta data within an HTML document. It explains additional
 
 Used by Facebook, Instagram, Pinterest, LinkedIn, etc.
 
-### Twitter Cards
+### Twitter卡片
 
 ```html
 <meta name="twitter:card" content="summary" />
@@ -854,7 +856,7 @@ Used by Facebook, Instagram, Pinterest, LinkedIn, etc.
 
 See: [Twitter Card Documentation](https://developer.twitter.com/en/docs/tweets/optimize-with-cards/overview/summary)
 
-### Geotagging
+### 地理标记
 
 ```html
 <meta name="ICBM" content="45.416667,-75.7" />
@@ -868,3 +870,7 @@ See: [Geotagging](https://en.wikipedia.org/wiki/Geotagging#HTML_pages)
 ## Also see
 
 - [HTML 4.01 Specification](https://www.w3.org/TR/REC-html40/cover.html#minitoc) _(w3.org)_
+
+
+### 李笑猛
+

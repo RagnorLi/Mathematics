@@ -2302,6 +2302,948 @@ predictions = final_model_reloaded.predict(new_data)
 
 {.show-header .left-text}
 
+## Classification
+
+### MNIST
+
+#### 问题 1: 如何使用 Scikit-Learn 下载 MNIST 数据集？
+
+代码：
+```python
+from sklearn.datasets import fetch_openml
+
+mnist = fetch_openml('mnist_784', as_frame=False)
+```
+
+解析：
+- 使用 `fetch_openml()` 函数从 OpenML 网站下载 MNIST 数据集。
+- 参数 `as_frame=False` 表示将数据作为 NumPy 数组返回，而不是 Pandas DataFrame。
+
+
+#### 问题 2: MNIST 数据集的格式是什么？
+
+数据格式：
+MNIST 数据集包含以下常见的字段：
+- `DESCR`: 数据集的描述
+- `data`: 输入数据，通常为 2D NumPy 数组（每个图像是 784 个特征）
+- `target`: 标签，通常为 1D NumPy 数组
+
+数据形状：
+```python
+X, y = mnist.data, mnist.target
+X.shape  # 输出: (70000, 784)
+y.shape  # 输出: (70000,)
+```
+
+解析：
+- `X` 是输入数据，包含 70,000 张图像，每张图像有 784 个像素（28x28 的图片被展平为一维数组）。
+- `y` 是标签，包含图像对应的数字标签（'0' 到 '9'）。
+
+
+#### 问题 3: 如何显示 MNIST 数据集中的某个图像？
+
+代码：
+```python
+import matplotlib.pyplot as plt
+
+def plot_digit(image_data):
+    image = image_data.reshape(28, 28)  # 将 784 个像素重新变成 28x28 格式
+    plt.imshow(image, cmap="binary")  # 使用灰度显示
+    plt.axis("off")
+
+some_digit = X[0]  # 取出第一个图像
+plot_digit(some_digit)
+plt.show()
+```
+
+图解：
+- ![一个MNIST手写数字体](../assets/attachment/hands_on_machine_learning/一个MNIST手写数字体.png)
+- 代码通过 `plot_digit()` 函数将 784 维向量重新变为 28x28 的二维数组，并使用 Matplotlib 库中的 `imshow()` 函数显示图像。
+- 使用 `cmap="binary"` 参数表示图片为黑白图，`0` 表示白色，`255` 表示黑色。
+
+输出图像：
+- 图像是一个数字“5”，表示 MNIST 数据集的第一个图像。
+
+
+#### 问题 4: 如何划分 MNIST 数据集为训练集和测试集？
+
+代码：
+```python
+X_train, X_test, y_train, y_test = X[:60000], X[60000:], y[:60000], y[60000:]
+```
+
+解析：
+- 前 60,000 张图像和标签作为训练集，后 10,000 张图像和标签作为测试集。
+- 数据集已经提前进行了随机打乱，这对于确保交叉验证中的每个分组都是一致的非常重要。
+
+图解：
+- ![MNIST数据集](../assets/attachment/hands_on_machine_learning/MNIST数据集.png)
+- 这个图展示了从 MNIST 数据集中随机选取的一些数字图像，帮助了解这个数据集的复杂性。这些手写数字看起来不完全一致，因此对分类算法来说是一个有挑战性的任务。
+
+### 训练一个二元分类器
+
+#### 问题 5: 如何训练一个二元分类器来识别数字“5”？
+
+代码：
+```python
+y_train_5 = (y_train == '5')  # True for all 5s, False for all other digits
+y_test_5 = (y_test == '5')
+```
+
+解析：
+- 我们将训练一个“5-检测器”，这是一个 **binary classifier** (二元分类器)，它用于区分两类数据：5 和非5。
+- `y_train_5` 和 `y_test_5` 是目标向量，包含布尔值，标记是否是数字“5”。
+
+
+#### 问题 6: 如何使用 Stochastic Gradient Descent (SGD) 训练二元分类器？
+
+代码：
+```python
+from sklearn.linear_model import SGDClassifier
+
+sgd_clf = SGDClassifier(random_state=42)
+sgd_clf.fit(X_train, y_train_5)
+```
+
+解析：
+- **SGDClassifier** 是一个基于随机梯度下降的分类器。它适合处理大型数据集，因为每次只处理一个训练实例，这也使得它适合在线学习。
+- `sgd_clf.fit(X_train, y_train_5)` 使用训练集中的数据（输入为`X_train`，目标标签为`y_train_5`）来训练这个分类器。
+
+---
+
+#### 问题 7: 如何使用训练好的模型进行预测？
+
+#### 代码：
+```python
+sgd_clf.predict([some_digit])
+```
+
+#### 预测结果：
+- 代码使用已经训练好的模型 `sgd_clf` 来预测 `some_digit`（之前我们已经看到这是数字5的图像）。
+
+输出：
+```
+array([ True])
+```
+
+解析：
+- 预测结果为 `True`，意味着模型猜测这个图像是数字“5”。
+- 在这个案例中，模型预测正确。
+
+{.marker-none}
+
+### 使用交叉验证评估模型的准确性
+
+#### 问题 8: 如何使用交叉验证评估模型的准确性？
+
+代码：
+```python
+from sklearn.model_selection import cross_val_score
+
+cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")
+```
+
+解析：
+- 这里使用 `cross_val_score()` 函数进行 **k-fold cross-validation**（k折交叉验证），`cv=3` 表示将数据集分成三折。
+- `scoring="accuracy"` 参数表示我们正在使用准确率作为评价标准。
+
+输出：
+```python
+array([0.95035, 0.96035, 0.9604])
+```
+
+结论：
+- 模型的平均准确率在 95% 以上，表面上看起来非常不错，但准确率可能会有误导性，尤其是在数据集存在偏斜时。
+
+
+#### 问题 9: 如何通过 DummyClassifier 进行基线测试？
+
+代码：
+```python
+from sklearn.dummy import DummyClassifier
+
+dummy_clf = DummyClassifier()
+dummy_clf.fit(X_train, y_train_5)
+print(any(dummy_clf.predict(X_train)))  # 输出 False：表示没有检测到任何5
+```
+
+解析：
+- **DummyClassifier** 是一个基线分类器，它只会预测最常见的类。在这个例子中，它预测所有的图片都不是5。
+
+评估 DummyClassifier 的准确率：
+```python
+cross_val_score(dummy_clf, X_train, y_train_5, cv=3, scoring="accuracy")
+```
+
+输出：
+```python
+array([0.90965, 0.90965, 0.90965])
+```
+
+结论：
+- DummyClassifier 的准确率超过90%，这主要是因为只有大约10%的图片是数字5，因此它总是预测“不是5”，从而得到较高的准确率。
+
+#### 问题 10: 如何实现自定义交叉验证？
+
+#### 代码：
+```python
+from sklearn.model_selection import StratifiedKFold
+from sklearn.base import clone
+
+skfolds = StratifiedKFold(n_splits=3)
+
+for train_index, test_index in skfolds.split(X_train, y_train_5):
+    clone_clf = clone(sgd_clf)
+    X_train_folds = X_train[train_index]
+    y_train_folds = y_train_5[train_index]
+    X_test_fold = X_train[test_index]
+    y_test_fold = y_train_5[test_index]
+
+    clone_clf.fit(X_train_folds, y_train_folds)
+    y_pred = clone_clf.predict(X_test_fold)
+    n_correct = sum(y_pred == y_test_fold)
+    print(n_correct / len(y_pred))
+```
+
+解析：
+- 该代码手动实现了 **StratifiedKFold** （分层K折交叉验证），它确保每个折中每个类的比例与整个数据集相同。
+- 使用 `clone()` 创建分类器的副本，避免对原模型进行修改。
+- 在每次迭代中，模型会在 `train_folds` 上训练，并在 `test_fold` 上进行预测，然后计算预测的正确率。
+
+输出：
+```python
+0.95035, 0.96035, 0.9604
+```
+
+{.marker-none}
+
+### 混淆矩阵
+
+#### 问题 11: 如何计算混淆矩阵（Confusion Matrix）？
+
+代码：
+```python
+from sklearn.model_selection import cross_val_predict
+
+y_train_pred = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3)
+```
+
+解析：
+- `cross_val_predict()` 类似于 `cross_val_score()`，但它返回的是每次验证的预测结果，而不是评估分数。这意味着对于训练集中的每个实例，模型生成的预测都是在没有看到该实例的数据的情况下做出的。
+- 这样，我们就得到了用于计算混淆矩阵的预测结果。
+
+
+#### 问题 12: 如何生成并解读混淆矩阵？
+
+代码：
+```python
+from sklearn.metrics import confusion_matrix
+
+cm = confusion_matrix(y_train_5, y_train_pred)
+cm
+```
+
+输出：
+```python
+array([[53892,   687],
+       [ 1891,  3530]])
+```
+
+解析：
+- **混淆矩阵解释**：
+  - 第 1 行表示非 5 的图像（负类）。53892 个图像被正确分类为非 5（真负类），687 个图像被错误分类为 5（假正类）。
+  - 第 2 行表示数字 5 的图像（正类）。1891 个图像被错误分类为非 5（假负类），3530 个图像被正确分类为 5（真正类）。
+
+图解：
+- ![MINIST的一个混淆矩阵示例](../assets/attachment/hands_on_machine_learning/MINIST的一个混淆矩阵示例.png)
+- 图中解释了混淆矩阵的各个部分，帮助理解预测结果的精确度。
+
+#### 问题 13: 如何计算分类器的精度（Precision）和召回率（Recall）？
+
+公式：
+- 精度（Precision）公式：
+  
+  ```KaTeX
+  \text{Precision} = \frac{TP}{TP + FP}
+  ```
+  
+  - TP：真正类，FP：假正类
+
+- 召回率（Recall）公式：
+  ```KaTeX
+  \text{Recall} = \frac{TP}{TP + FN}
+  ```
+  - TP：真正类，FN：假负类
+
+解析：
+- 精度表示所有正类预测中，实际为正类的比例。
+- 召回率表示所有正类实例中，模型正确识别的比例。
+
+#### 总结：
+- 通过混淆矩阵，我们可以详细评估模型的分类能力，不仅仅依赖于准确率，还能通过精度和召回率分析模型在不同类别上的表现。
+
+### 计算分类器的精度和召回率
+
+#### 问题 14: 如何计算分类器的精度（Precision）和召回率（Recall）？
+
+代码：
+```python
+from sklearn.metrics import precision_score, recall_score
+
+precision_score(y_train_5, y_train_pred)  # 计算精度
+recall_score(y_train_5, y_train_pred)     # 计算召回率
+```
+
+输出：
+```python
+# 精度：True Positive / (True Positive + False Positive)
+0.8370879772350012
+# 召回率：True Positive / (True Positive + False Negative)
+0.6511713705958311
+```
+
+解析：
+- **精度（Precision）**：当分类器预测某张图像为5时，它有 83.7% 的概率是正确的。
+- **召回率（Recall）**：分类器只识别出 65.1% 的5。
+
+
+
+#### 问题 15: 什么是 F1 分数，如何计算？
+
+公式：
+```KaTeX
+F1 = 2 \times \frac{\text{precision} \times \text{recall}}{\text{precision} + \text{recall}}
+```
+
+- F1 分数是精度和召回率的调和平均值，目的是在两者之间找到一个平衡。
+
+代码：
+```python
+from sklearn.metrics import f1_score
+
+f1_score(y_train_5, y_train_pred)
+```
+
+输出：
+```python
+0.7325171197343846
+```
+
+解析：
+- F1 分数是 0.73，这表明模型在精度和召回率之间取得了某种平衡。高 F1 分数要求精度和召回率都较高，任何一个较低都会降低 F1 分数。
+
+
+
+#### 问题 16: 精度与召回率的权衡（Precision/Recall Trade-off）是什么？
+
+解析：
+- 精度和召回率往往呈反比。提升精度通常会导致召回率下降，反之亦然。这种权衡取决于应用场景：
+  - **高精度，低召回率**：适用于只需要少数非常准确的预测。例如，筛选对儿童安全的视频时，可能需要更高的精度，避免错误分类不安全的视频。
+  - **高召回率，低精度**：适用于需要尽可能多地检测目标的场景，例如商店的防盗监控，即便可能产生一些错误警报（低精度），但要确保所有小偷（正类）被识别出来。
+
+结论：
+- 无法同时最大化精度和召回率，这就是 **Precision/Recall Trade-off**。
+
+### 精度和召回率的权衡
+
+#### 问题 17: 如何理解精度与召回率的权衡（Precision/Recall Trade-off）？
+
+解析：
+- **SGDClassifier** 通过计算一个基于 **decision function** 的得分来做出分类决策。得分高于阈值时，该实例被归为正类，否则归为负类。
+- ![调整精度和阈值是怎么动态影响一个手写数字被判定的](../assets/attachment/hands_on_machine_learning/调整精度和阈值是怎么动态影响一个手写数字被判定的.png) 展示了几个数字按得分从低到高排列，并演示了如何通过调整决策阈值影响精度和召回率。随着阈值的提高，精度增加但召回率降低；反之，降低阈值则提高召回率但降低精度。
+
+
+#### 问题 18: 如何使用 `decision_function()` 来计算决策分数？
+
+代码：
+```python
+y_scores = sgd_clf.decision_function([some_digit])
+y_scores
+# 输出: array([2164.22030239])
+```
+
+解析：
+- `decision_function()` 返回每个实例的决策分数。
+- 对比 `predict()`，它返回的只是预测的二元结果（True/False），而 `decision_function()` 给出了分类决策的置信度。
+
+
+#### 问题 19: 如何通过调整阈值来改变分类结果？
+
+代码：
+```python
+threshold = 0
+y_some_digit_pred = (y_scores > threshold)  # 阈值为0，分类结果为True
+
+threshold = 3000
+y_some_digit_pred = (y_scores > threshold)  # 阈值提高到3000，分类结果为False
+```
+
+解析：
+- 当阈值为 0 时，分类器检测到图像为 5；但当阈值提高到 3000 时，分类器错过了这个 5。因此，调整阈值可以改变模型的精度和召回率。
+
+
+
+#### 问题 20: 如何通过 `cross_val_predict` 获取所有实例的决策分数？
+
+代码：
+```python
+y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3, method="decision_function")
+```
+
+解析：
+- 这段代码获取所有实例的决策分数，而不是直接返回分类结果，这样我们可以使用这些分数来计算不同阈值下的精度和召回率。
+
+
+#### 问题 21: 如何绘制 Precision/Recall 曲线？
+
+代码：
+```python
+from sklearn.metrics import precision_recall_curve
+
+precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+
+plt.plot(thresholds, precisions[:-1], "b--", label="Precision", linewidth=2)
+plt.plot(thresholds, recalls[:-1], "g-", label="Recall", linewidth=2)
+plt.vlines(3000, 0, 1.0, "k", "dotted", label="threshold")
+plt.legend(loc="center left")
+plt.xlabel("Threshold")
+plt.grid(True)
+plt.show()
+```
+
+图解：
+- ![不同阈值下精度和召回率的变化趋势](../assets/attachment/hands_on_machine_learning/不同阈值下精度和召回率的变化趋势.png)
+- 此图展示了不同阈值下的精度和召回率曲线。随着阈值增加，精度上升，召回率下降。黑色虚线标注了阈值为 3000 的位置。
+
+
+#### 问题 22: 如何绘制 Precision/Recall 曲线的另一种视角？
+
+代码：
+```python
+plt.plot(recalls, precisions, linewidth=2, label="Precision/Recall curve")
+plt.show()
+```
+
+图解：
+- ![精度随召回率的变化曲线](../assets/attachment/hands_on_machine_learning/精度随召回率的变化曲线.png)
+- 精度随召回率的变化曲线展示了当召回率较低时精度较高，但随着召回率的上升，精度下降。
+
+
+#### 问题 23: 如何选择目标精度并找到相应的阈值？
+
+代码：
+```python
+idx_for_90_precision = (precisions >= 0.90).argmax()
+threshold_for_90_precision = thresholds[idx_for_90_precision]
+
+# 使用 90% 精度的阈值做预测
+y_train_pred_90 = (y_scores >= threshold_for_90_precision)
+
+# 检查该阈值下的精度和召回率
+precision_score(y_train_5, y_train_pred_90)  # 输出: 0.9000345901072293
+recall_score(y_train_5, y_train_pred_90)     # 输出: 0.4799852425751706
+```
+
+解析：
+- 通过找到至少 90% 精度对应的阈值，生成高精度的分类器，但由于召回率较低（仅 48%），这表明高精度分类器可能会错过很多实际为 5 的图像。
+
+
+#### 问题 24: 为什么在追求高精度时需要关注召回率？
+
+解析：
+- 当有人说 “我们要实现 99% 的精度” 时，实际上意味着模型在所有预测为正类的样本中，99% 是正确的。然而，**高精度并不意味着高召回率**，即模型可能只检测到极少一部分正类样本。
+- **Tip** 中提醒我们要警惕这种情况：如果只关注精度，而忽视召回率，可能会错过很多实际为正类的样本（低召回率）。因此，追求高精度时，应该同时考虑召回率，确保模型不仅精确，而且能够覆盖足够多的正类样本。
+
+例如，如果某个模型的召回率很低，即使它的精度达到了 99%，也意味着它可能会忽略很多重要的正类数据。这在许多应用中是不可接受的，比如在医学检测中，如果模型只正确识别出少数几个阳性病例，虽然精度很高，但未检测出的病人可能会错过及时治疗的机会。
+
+### ROC曲线
+
+#### 问题 25: 什么是 ROC 曲线，它有什么作用？
+
+解析：
+- **Receiver Operating Characteristic (ROC)** 曲线是用于评估二元分类器的一种常用工具。它与精度/召回率曲线类似，但不同的是，ROC 曲线绘制的是 **真正率 (True Positive Rate, TPR)** 对 **假正率 (False Positive Rate, FPR)** 的关系。
+- TPR 是召回率（即正确分类为正类的比例），而 FPR 是错误分类为正类的负类比例。
+- ![ROC 曲线-绘制假正率与真正率的关系](../assets/attachment/hands_on_machine_learning/ROC曲线-绘制假正率与真正率的关系.png)展示了 ROC 曲线，x 轴表示 FPR，y 轴表示 TPR。理想的分类器应该靠近左上角。
+
+
+
+#### 问题 26: 如何计算 ROC 曲线？
+
+代码：
+```python
+from sklearn.metrics import roc_curve
+
+fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
+```
+
+解析：
+- `roc_curve()` 函数用于计算不同阈值下的 TPR 和 FPR。
+- 我们可以使用这些值来绘制 ROC 曲线。
+
+
+
+#### 问题 27: 如何绘制 ROC 曲线？
+
+代码：
+```python
+plt.plot(fpr, tpr, linewidth=2, label="ROC curve")
+plt.plot([0, 1], [0, 1], 'k--', label="Random classifier's ROC curve")
+plt.xlabel("False Positive Rate (Fall-Out)")
+plt.ylabel("True Positive Rate (Recall)")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.show()
+```
+
+图解：
+- ![ROC 曲线-绘制假正率与真正率的关系](../assets/attachment/hands_on_machine_learning/ROC曲线-绘制假正率与真正率的关系.png)
+- 蓝色曲线是我们的分类器，黑色虚线是随机分类器的 ROC 曲线（作为对比）。理想的曲线应该尽量远离这条虚线，靠近图的左上角。
+
+
+
+#### 问题 28: 什么是 ROC AUC 分数？
+
+解析：
+- **ROC AUC (Area Under the Curve)** 是对 ROC 曲线下方面积的度量。AUC 值在 0.5 到 1 之间，1 表示完美的分类器，0.5 表示随机分类器。
+
+代码：
+```python
+from sklearn.metrics import roc_auc_score
+
+roc_auc_score(y_train_5, y_scores)
+```
+
+输出：
+```python
+0.9604938554008616
+```
+
+解析：
+- ROC AUC 分数接近 1，说明分类器表现良好。
+
+
+
+#### 问题 29: 什么时候使用 PR 曲线，什么时候使用 ROC 曲线？
+
+提示：
+- 当正类样本比较少时，应该使用 **PR 曲线**，因为在这种情况下，**假正率（FPR）** 的影响更大。而 **ROC 曲线** 更适合正负类样本比例均衡的情况。
+- **Tip** 提醒我们，当正类样本稀少时，ROC 曲线可能会给出误导性结果。此时使用 PR 曲线可以更准确地评估模型的表现。
+
+
+
+#### 问题 30: 如何比较不同分类器的 PR 曲线？
+
+代码：
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+forest_clf = RandomForestClassifier(random_state=42)
+y_probas_forest = cross_val_predict(forest_clf, X_train, y_train_5, cv=3, method="predict_proba")
+y_scores_forest = y_probas_forest[:, 1]
+
+precisions_forest, recalls_forest, thresholds_forest = precision_recall_curve(y_train_5, y_scores_forest)
+
+# 绘制PR曲线
+plt.plot(recalls_forest, precisions_forest, "b-", linewidth=2, label="Random Forest")
+plt.plot(recalls, precisions, "g--", linewidth=2, label="SGD")
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.legend(loc="lower left")
+plt.grid(True)
+plt.show()
+```
+
+图解：
+- ![比较 PR 曲线-随机森林分类器优于 SGD 分类器](../assets/attachment/hands_on_machine_learning/比较PR曲线-随机森林分类器优于SGD分类器.png)
+- 随机森林的 PR 曲线明显比 SGDClassifier 更接近右上角，说明它在精度和召回率的平衡上表现更好。
+
+
+#### 问题 31: 如何计算随机森林的 F1 分数和 ROC AUC 分数？
+
+代码：
+```python
+f1_score(y_train_5, y_probas_forest[:, 1] >= 0.5)
+roc_auc_score(y_train_5, y_scores_forest)
+```
+
+输出：
+```python
+# F1 分数
+0.9422275142688446
+# ROC AUC 分数
+0.9983436731328145
+```
+
+解析：
+- 随机森林的 F1 分数为 0.94，ROC AUC 分数接近 1，表明其性能优越。
+
+### 多分类
+
+#### 问题 32: 什么是多分类（Multiclass Classification）？
+
+解析：
+- 与二元分类器不同，多分类器可以区分多个类别，而不仅仅是两个。许多 Scikit-Learn 的分类器（例如 LogisticRegression、RandomForestClassifier）可以直接处理多个类别。对于只能处理二元分类的算法（如 SGDClassifier 和 SVC），我们可以使用策略将它们扩展为多分类器。
+- 两种常见的多分类策略：
+  1. **OvR（One-versus-the-Rest）**：为每个类别训练一个分类器，预测每个类别与其他所有类别的区别。
+  2. **OvO（One-versus-One）**：为每对类别训练一个分类器，预测两个类别之间的区别。这种方法需要训练 `KaTeX:N \times (N-1) / 2` 个分类器。
+
+
+
+#### 问题 33: 如何使用 SVM 进行多分类任务？
+
+代码：
+```python
+from sklearn.svm import SVC
+
+svm_clf = SVC(random_state=42)
+svm_clf.fit(X_train[:2000], y_train[:2000])
+```
+
+解析：
+- 使用 **SVC** 进行多分类任务时，Scikit-Learn 自动选择 OvR 或 OvO 策略。在这里，Scikit-Learn 使用了 **OvO 策略**，训练了 45 个二元分类器。
+
+
+
+#### 问题 34: 如何使用训练好的 SVM 分类器进行预测？
+
+代码：
+```python
+svm_clf.predict([some_digit])
+```
+
+输出：
+```python
+array(['5'], dtype=object)
+```
+
+解析：
+- 当我们对一个图像进行预测时，SVM 实际上做了 45 次预测（每一对类别），然后选择获胜次数最多的类别作为最终结果。
+
+
+
+#### 问题 35: 如何获取每个类别的决策分数？
+
+代码：
+```python
+some_digit_scores = svm_clf.decision_function([some_digit])
+some_digit_scores.round(2)
+```
+
+输出：
+```python
+array([[ 3.79,  0.73,  6.06,  8.3, -0.29,  9.3,  1.75,  2.77,  7.21,  4.82]])
+```
+
+解析：
+- `decision_function()` 返回每个类别的得分。每个类别的分数表示该类别在决策中的胜率，分数最高的类别就是最终预测结果（这里是类 5，得分为 9.3）。
+
+
+
+#### 问题 36: 如何强制 Scikit-Learn 使用 OvR 或 OvO 策略？
+
+代码：
+```python
+from sklearn.multiclass import OneVsRestClassifier
+
+ovr_clf = OneVsRestClassifier(SVC(random_state=42))
+ovr_clf.fit(X_train[:2000], y_train[:2000])
+```
+
+解析：
+- 可以使用 **OneVsRestClassifier** 或 **OneVsOneClassifier** 来手动选择 OvR 或 OvO 策略。这里我们使用了 **OneVsRestClassifier**。
+
+
+
+#### 问题 37: 使用 SGDClassifier 进行多分类任务的步骤是什么？
+
+代码：
+```python
+sgd_clf = SGDClassifier(random_state=42)
+sgd_clf.fit(X_train, y_train)
+sgd_clf.predict([some_digit])
+```
+
+输出：
+```python
+array(['3'], dtype='<U1')
+```
+
+解析：
+- 虽然我们在前面预测的是数字 5，但这里 SGDClassifier 预测的是 3。这次 Scikit-Learn 使用了 **OvR** 策略，训练了 10 个二元分类器。
+
+
+
+#### 问题 38: 如何评估 SGDClassifier 的模型性能？
+
+代码：
+```python
+cross_val_score(sgd_clf, X_train, y_train, cv=3, scoring="accuracy")
+```
+
+输出：
+```python
+array([0.87365, 0.85835, 0.8689])
+```
+
+解析：
+- SGDClassifier 的准确率在 85.8% 左右。虽然这是一个不错的分数，但我们可以通过进一步调整数据来提高准确率。
+
+
+#### 问题 39: 如何通过数据预处理提升模型准确性？
+
+代码：
+```python
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train.astype(float))
+cross_val_score(sgd_clf, X_train_scaled, y_train, cv=3, scoring="accuracy")
+```
+
+输出：
+```python
+array([0.8983, 0.891 , 0.9018])
+```
+
+解析：
+- 通过对输入数据进行标准化处理（即缩放到相同范围），我们将模型的准确率提高到了 89.1%。
+
+### 模型误差分析
+
+#### 问题 40: 如何使用混淆矩阵进行误差分析？
+
+代码：
+```python
+from sklearn.metrics import ConfusionMatrixDisplay
+
+y_train_pred = cross_val_predict(sgd_clf, X_train_scaled, y_train, cv=3)
+ConfusionMatrixDisplay.from_predictions(y_train, y_train_pred)
+plt.show()
+```
+
+解析：
+- 使用 **ConfusionMatrixDisplay** 函数生成混淆矩阵，可以帮助我们了解分类器在各个类别上的表现。![没有归一化-归一化的混淆矩阵](../assets/attachment/hands_on_machine_learning/没有归一化-归一化的混淆矩阵.png) 左边展示了没有归一化的混淆矩阵。
+
+
+#### 问题 41: 如何归一化混淆矩阵并显示百分比？
+
+代码：
+```python
+ConfusionMatrixDisplay.from_predictions(y_train, y_train_pred, normalize='true', values_format=".0%")
+plt.show()
+```
+
+图解：
+-  ![没有归一化-归一化的混淆矩阵](../assets/attachment/hands_on_machine_learning/没有归一化-归一化的混淆矩阵.png)右侧的图展示了归一化后的混淆矩阵，所有的值都表示为百分比。通过归一化，我们可以更清晰地看到分类器在每个类别上的准确率，例如，只有 82% 的数字 5 被正确分类。
+
+
+#### 问题 42: 如何突出显示分类错误？
+
+代码：
+```python
+sample_weight = (y_train_pred != y_train)
+ConfusionMatrixDisplay.from_predictions(y_train, y_train_pred, sample_weight=sample_weight, normalize="true", values_format=".0%")
+plt.show()
+```
+
+图解：
+- ![归一化-未归一化的混淆矩阵](../assets/attachment/hands_on_machine_learning/归一化-未归一化的混淆矩阵.png)左图通过将正确预测的权重设为零，突出显示了分类器的错误。右图是按列归一化后的混淆矩阵，它展示了某些类别的误分类，例如，56% 的被误分类为 7 的图像实际是 9。
+
+
+
+#### 问题 43: 如何通过分析错误来改进模型？
+
+解析：
+- 通过分析错误，我们可以获得分类器的性能瓶颈。例如，在 MNIST 数据集上，模型的主要错误是将 5 识别为 8。这可能是因为某些 5 看起来像 8，而分类器缺乏足够的能力来区分它们。我们可以通过为类似 8 的数字训练更多的 5 类图像来改善模型。
+
+
+
+#### 问题 44: 如何分析具体类别的错误？
+
+代码：
+```python
+cl_a, cl_b = '3', '5'
+X_aa = X_train[(y_train == cl_a) & (y_train_pred == cl_a)]
+X_ab = X_train[(y_train == cl_a) & (y_train_pred == cl_b)]
+X_ba = X_train[(y_train == cl_b) & (y_train_pred == cl_a)]
+X_bb = X_train[(y_train == cl_b) & (y_train_pred == cl_b)]
+
+# 绘制 3 和 5 的分类结果
+# 代码省略
+```
+
+图解：
+-  ![分类器在区分3和5时犯的错误](../assets/attachment/hands_on_machine_learning/分类器在区分3和5时犯的错误.png)展示了分类器在区分 3 和 5 时犯的错误。我们可以看到一些手写数字非常模糊，甚至连人类都难以正确分类。
+
+
+
+#### 问题 45: 如何通过数据增强（Data Augmentation）来改进模型？
+
+解析：
+- 一种减少 3 和 5 混淆的方法是通过 **数据增强** 来改进模型。这包括通过略微偏移和旋转图像来扩展训练集，这将迫使模型学会处理图像的变异性，提高分类的稳健性。
+
+### 多标签分类 {.col-span-2}
+
+#### 问题 46: 什么是多标签分类（Multilabel Classification）？
+
+解析：
+- 在多标签分类中，每个实例可以被分配到多个类别，而不仅仅是一个类别。例如，在人脸识别系统中，可能会同时识别出多个人物。这种能够输出多个标签的分类系统被称为多标签分类系统。
+
+
+
+#### 问题 47: 如何在多标签分类中使用 KNeighborsClassifier？
+
+代码：
+```python
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+
+y_train_large = (y_train >= '7')
+y_train_odd = (y_train.astype(int) % 2 == 1)
+y_multilabel = np.c_[y_train_large, y_train_odd]
+
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(X_train, y_multilabel)
+```
+
+解析：
+- 这里我们创建了一个多标签分类器，它同时为每个数字图像生成两个标签：第一个标签表示数字是否大于等于 7，第二个标签表示数字是否为奇数。
+
+预测：
+```python
+knn_clf.predict([some_digit])
+```
+
+输出：
+```python
+array([[False,  True]])
+```
+
+解析：
+- 对于数字 5，第一个标签为 `False`（表示不大于等于 7），第二个标签为 `True`（表示为奇数）。
+
+
+#### 问题 48: 如何评估多标签分类器的性能？
+
+代码：
+```python
+y_train_knn_pred = cross_val_predict(knn_clf, X_train, y_multilabel, cv=3)
+f1_score(y_multilabel, y_train_knn_pred, average="macro")
+```
+
+输出：
+```python
+0.976410265560605
+```
+
+解析：
+- 我们使用 **F1 分数** 来评估多标签分类器的性能。这里，我们计算了每个标签的 F1 分数，然后取它们的平均值（macro 平均）。
+
+
+#### 问题 49: 如何处理多标签分类中的标签依赖性？
+
+解析：
+- 有些分类器，如 SVC，不支持多标签分类。一个可能的解决方案是为每个标签训练一个模型，但这种方法可能难以捕捉标签之间的依赖关系。例如，一个大数字（7, 8, 9）更可能是奇数，但奇数分类器不会知道“大”标签预测的内容。
+- 为了解决这个问题，模型可以被组织在一个链条中：当一个模型做出预测时，它会使用输入特征加上之前模型的所有预测结果。这称为 **Classifier Chain**。
+
+
+#### 问题 50: 如何使用 Classifier Chain 处理多标签分类？
+
+代码：
+```python
+from sklearn.multioutput import ClassifierChain
+from sklearn.svm import SVC
+
+chain_clf = ClassifierChain(SVC(), cv=3, random_state=42)
+chain_clf.fit(X_train[:2000], y_multilabel[:2000])
+```
+
+解析：
+- **ClassifierChain** 是 Scikit-Learn 中用于处理多标签分类的一种方法，它利用链式结构来捕捉标签之间的依赖关系。
+
+预测：
+```python
+chain_clf.predict([some_digit])
+```
+
+输出：
+```python
+array([[0., 1.]])
+```
+
+解析：
+- 对于数字 5，Classifier Chain 给出的预测为 `[0., 1.]`，即不大于等于 7 且为奇数。
+
+### 多输出分类
+
+#### 问题 51: 什么是多输出分类（Multioutput Classification）？
+
+解析：
+- 多输出-多分类（Multioutput-Multiclass）分类是多标签分类的扩展，其中每个标签都可以是多类（即每个标签可以有多个可能的值）。
+- 例如，在这个例子中，我们构建一个系统来去除图像中的噪声。它的输入是一个带有噪声的数字图像，输出则是一个清晰的图像。
+
+
+#### 问题 52: 如何构建训练集和测试集？
+
+代码：
+```python
+np.random.seed(42)  # 为了使代码示例可复现
+noise = np.random.randint(0, 100, (len(X_train), 784))
+X_train_mod = X_train + noise
+noise = np.random.randint(0, 100, (len(X_test), 784))
+X_test_mod = X_test + noise
+y_train_mod = X_train
+y_test_mod = X_test
+```
+
+解析：
+- 我们首先通过为 MNIST 图像添加噪声来创建训练集和测试集。目标图像是原始的无噪声图像，而输入是带有噪声的图像。
+
+
+
+#### 问题 53: 如何训练分类器以清除图像中的噪声？
+
+代码：
+```python
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(X_train_mod, y_train_mod)
+clean_digit = knn_clf.predict([X_test_mod[0]])
+plot_digit(clean_digit)
+plt.show()
+```
+
+图解：
+- 图名：**Figure 3-12** 和 **Figure 3-13** ![MNIST输入的带噪声图像跟输出的无噪声图像](../assets/attachment/hands_on_machine_learning/MNIST输入的带噪声图像跟输出的无噪声图像.png)显示了输入的带噪声图像和输出的清晰图像。KNeighborsClassifier 被训练来清除图像中的噪声。
+
+---
+
+#### 问题 54: 多输出分类与回归的关系是什么？
+
+解析：
+- 在这个例子中，预测像素强度更像是回归问题而不是分类问题。然而，多输出系统不仅限于分类任务；它们甚至可以输出每个实例的多个标签，包括类别标签和值标签。
+
+### exercise {.col-span-3}
+
+| ID  | Questions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 中文翻译 |
+|-----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| 1   | Try to build a classifier for the MNIST dataset that achieves over 97% accuracy on the test set. Hint: the KNeighborsClassifier works quite well for this task; you just need to find good hyperparameter values (try a grid search on the weights and n_neighbors hyperparameters).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | 尝试为 MNIST 数据集构建一个在测试集中达到 97% 以上准确率的分类器。提示：KNeighborsClassifier 对于此任务效果很好，你只需要找到合适的超参数值（可以尝试对权重和 n_neighbors 超参数进行网格搜索）。 |
+| 2   | Write a function that can shift an MNIST image in any direction (left, right, up, or down) by one pixel. Then, for each image in the training set, create four shifted copies (one per direction) and add them to the training set. Finally, train your best model on this expanded training set and measure its accuracy on the test set. You should observe that your model performs even better now! This technique of artificially growing the training set is called data augmentation or training set expansion.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | 编写一个函数，可以将 MNIST 图像向任意方向（左、右、上或下）移动一个像素。然后，对于训练集中的每个图像，创建四个移动副本（每个方向一个），并将它们添加到训练集中。最后，在扩展后的训练集上训练你最好的模型，并在测试集上测量其准确率。你会发现你的模型表现得更好了！这种人为扩展训练集的技术被称为数据增强或训练集扩展。 |
+| 3   | Tackle the Titanic dataset. A great place to start is on Kaggle. Alternatively, you can download the data from https://homl.info/titanic.tgz and unzip this tarball like you did for the housing data in Chapter 2. This will give you two CSV files, train.csv and test.csv, which you can load using pandas.read_csv(). The goal is to train a classifier that can predict the Survived column based on the other columns.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 处理泰坦尼克号数据集。一个很好的开始是从 Kaggle 上开始。或者，你可以从 https://homl.info/titanic.tgz 下载数据，并像处理第2章中的房屋数据一样解压此压缩包。这将为你提供两个 CSV 文件，train.csv 和 test.csv，你可以使用 pandas.read_csv() 加载它们。目标是训练一个分类器，能够根据其他列预测 Survived 列。 |
+| 4   | Build a spam classifier (a more challenging exercise): <br>a. Download examples of spam and ham from Apache SpamAssassin’s public datasets. <br>b. Unzip the datasets and familiarize yourself with the data format. <br>c. Split the data into a training set and a test set. <br>d. Write a data preparation pipeline to convert each email into a feature vector. Your preparation pipeline should transform an email into a (sparse) vector that indicates the presence or absence of each possible word. For example, if all emails only ever contain four words, “Hello”, “how”, “are”, “you”, then the email “Hello you Hello Hello you” would be converted into a vector [1, 0, 0, 1] (meaning [“Hello” is present, “how” is absent, “are” is absent, “you” is present]), or [3, 0, 0, 2] if you prefer to count the number of occurrences of each word. <br>e. Finally, try out several classifiers and see if you can build a great spam classifier, with both high recall and high precision. | 构建一个垃圾邮件分类器（更具挑战性的练习）：<br>a. 从 Apache SpamAssassin 的公共数据集中下载垃圾邮件和非垃圾邮件的示例。<br>b. 解压数据集并熟悉数据格式。<br>c. 将数据分成训练集和测试集。<br>d. 编写一个数据准备管道，将每封电子邮件转换为特征向量。你的准备管道应将电子邮件转换为一个（稀疏的）向量，指示每个可能单词的存在或不存在。例如，如果所有电子邮件只包含四个单词，“Hello”、“how”、“are”、“you”，那么电子邮件“Hello you Hello Hello you”将转换为向量 [1, 0, 0, 1]（意思是 [“Hello” 存在，“how” 不存在，“are” 不存在，“you” 存在]），或者 [3, 0, 0, 2] 如果你更喜欢计数每个单词的出现次数。<br>e. 最后，尝试多种分类器，看看能否构建一个高召回率和高精度的垃圾邮件分类器。 |
+
+
+{.show-header .left-text}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

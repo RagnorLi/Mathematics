@@ -8,7 +8,7 @@ tags:
 categories:
   - Code
 intro: |
-  A TypeScript cheat sheet with the most important concepts, functions, methods, and more. A complete quick reference for beginners.
+  TypeScript 是微软开发的 为 JavaScript 引入了静态类型，使开发人员能够在编译时而不是运行时捕获错误。
 plugins:
   - copyCode
 ---
