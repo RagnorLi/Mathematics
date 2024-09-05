@@ -3234,6 +3234,1138 @@ plt.show()
 
 {.show-header .left-text}
 
+## Training Models
+
+### 线性回归
+
+#### 问题 1：什么是线性回归？
+
+**答案：**
+线性回归是一种预测模型，它通过输入特征的加权和来进行预测。最基本的模型如下：
+
+```KaTeX
+\hat{y} = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_n x_n
+```
+
+- `KaTeX: \hat{y}` 是预测的值。
+- `KaTeX: n` 是特征的数量。
+- `KaTeX: x_i` 是第 `KaTeX: i` 个特征的值。
+- `KaTeX: \theta_j` 是第 `KaTeX: j` 个模型参数，包含 `KaTeX: \theta_0`（偏差项，bias term）以及特征权重 `KaTeX: \theta_1, \theta_2, \dots, \theta_n`。
+
+#### 问题 2：如何使用向量形式简化线性回归模型？
+
+**答案：**
+我们可以使用向量的形式简化线性回归模型：
+
+```KaTeX
+\hat{y} = h_{\theta}(x) = \theta^T \cdot x
+```
+
+- `KaTeX: h_{\theta}(x)` 是假设函数，使用模型参数 `KaTeX: \theta`。
+- `KaTeX: \theta` 是模型的参数向量，包含 `KaTeX: \theta_0`（偏差项）和权重 `KaTeX: \theta_1` 到 `KaTeX: \theta_n`。
+- `KaTeX: x` 是实例的特征向量，包含 `KaTeX: x_0` 到 `KaTeX: x_n`，其中 `KaTeX: x_0` 恒为 1。
+- `KaTeX: \theta \cdot x` 是向量的点积。
+
+#### 问题 3：线性回归的模型如何训练？
+
+**答案：**
+训练线性回归模型意味着找到一组参数 `KaTeX: \theta`，使得模型最能拟合训练集。这通常通过最小化模型误差来实现。我们使用均方误差（MSE）作为模型性能的度量标准：
+
+```KaTeX
+MSE(\theta) = \frac{1}{m} \sum_{i=1}^{m} \left( \theta^T x^{(i)} - y^{(i)} \right)^2
+```
+
+其中：
+- `KaTeX: m` 是训练集中的样本数。
+- `KaTeX: x^{(i)}` 是第 `KaTeX: i` 个实例的特征向量。
+- `KaTeX: y^{(i)}` 是该实例的实际目标值。
+
+MSE 的目标是找到一组参数 `KaTeX: \theta` 使得 `KaTeX: MSE(\theta)` 最小。
+
+#### ↓ 线性回归的核心公式
+
+从`KaTeX:\hat{y} = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_n x_n`公式中我们看到，线性回归的核心公式通过特征值的加权和来表示。在代码中，可以用以下形式实现：
+
+```python
+import numpy as np
+
+# 特征向量 x, 参数向量 theta
+x = np.array([1, x1, x2, ..., xn])
+theta = np.array([theta0, theta1, theta2, ..., thetan])
+
+# 计算预测值
+y_pred = np.dot(theta, x)
+```
+
+#### 注意事项：
+
+在机器学习中，向量通常表示为**列向量**，这是二维数组中的单列。模型的向量 `KaTeX: \theta` 可以用行向量表示，在计算时需要进行转置。
+
+### 正规方程
+
+#### 问题 4：什么是正规方程？如何计算线性回归参数？
+
+**答案：**
+在线性回归中，**正规方程**提供了一种**闭式解**，可以直接计算使均方误差（MSE）最小的参数 `KaTeX: \theta`。该解不需要迭代求解，具体公式如下：
+
+```KaTeX
+\hat{\theta} = (X^T X)^{-1} X^T y
+```
+
+- `KaTeX: \hat{\theta}` 是最优的参数向量，使得损失函数最小化。
+- `KaTeX: X` 是训练实例的特征矩阵。
+- `KaTeX: y` 是目标值的向量，包含 `KaTeX: y^{(1)}` 到 `KaTeX: y^{(m)}`。
+
+#### ↓代码示例
+
+以下是生成线性数据并使用正规方程求解 `KaTeX: \hat{\theta}` 的代码示例：
+
+```python
+import numpy as np
+
+# 生成线性数据
+np.random.seed(42)
+m = 100  # 实例数量
+X = 2 * np.random.rand(m, 1)  # 特征矩阵
+y = 4 + 3 * X + np.random.randn(m, 1)  # 目标值，带有一些噪声
+
+# 正规方程
+X_b = np.c_[np.ones((m, 1)), X]  # 添加x0 = 1到每个实例
+theta_best = np.linalg.inv(X_b.T @ X_b) @ X_b.T @ y
+```
+
+该代码使用 NumPy 的 `np.linalg.inv()` 函数计算矩阵的逆，并通过矩阵乘法来获得 `KaTeX: \hat{\theta}`。
+
+#### ↓图解：
+
+  - ![一组随机的线性数据](../assets/attachment/hands_on_machine_learning/一组随机的线性数据.png)
+  - 该图展示了通过公式 `y = 4 + 3x_1 + \text{Gaussian noise}` 生成的随机线性数据。
+
+#### 问题 5：如何通过正规方程计算预测值？
+
+**答案：**
+你可以使用计算出的 `KaTeX: \hat{\theta}` 来进行预测，假设我们要预测 `X_new = [[0], [2]]` 的结果：
+
+```python
+X_new = np.array([[0], [2]])
+X_new_b = np.c_[np.ones((2, 1)), X_new]  # 添加 x0 = 1
+y_predict = X_new_b @ theta_best
+```
+
+- 计算得到的 `KaTeX: y` 值为 `KaTeX: \hat{y} = [4.215, 9.755]`，这是基于最优参数 `KaTeX: \theta` 的预测值。
+
+#### ↓ 图解：
+
+  - ![线性回归模型预测](../assets/attachment/hands_on_machine_learning/线性回归模型预测.png)
+  - 该图展示了模型预测的线性回归拟合线与原始数据点的比较。
+
+#### 问题 6：如何使用 Scikit-Learn 进行线性回归？
+
+**答案：**
+使用 Scikit-Learn 进行线性回归非常简单，可以通过以下代码完成：
+
+```python
+from sklearn.linear_model import LinearRegression
+
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+print(lin_reg.intercept_, lin_reg.coef_)  # 显示偏差项和特征权重
+
+X_new = np.array([[0], [2]])
+y_predict = lin_reg.predict(X_new)
+```
+
+#### 正规方程的优势和替代方案
+
+Scikit-Learn 中的 `LinearRegression` 类使用了**最小二乘法**，这是正规方程的底层算法。若矩阵 `KaTeX: X^T X` 是可逆的，正规方程是一个计算有效的解决方案。然而，当 `m < n` 或特征存在冗余时，矩阵可能不可逆，此时可使用**广义逆矩阵**来计算。
+
+```python
+theta_best_svd, residuals, rank, s = np.linalg.lstsq(X_b, y, rcond=1e-6)
+```
+
+此代码使用 `np.linalg.lstsq()` 函数来解决上述问题。
+
+### 正规方程的计算复杂度
+
+#### 问题 7：正规方程的计算复杂度如何？
+
+**答案：**
+在正规方程中，我们需要计算矩阵 `KaTeX: X^T X` 的逆。这个矩阵是一个维度为 `KaTeX: (n + 1) \times (n + 1)` 的矩阵，其中 `KaTeX: n` 是特征数量。
+
+计算逆矩阵的**计算复杂度**通常为 `KaTeX: O(n^2.4)` 到 `KaTeX: O(n^3)`，具体取决于实现方式。这意味着如果你将特征数量加倍，计算时间大约会增加到原来的 `KaTeX: 2^2.4 \approx 5.3` 倍到 `KaTeX: 2^3 = 8` 倍。
+
+相比之下，使用 Scikit-Learn 的 `LinearRegression` 类基于奇异值分解（SVD）的方式，计算复杂度约为 `KaTeX: O(n^2)`。如果特征数量加倍，计算时间大约增加 4 倍。
+
+#### ⚠️警告：
+
+- **WARNING**：无论是正规方程还是 SVD 方法，当特征数量变得非常大（例如 `KaTeX: n = 100,000`）时，两者的速度都会非常慢。但两者的计算复杂度相对于训练实例的数量 `KaTeX: m` 是线性的，因此在内存可以处理的情况下，它们可以高效处理大规模训练集。
+
+#### 问题 8：训练后的线性回归模型计算预测的速度如何？
+
+**答案：**
+一旦模型训练完成后，无论是使用正规方程还是其他方法，**预测速度非常快**。其计算复杂度在特征数量 `KaTeX: n` 和实例数量 `KaTeX: m` 方面是线性的。
+
+也就是说，如果你要对两倍的实例数量或特征数量进行预测，所需的时间也大约增加一倍。
+
+#### 结论：
+
+对于特征数量较多或者数据量过大，无法全部装入内存的情况，我们需要采用不同的训练方法。just wait a moment。
+
+{.marker-none}
+
+### 梯度下降GD
+
+#### 问题 9：什么是梯度下降？
+
+**答案：**
+梯度下降（**Gradient Descent**）是一种通用的优化算法，适用于解决广泛的问题。梯度下降的基本思想是通过不断调整参数，以最小化一个成本函数。
+
+在梯度下降的过程中，我们从随机初始化的参数 `KaTeX: \theta` 开始，逐步向下移动到成本函数最小的点，这个过程会一直持续到算法收敛到一个最小值（参考 **Figure 4-3: In this depiction of gradient descent, the model parameters are initialized randomly and tweaked repeatedly to minimize the cost function**）。
+
+#### 算法步骤：
+1. 随机初始化参数 `KaTeX: \theta`（称为随机初始化）。
+2. 在每一步中，根据成本函数相对于参数的梯度，向梯度方向移动。
+3. 当梯度为零时，意味着到达了最小值。
+
+#### 图解：
+- ![随机一个初始值开始梯度下降的过程](../assets/attachment/hands_on_machine_learning/随机一个初始值开始梯度下降的过程.png)该图展示了梯度下降的过程，从随机初始值开始，通过多个学习步骤逐步下降到最小值。
+
+#### 问题 10：学习率如何影响梯度下降？
+
+**答案：**
+梯度下降的一个关键参数是**学习率**（**learning rate**），它决定每一步的移动大小。如果学习率太小，算法需要很多次迭代才能收敛，耗时较长（参考 **Figure 4-4: Learning rate too small**）。相反，如果学习率过大，可能会导致算法跳过最优解，甚至可能使得算法发散（参考 **Figure 4-5: Learning rate too high**）。
+
+#### 图解：
+- **Figure 4-4**：![学习率太小时候的梯度下降示意图](../assets/attachment/hands_on_machine_learning/学习率太小时候的梯度下降示意图.png)当学习率太小时，梯度下降的步长非常小，需要很长时间才能到达最小值。
+- **Figure 4-5**：![学习率太大时候的随机梯度下降示意图](../assets/attachment/hands_on_machine_learning/学习率太大时候的随机梯度下降示意图.png)当学习率过高时，算法可能会跳过最小值，导致发散，无法找到好的解。
+
+#### 问题 11：梯度下降有哪些常见的陷阱？
+
+**答案：**
+并非所有的成本函数都像规则的碗状函数一样简单。可能存在局部最小值、台阶或凹陷等不规则情况，使得梯度下降收敛到最优解变得困难（参考 **Figure 4-6: Gradient descent pitfalls**）。
+
+- 如果随机初始化算法从左侧开始，可能会陷入局部最小值。
+- 如果初始化在右侧，需要很长时间才能穿越台阶到达全局最小值。
+
+#### 图解：
+- **Figure 4-6**：![梯度下降可能会遇到的陷阱](../assets/attachment/hands_on_machine_learning/梯度下降可能会遇到的陷阱.png)展示了梯度下降可能遇到的陷阱，算法可能会收敛到局部最小值，或者在平坦区域长时间停留。
+
+#### 问题 12：特征缩放如何帮助梯度下降？
+
+**答案：**
+如果特征的值范围差别很大，梯度下降在优化时会沿着一个方向（值较大的特征）较快，而在另一个方向（值较小的特征）较慢（参考 **Figure 4-7: Gradient descent with (left) and without (right) feature scaling**）。通过特征缩放（**Feature Scaling**），所有特征的值可以被标准化到相似的范围，从而加速梯度下降的收敛。
+
+#### 图解：
+- **Figure 4-7**：![特征缩放对梯度下降的影响](../assets/attachment/hands_on_machine_learning/特征缩放对梯度下降的影响.png)展示了特征缩放对梯度下降的影响，左侧特征已缩放，算法快速到达最小值；右侧未缩放，算法耗时更长。
+
+
+**警告：** 当使用梯度下降时，确保所有特征的尺度相似（例如使用 `Scikit-Learn` 的 `StandardScaler` 类），否则算法将会收敛得非常慢。
+
+{.marker-none}GD
+
+### 批量梯度下降BGD
+
+#### 问题 13：什么是批量梯度下降（Batch Gradient Descent）？
+
+**答案：**
+批量梯度下降（**Batch Gradient Descent**）是一种优化算法，用于计算成本函数相对于每个模型参数 `KaTeX: \theta_j` 的梯度。在梯度下降中，我们需要计算出每个模型参数的梯度，即**偏导数**。
+
+#### 偏导数公式（Partial Derivatives）：
+```KaTeX
+\frac{\partial}{\partial \theta_j} MSE(\theta) = \frac{2}{m} \sum_{i=1}^{m} \left( \theta^T x^{(i)} - y^{(i)} \right) x_j^{(i)}
+```
+此公式计算了均方误差（MSE）关于模型参数 `KaTeX: \theta_j` 的偏导数。`KaTeX: m` 是样本的数量，`KaTeX: x_j^{(i)}` 是第 `KaTeX: i` 个样本的第 `KaTeX: j` 个特征。
+
+#### 梯度向量公式（Gradient Vector）：
+```KaTeX
+\nabla_\theta MSE(\theta) = \frac{2}{m} X^T (X \theta - y)
+```
+该公式使用矩阵运算一次性计算了所有参数的梯度。`KaTeX: X` 是特征矩阵，`KaTeX: y` 是目标值向量。
+
+**注意：**
+批量梯度下降需要在每次迭代时使用整个训练集 `KaTeX: X` 来计算梯度，因此它在处理非常大的数据集时会变得非常慢。这就是为什么它被称为“**批量**”梯度下降。
+
+#### 图解：
+- **Figure 4-8**：![不同学习率的梯度下降过程示意图](../assets/attachment/hands_on_machine_learning/不同学习率的梯度下降过程示意图.png)展示了不同学习率的梯度下降过程。左侧的学习率太低，导致收敛非常缓慢；中间的学习率较为理想，收敛速度较快；右侧的学习率过高，导致算法发散，未能找到好的解。
+
+#### 问题 14：如何实现批量梯度下降？
+
+以下代码展示了如何通过批量梯度下降实现线性回归的训练：
+
+```python
+eta = 0.1  # 学习率
+n_epochs = 1000  # 迭代次数
+m = len(X_b)  # 样本数量
+
+np.random.seed(42)
+theta = np.random.randn(2, 1)  # 随机初始化模型参数
+
+for epoch in range(n_epochs):
+    gradients = 2 / m * X_b.T @ (X_b @ theta - y)
+    theta = theta - eta * gradients
+```
+
+- `KaTeX: \eta` 是学习率，决定每一步的移动大小。
+- `KaTeX: n\_epochs` 是迭代次数，每次遍历训练集称为一个 epoch。
+- 在每个 epoch 中，计算梯度并更新模型参数 `KaTeX: \theta`。
+
+#### ⚠️警告：
+批量梯度下降在处理非常大的数据集时效率较低，因为每次更新都需要使用整个训练集进行计算。然而，对于特征数较多的数据集，它仍然比正规方程或 SVD 分解更快。
+
+#### 问题 15：什么是收敛速率？
+
+**答案：**
+收敛速率是指梯度下降算法收敛到最优解的速度。对于凸函数（如均方误差 MSE），批量梯度下降的收敛速率取决于学习率 `KaTeX: \eta` 和其他超参数。如果学习率设置得太小，收敛会非常缓慢；如果学习率过大，算法可能会发散。
+
+在凸函数的情况下，批量梯度下降最终会收敛到全局最优解，但可能需要很多迭代。
+
+{.marker-none}
+
+### 随机梯度下降SGD
+
+#### 问题 16：什么是随机梯度下降（Stochastic Gradient Descent, SGD）？
+
+**答案：**
+随机梯度下降（SGD）是梯度下降的一种变体，它与批量梯度下降的不同之处在于每次迭代中仅使用一个随机选择的训练实例，而不是整个训练集来计算梯度。这使得 SGD 比批量梯度下降更快，尤其是在处理大型数据集时（参考 **Figure 4-9: With stochastic gradient descent, each training step is much faster but also much more stochastic than when using batch gradient descent**）。
+
+由于每次更新只基于一个样本，SGD 的梯度变化更加随机（即具有“随机性”），因此损失函数会在下降过程中上下波动，而不是像批量梯度下降那样平稳下降。不过，SGD 最终会接近最优解，但不会完全收敛，而是在最优解附近不断波动。
+
+#### 图解：
+- **Figure 4-9**：![随机梯度下降的迭代过程](../assets/attachment/hands_on_machine_learning/随机梯度下降的迭代过程.png)展示了 SGD 的迭代过程。由于其随机性，SGD 会在下降过程中产生更大的波动，但这也有助于算法跳出局部最小值，最终接近全局最优。
+
+#### 问题 17：如何实现随机梯度下降？
+
+以下代码展示了如何通过 SGD 实现线性回归的训练：
+
+```python
+n_epochs = 50
+t0, t1 = 5, 50  # 学习率调度的超参数
+
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+np.random.seed(42)
+theta = np.random.randn(2, 1)  # 随机初始化
+
+for epoch in range(n_epochs):
+    for i in range(m):  # m 是样本数量
+        random_index = np.random.randint(m)
+        xi = X_b[random_index:random_index+1]
+        yi = y[random_index:random_index+1]
+        gradients = 2 * xi.T @ (xi @ theta - yi)
+        eta = learning_schedule(epoch * m + i)
+        theta = theta - eta * gradients
+```
+
+在此代码中，`KaTeX: \eta` 是学习率，它随着迭代次数逐渐减小，以确保算法最终收敛到全局最小值。每次迭代时从训练集中随机选择一个样本进行梯度更新。
+
+#### 图解：
+- **Figure 4-10**：![随机梯度下降在前20步的迭代过程示意图](../assets/attachment/hands_on_machine_learning/随机梯度下降在前20步的迭代过程示意图.png)展示了 SGD 在前 20 步训练中的过程。可以看到其步伐较不规则，但最终收敛效果不错。
+
+#### 问题 18：SGD 的收敛速度如何？
+
+由于 SGD 每次只使用一个样本计算梯度，它的每一步计算都非常快，特别适合大规模数据集。然而，由于其随机性，损失函数会在最优点附近波动，不会完全收敛。这种波动可以通过逐步减小学习率来控制。这个过程类似于**模拟退火**，通过逐渐降低学习率，算法可以更好地跳出局部最优，并最终接近全局最优。
+
+#### 图解：
+- **Figure 4-10**：展示了 SGD 的训练过程。初期的梯度变化较大，但随着学习率的减小，梯度波动逐渐减小，最终收敛到一个较好的解。
+
+#### 实现 SGD 的 Scikit-Learn 代码：
+
+使用 `SGDRegressor` 类可以方便地在 Scikit-Learn 中实现随机梯度下降：
+
+```python
+from sklearn.linear_model import SGDRegressor
+
+sgd_reg = SGDRegressor(max_iter=1000, tol=1e-5, penalty=None, eta0=0.01,
+                       n_iter_no_change=100, random_state=42)
+sgd_reg.fit(X, y.ravel())
+```
+
+该代码使用了默认的学习调度（与我们前面手动实现的不同），且未使用正则化（`penalty=None`）。在运行 1000 次迭代后，可以得到与正规方程法非常接近的解。
+
+{.marker-none}
+
+### 小批量梯度下降M-BGD {.col-span-2}
+
+#### 问题 19：什么是 Mini-Batch 梯度下降？
+
+**答案：**
+Mini-Batch 梯度下降是一种介于批量梯度下降（Batch Gradient Descent）和随机梯度下降（Stochastic Gradient Descent）之间的变体。它每次计算梯度时，不是使用整个训练集（如批量梯度下降），也不是使用单个实例（如随机梯度下降），而是使用小批量的数据集（称为 mini-batch）。
+
+Mini-Batch 梯度下降的主要优势在于它能够充分利用硬件优化（如 GPU 的矩阵运算优化），使得训练速度比纯粹的随机梯度下降更快，且相比批量梯度下降更不易陷入局部最小值。它通常比随机梯度下降更稳定，且不容易出现参数剧烈波动的情况。
+
+#### 图解：
+  - **Figure 4-11**：![三种梯度下降算法的参数路径](../assets/attachment/hands_on_machine_learning/三种梯度下降算法的参数路径.png)展示了三种梯度下降算法（批量、Mini-Batch 和随机）的参数路径。可以看到：
+  - **批量梯度下降**：平滑地沿着路径逐渐逼近最小值，并最终停留在最优解。
+  - **Mini-Batch 梯度下降**：路径相对较为稳定，靠近最优解，但不会完全收敛。
+  - **随机梯度下降**：由于随机性，路径在最优解附近波动，最终不会稳定在一个点。
+
+#### 表格对比：
+
+以下是关于线性回归的不同算法的对比：
+
+| Algorithm       | Large `m` | Out-of-core support | Large `n` | Hyperparams |
+|-----------------|------------|---------------------|-----------|-------------|
+| Normal equation | Fast       | No                  | Slow      | 0           |
+| SVD             | Fast       | No                  | Slow      | 0           |
+| Batch GD        | Slow       | No                  | Fast      | 2           |
+| Stochastic GD   | Fast       | Yes                 | Fast      | ≥2          |
+| Mini-batch GD   | Fast       | Yes                 | Fast      | ≥2          |
+
+{.show-header .left-text}
+
+- **Large `m`**：算法在处理大量训练实例时的表现。
+- **Out-of-core support**：是否支持在数据集过大以至于无法放入内存时仍能执行训练。
+- **Large `n`**：算法在处理大量特征时的表现。
+- **Hyperparams**：该算法的超参数数量。
+
+{.marker-round}
+
+#### 结论：
+- 无论使用哪种梯度下降算法，最终的模型都非常相似，且预测结果完全相同。
+- Mini-Batch 梯度下降在处理大规模数据集时表现优异，尤其是结合硬件加速（如 GPU）时。
+
+{.marker-none}
+
+### 多项式回归
+
+#### 问题 20：什么是多项式回归（Polynomial Regression）？
+
+**答案：**
+多项式回归是一种用于拟合非线性数据的回归模型。尽管它的名称是“多项式回归”，但实际上它仍然使用线性回归模型。不同之处在于我们将输入特征的多项式项（如二次、三次项等）添加为新的特征，模型仍然是线性的。
+
+#### 生成非线性数据：
+
+为了展示多项式回归，我们生成一些基于二次方程的数据，并添加一些噪声：
+
+```python
+np.random.seed(42)
+m = 100
+X = 6 * np.random.rand(m, 1) - 3
+y = 0.5 * X**2 + X + 2 + np.random.randn(m, 1)
+```
+
+这里的数据基于二次方程 `KaTeX: y = 0.5x^2 + x + 2` 加上噪声。![为了展示多项式回归生成的非线性带噪声数据集](../assets/attachment/hands_on_machine_learning/为了展示多项式回归生成的非线性带噪声数据集.png)图 **Figure 4-12** 展示了这些生成的数据。
+
+#### 问题 21：如何使用 Scikit-Learn 进行多项式回归？
+
+为了将数据转换为多项式特征，我们可以使用 `PolynomialFeatures` 类来扩展我们的训练数据。以二次多项式为例，它会将原始特征的平方作为一个新特征添加到数据集中。
+
+```python
+from sklearn.preprocessing import PolynomialFeatures
+poly_features = PolynomialFeatures(degree=2, include_bias=False)
+X_poly = poly_features.fit_transform(X)
+```
+
+此代码将原始特征 `KaTeX: X` 扩展为二次项，`X_poly` 现在包含了原始特征以及其平方项。
+
+接下来，我们可以使用扩展后的数据集 `X_poly` 进行线性回归训练：
+
+```python
+from sklearn.linear_model import LinearRegression
+lin_reg = LinearRegression()
+lin_reg.fit(X_poly, y)
+```
+
+#### 图解：
+- **Figure 4-13**：![多项式回归模型对生成的非线性带噪声数据的预测曲线](../assets/attachment/hands_on_machine_learning/多项式回归模型对生成的非线性带噪声数据的预测曲线.png)展示了多项式回归模型对扩展后的训练集的拟合情况。红色线是模型的预测，蓝点是原始数据。
+
+#### 结果：
+
+回归模型最终预测的方程如下：
+
+```KaTeX
+\hat{y} = 0.56 x_1^2 + 0.93 x_1 + 1.78
+```
+
+这个结果接近我们生成数据时的真实方程：
+
+```KaTeX
+y = 0.5 x_1^2 + 1.0 x_1 + 2.0 + \text{Gaussian noise}
+```
+
+#### 警告：
+**WARNING**：`PolynomialFeatures(degree=d)` 会将包含 `n` 个特征的数组转换为一个包含 `KaTeX:\frac{(n + d)!}{n! d!}` 个特征的数组。随着特征和多项式阶数的增加，特征的数量可能会迅速爆炸，带来计算负担（组合爆炸问题）。
+
+{.marker-none}
+
+### 模型学习曲线
+
+#### 问题 22：什么是学习曲线（Learning Curves）？
+
+**答案：**
+学习曲线是模型的训练误差和验证误差随训练集大小变化的图表。通过查看学习曲线，可以帮助我们判断模型是否**欠拟合**或**过拟合**。
+
+在高阶多项式回归中，模型往往会比普通线性回归模型更好地拟合训练数据，但也容易过拟合。例如，**Figure 4-14** 显示了一个 300 阶多项式模型相对于一阶线性模型和二阶多项式模型的拟合结果。
+
+#### 图解：
+- **Figure 4-14**：![高阶多项式回归不同阶拟合结果](../assets/attachment/hands_on_machine_learning/高阶多项式回归不同阶拟合结果.png)高阶多项式回归拟合结果展示了三种模型的表现（1阶、2阶和300阶多项式），其中 300 阶多项式由于过拟合，完全拟合了训练数据中的噪声。
+
+#### ↓代码示例：生成学习曲线
+
+我们可以使用 Scikit-Learn 的 `learning_curve` 函数来生成学习曲线。以下是生成线性回归模型的学习曲线的代码：
+
+```python
+from sklearn.model_selection import learning_curve
+
+train_sizes, train_scores, valid_scores = learning_curve(
+    LinearRegression(), X, y, train_sizes=np.linspace(0.01, 1.0, 40), cv=5,
+    scoring="neg_root_mean_squared_error")
+
+train_errors = -train_scores.mean(axis=1)
+valid_errors = -valid_scores.mean(axis=1)
+
+plt.plot(train_sizes, train_errors, "r-+", linewidth=2, label="train")
+plt.plot(train_sizes, valid_errors, "b-", linewidth=3, label="valid")
+plt.show()
+```
+
+该代码生成的学习曲线如下图所示：
+
+- **Figure 4-15**：![线性回归模型的学习曲线](../assets/attachment/hands_on_machine_learning/线性回归模型的学习曲线.png)显示了线性回归模型的学习曲线。训练误差随着数据集增大而增加，验证误差则逐渐下降，但在某个点后稳定。
+
+#### 学习曲线分析：
+
+通过观察 **Figure 4-15**：
+- 模型的训练误差起初较低（因为它能很好地拟合少量数据），但随着训练数据的增加，误差也随之增加。
+- 验证误差起初很高，但随着数据的增加逐渐下降，直到达到一个稳定值。
+
+这说明线性回归模型在此例中表现欠拟合，因为训练误差和验证误差都较高且接近。
+
+#### 提示：
+如果你的模型表现欠拟合，增加更多的训练数据可能无助于提高模型性能，你需要使用更复杂的模型或引入更多有效特征。
+
+#### 问题 23：如何通过学习曲线判断模型的过拟合？
+
+在观察高阶多项式（例如 10 阶多项式）的学习曲线时，可以明显看到模型过拟合的迹象：
+
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+
+polynomial_regression = make_pipeline(
+    PolynomialFeatures(degree=10, include_bias=False),
+    LinearRegression())
+
+train_sizes, train_scores, valid_scores = learning_curve(
+    polynomial_regression, X, y, train_sizes=np.linspace(0.01, 1.0, 40), cv=5,
+    scoring="neg_root_mean_squared_error")
+
+plt.plot(train_sizes, train_errors, "r-+", linewidth=2, label="train")
+plt.plot(train_sizes, valid_errors, "b-", linewidth=3, label="valid")
+plt.show()
+```
+
+#### 图解：
+- **Figure 4-16**：![10阶多项式模型的学习曲线](../assets/attachment/hands_on_machine_learning/10阶多项式模型的学习曲线.png)显示了10阶多项式模型的学习曲线。模型在训练数据上表现得非常好（训练误差很低），但在验证集上表现较差，表明模型过拟合。
+
+#### 偏差-方差权衡（Bias/Variance Trade-Off）：
+
+一个模型的泛化误差可以分为三个部分：
+- **偏差（Bias）**：由于错误假设（如假设数据是线性的而实际上是二次的）导致的误差。高偏差的模型容易欠拟合。
+- **方差（Variance）**：模型对训练数据的小变化过于敏感，导致在不同的数据集上表现不稳定。高方差的模型容易过拟合。
+- **不可避免的误差（Irreducible error）**：由数据本身的噪声引入的误差。
+
+{.marker-round}
+
+
+#### 提示：
+改善过拟合模型的一种方法是增加训练数据，直到验证误差接近训练误差。
+
+{.marker-none}
+
+### 岭回归
+
+#### 问题 24：什么是岭回归（Ridge Regression）？
+
+**答案：**
+岭回归（**Ridge Regression**），也叫作**Tikhonov Regularization**，是线性回归的正则化版本。它通过在损失函数中添加一个正则化项（`KaTeX: \alpha \sum_{i=1}^{n} \theta_i^2`）来限制模型的权重，使得模型在拟合训练数据的同时保持模型参数较小，减少过拟合。
+
+正则化项的作用是惩罚模型的复杂度，控制权重的大小。岭回归的目标是最小化带有正则化项的均方误差（MSE）。当正则化项系数 `KaTeX: \alpha = 0` 时，岭回归退化为普通的线性回归。当 `KaTeX: \alpha` 很大时，模型的所有权重趋近于零，模型变成一条接近于数据均值的平坦线。
+
+
+#### 岭回归的成本函数：
+```KaTeX
+J(\theta) = MSE(\theta) + \alpha \sum_{i=1}^{n} \theta_i^2
+```
+
+这个公式在均方误差（MSE）基础上增加了权重的平方和，`KaTeX: \alpha` 是控制正则化强度的超参数。
+
+#### 问题 25：如何通过闭式解实现岭回归？
+
+与线性回归类似，岭回归也可以通过闭式解求解。方程如下：
+```KaTeX
+\theta = (X^T X + \alpha A)^{-1} X^T y
+```
+
+其中，`KaTeX: A` 是一个 `KaTeX: (n+1) \times (n+1)` 的单位矩阵，除了左上角（对应偏差项 `KaTeX: \theta_0`）是0。
+
+#### 图解：
+- **Figure 4-17**：![不同alpha值下的岭回归示意图](../assets/attachment/hands_on_machine_learning/不同alpha值下的岭回归示意图.png)展示了不同 `KaTeX: \alpha` 值下的岭回归模型。随着 `KaTeX: \alpha` 的增加，模型变得更加平滑，减少了方差但增加了偏差。
+
+#### 代码示例：如何在 Scikit-Learn 中实现岭回归？
+
+我们可以使用 Scikit-Learn 中的 `Ridge` 类实现岭回归。以下是一个简单的例子：
+
+```python
+from sklearn.linear_model import Ridge
+
+ridge_reg = Ridge(alpha=0.1, solver="cholesky")
+ridge_reg.fit(X, y)
+ridge_reg.predict([[1.5]])
+```
+
+这个代码使用闭式解来计算岭回归的参数，并预测值为 `KaTeX: X=1.5` 时的输出。
+
+#### 问题 26：如何使用随机梯度下降实现岭回归？
+
+通过随机梯度下降（SGD），我们也可以实现岭回归：
+
+```python
+from sklearn.linear_model import SGDRegressor
+
+sgd_reg = SGDRegressor(penalty="l2", alpha=0.1 / m, max_iter=1000, tol=None)
+sgd_reg.fit(X, y.ravel())
+sgd_reg.predict([[1.5]])
+```
+
+在这里，`penalty="l2"` 表示我们在损失函数中使用 `L2` 正则化项。
+
+#### 提示：
+- **Tip**：`RidgeCV` 类可以自动调整超参数 `KaTeX: \alpha`，并使用交叉验证来选择最优值，它比使用 `GridSearchCV` 更高效，且专门优化岭回归的计算。
+
+{.marker-none}
+
+### Lasso回归
+
+#### 问题 27：什么是 Lasso 回归（Lasso Regression）？
+
+**答案：**
+Lasso 回归，即**最小绝对收缩和选择算子回归**（**Least absolute shrinkage and selection operator regression**），是一种线性回归的正则化版本。与岭回归类似，Lasso 回归通过在损失函数中添加正则化项来控制模型的复杂度。但是，Lasso 回归使用的是权重向量的 `KaTeX: \ell_1` 范数，而不是 `KaTeX: \ell_2` 范数。
+
+
+#### Lasso 回归的成本函数：
+
+```KaTeX
+J(\theta) = MSE(\theta) + 2 \alpha \sum_{i=1}^{n} |\theta_i|
+```
+
+与岭回归相比，Lasso 回归使用 `KaTeX: \ell_1` 范数对权重进行惩罚。通过这种方式，Lasso 回归有选择性地使某些特征的权重变为零，从而自动执行特征选择，输出一个稀疏模型。
+
+#### 图解：
+- **Figure 4-18**：![不同alpha值下的lasso回归模型示意图](../assets/attachment/hands_on_machine_learning/不同alpha值下的lasso回归模型示意图.png)展示了不同 `KaTeX: \alpha` 值下的 Lasso 模型。随着 `KaTeX: \alpha` 的增加，模型的高阶多项式特征的权重逐渐减少并最终归零。
+
+#### 特性：
+Lasso 回归的一个重要特点是，它倾向于将最不重要特征的权重缩减为零，因此模型会自动进行特征选择。例如，在 **Figure 4-18** 右侧图中，`KaTeX: \alpha = 0.01` 时，高阶多项式特征的所有权重接近零，模型只保留了少数非零特征。
+
+#### 问题 28：Lasso 回归的梯度下降过程是怎样的？
+
+Lasso 回归的损失函数在 `KaTeX: \theta_i = 0` 时不可微分，但梯度下降仍然可以使用次梯度（**subgradient vector**）进行优化：
+
+```KaTeX
+g(\theta, J) = \nabla_\theta MSE(\theta) + 2 \alpha \text{sign}(\theta)
+```
+
+其中 `KaTeX: \text{sign}(\theta_i)` 表示 `KaTeX: \theta_i` 的符号函数，定义如下：
+```KaTeX
+\text{sign}(\theta_i) =
+\begin{cases}
+-1 & \text{if } \theta_i < 0 \\
+0 & \text{if } \theta_i = 0 \\
+1 & \text{if } \theta_i > 0
+\end{cases}
+```
+
+#### 图解：
+- **Figure 4-19**：![Lasso跟Ridge回归的损失轮廓](../assets/attachment/hands_on_machine_learning/Lasso跟Ridge回归的损失轮廓.png)展示了 Lasso 和 Ridge 回归的损失轮廓。Lasso 使用 `KaTeX: \ell_1` 范数，而 Ridge 使用 `KaTeX: \ell_2` 范数。可以看到，Lasso 回归更容易让参数完全降为零，从而实现特征选择。
+
+#### 代码示例：如何在 Scikit-Learn 中实现 Lasso 回归？
+
+我们可以使用 Scikit-Learn 中的 `Lasso` 类来实现 Lasso 回归：
+
+```python
+from sklearn.linear_model import Lasso
+
+lasso_reg = Lasso(alpha=0.1)
+lasso_reg.fit(X, y)
+lasso_reg.predict([[1.5]])
+```
+
+此代码中，`alpha=0.1` 控制正则化强度。
+
+#### 提示：
+- **Tip**：你也可以使用 `SGDRegressor(penalty="l1", alpha=0.1)` 实现 Lasso 回归，通过随机梯度下降优化。
+
+{.marker-none}
+
+### 弹性网络回归
+
+#### 问题 29：什么是弹性网络回归（Elastic Net Regression）？
+
+**答案：**
+弹性网回归（**Elastic Net Regression**）是介于岭回归（Ridge Regression）和Lasso回归之间的一种正则化线性回归。它的正则化项是岭回归和Lasso回归正则化项的加权和。你可以通过 `r` 来控制两者的比例：当 `KaTeX: r = 0` 时，弹性网回归等价于岭回归；当 `KaTeX: r = 1` 时，等价于Lasso回归。
+
+#### 弹性网回归的成本函数：
+```KaTeX
+J(\theta) = MSE(\theta) + 2 \alpha r \sum_{i=1}^{n} |\theta_i| + (1 - r) \alpha \sum_{i=1}^{n} \theta_i^2
+```
+
+在这个公式中，正则化项是Lasso的 `KaTeX: \ell_1` 范数和岭回归的 `KaTeX: \ell_2` 范数的组合，`KaTeX: \alpha` 控制正则化的强度，而 `KaTeX: r` 控制Lasso和岭回归之间的混合比例。
+
+
+#### 使用场景：
+- 如果你怀疑只有少数特征有用，Lasso或弹性网回归是优选，因为它们倾向于将无用特征的权重减为零。
+- 当特征数量大于训练实例数量，或特征强相关时，弹性网通常优于Lasso，因为Lasso在这种情况下表现可能较不稳定。
+
+{.marker-round}
+
+#### 代码示例：如何在 Scikit-Learn 中实现弹性网回归？
+
+我们可以使用 Scikit-Learn 中的 `ElasticNet` 类来实现弹性网回归。以下是一个简单的示例：
+
+```python
+from sklearn.linear_model import ElasticNet
+
+elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5)
+elastic_net.fit(X, y)
+elastic_net.predict([[1.5]])
+```
+
+其中，`l1_ratio` 对应于公式中的混合比例 `KaTeX: r`，`alpha` 控制正则化强度。
+
+#### 结论：
+弹性网回归结合了岭回归和Lasso回归的优点，当需要适度的特征选择并且存在共线性问题时，弹性网是一个不错的选择。
+
+{.marker-none}
+
+### 早停
+
+#### 问题 29：早停（Early Stopping）是什么？
+
+**早停法** 是一种迭代学习算法的正则化方式，例如梯度下降法。具体做法是在验证误差到达最小值时立即停止训练，这样可以防止模型开始过拟合。这种方法称为 **早停法（Early Stopping）**。图 **Figure 4-20** 展示了在一个复杂模型（高次多项式回归模型）的批量梯度下降中的早停训练过程：
+
+- **训练集误差** 和 **验证集误差** 随着训练次数（epochs）增加而变化。
+- 当验证集误差达到最小值时，训练应停止。此时的模型是最佳模型，继续训练可能导致模型过拟合。
+
+#### 图解：
+
+- **图 4-20** ![早停对模型训练的效果示意图](../assets/attachment/hands_on_machine_learning/早停对模型训练的效果示意图.png)解释了早停的效果：当验证误差最小时停止训练，避免了过拟合。
+
+
+#### **公式与代码实现：**
+
+为了实现早停法，需定期在验证集上评估模型，并在验证误差开始增大时停止训练。这里是一个早停的基本实现：
+
+```python
+from copy import deepcopy
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+# 假设已将数据分割为训练集和验证集
+X_train, y_train, X_valid, y_valid = [...], [...] # 数据集
+preprocessing = make_pipeline(
+    PolynomialFeatures(degree=90, include_bias=False),
+    StandardScaler())
+
+X_train_prep = preprocessing.fit_transform(X_train)
+X_valid_prep = preprocessing.transform(X_valid)
+
+sgd_reg = SGDRegressor(penalty=None, eta0=0.002, random_state=42)
+n_epochs = 500
+best_valid_rmse = float('inf')
+best_model = None
+
+for epoch in range(n_epochs):
+    # 使用部分训练集拟合模型
+    sgd_reg.partial_fit(X_train_prep, y_train)
+    
+    # 在验证集上进行预测
+    y_valid_predict = sgd_reg.predict(X_valid_prep)
+    
+    # 计算验证集均方误差
+    val_error = mean_squared_error(y_valid, y_valid_predict, squared=False)
+    
+    # 如果当前模型在验证集上的误差比之前的最佳模型小，保存模型
+    if val_error < best_valid_rmse:
+        best_valid_rmse = val_error
+        best_model = deepcopy(sgd_reg)
+```
+
+**代码分析**：
+- 该代码首先对输入特征进行多项式变换并标准化（适用于训练集和验证集）。
+- `SGDRegressor` 模型没有使用正则化（penalty=None），且学习率为 0.002。
+- 在每个 epoch 中，模型使用 `partial_fit()` 方法逐步进行增量学习，并在验证集上计算均方误差（RMSE）。
+- 如果当前 epoch 产生的验证误差比之前更小，保存当前模型。
+- 该实现通过使用 `deepcopy()` 来复制当前的最佳模型。
+
+{.marker-round}
+
+#### 提示（Tip）：
+
+在使用早停法时，可以在验证误差达到最小值时停止训练并恢复到该时的模型。
+
+### 概率估计
+
+#### 问题30：如何通过逻辑回归估计分类概率？
+
+逻辑回归模型计算输入特征的加权和（包括偏置项），然后输出结果的逻辑函数值（即 `logistic` 函数的值）。公式如下：
+
+```KaTeX
+\hat{p} = h_{\theta}(x) = \sigma(\theta^{\top}x)
+```
+
+其中，`KaTeX:\sigma(t)` 是 S 形的**逻辑函数**，输出在 0 到 1 之间的值。其数学形式如下：
+
+```KaTeX
+\sigma(t) = \frac{1}{1 + e^{-t}}
+```
+
+对应的图解如下：
+
+  - ![Logistic函数图像](../assets/attachment/hands_on_machine_learning/Logistic函数图像.png)
+  - 该图展示了 `KaTeX:\sigma(t)` 的 S 形曲线。横轴表示 `KaTeX:t`，纵轴表示 `KaTeX:\sigma(t)`。可以看到，当 `KaTeX:t` 接近正无穷时， `KaTeX:\sigma(t)` 接近 1；当 `KaTeX:t` 接近负无穷时， `KaTeX:\sigma(t)` 接近 0。
+
+
+
+#### 问题31：如何通过逻辑回归模型进行分类预测？
+
+一旦逻辑回归模型估计出概率 `KaTeX:\hat{p} = h_{\theta}(x)`，可以通过 50% 的概率阈值进行分类预测，判断实例 `KaTeX:x` 是否属于正类。决策规则如下：
+
+```KaTeX
+\hat{y} =
+\begin{cases} 
+0 & \text{if } \hat{p} < 0.5 \\
+1 & \text{if } \hat{p} \geq 0.5 
+\end{cases}
+```
+
+也就是说，当 `KaTeX:\hat{p}` 大于等于 0.5 时，预测为正类 (`KaTeX:1`)；当 `KaTeX:\hat{p}` 小于 0.5 时，预测为负类 (`KaTeX:0`)。
+
+
+#### 问题32：什么是逻辑函数（logit function）？
+
+**Logit** 是得分 `KaTeX:t` 的别称，其定义为逻辑函数的反函数，公式为：
+
+```KaTeX
+\text{logit}(p) = \log\left[\frac{p}{1-p}\right]
+```
+
+Logit 也被称为**对数几率（log-odds）**，它表示正类的估计概率与负类的估计概率的对数比率。
+
+{.marker-none}
+
+### 模型训练与损失函数
+
+#### 问题33：如何定义逻辑回归的损失函数？
+
+在逻辑回归中，训练的目标是找到参数向量 `KaTeX:\theta`，以便使模型对正类 (`KaTeX:y=1`) 的估计概率高，而对负类 (`KaTeX:y=0`) 的估计概率低。这个目标通过代价函数 `KaTeX:c(\theta)` 来捕捉，每个训练实例 `KaTeX:x` 的代价函数如下：
+
+```KaTeX
+c(\theta) =
+\begin{cases}
+-\log(\hat{p}) & \text{if } y = 1 \\
+-\log(1 - \hat{p}) & \text{if } y = 0
+\end{cases}
+```
+
+其中 `KaTeX:\hat{p}` 是模型对实例 `KaTeX:x` 的估计概率。这个代价函数的核心思想是，如果模型的估计与实际标签偏差较大，代价函数的值就会增大，以惩罚错误预测。
+
+
+
+#### 问题34：逻辑回归的整体代价函数（Log Loss）是什么？
+
+整个训练集上的代价函数是所有训练实例的代价函数的平均值。这个整体代价函数称为**对数损失（Log Loss）**，如下公式所示：
+
+```KaTeX
+J(\theta) = -\frac{1}{m} \sum_{i=1}^{m} \left[ y(i) \log(\hat{p}(i)) + (1 - y(i)) \log(1 - \hat{p}(i)) \right]
+```
+
+其中：
+- `KaTeX:m` 表示训练集中的样本数量，
+- `KaTeX:y(i)` 是第 `KaTeX:i` 个样本的标签，
+- `KaTeX:\hat{p}(i)` 是模型对第 `KaTeX:i` 个样本的预测概率。
+
+
+#### 问题35：如何通过梯度下降训练逻辑回归模型？
+
+由于逻辑回归的代价函数是凸函数，因此可以通过梯度下降（或其他优化算法）找到全局最小值。代价函数相对于第 `KaTeX:j` 个模型参数 `KaTeX:\theta_j` 的偏导数为：
+
+```KaTeX
+\frac{\partial}{\partial \theta_j} J(\theta) = \frac{1}{m} \sum_{i=1}^{m} \left[ \sigma(\theta^{\top} x(i)) - y(i) \right] x_j(i)
+```
+
+在这里，`KaTeX:\sigma(\theta^{\top} x(i))` 是对第 `KaTeX:i` 个实例的预测值。这个公式类似于线性回归中的梯度公式，每次计算预测误差，并乘以第 `KaTeX:j` 个特征值 `KaTeX:x_j(i)`。
+
+通过计算所有参数 `KaTeX:\theta` 的偏导数（称为梯度向量），可以将其用于批量梯度下降算法中：
+
+```python
+# 逻辑回归的梯度下降
+for epoch in range(n_epochs):
+    gradients = 1/m * X.T.dot(sigmoid(X.dot(theta)) - y)
+    theta = theta - learning_rate * gradients
+```
+
+- 其中，`sigmoid()` 函数是逻辑函数 `KaTeX:\sigma(t)`。
+
+对于**随机梯度下降**，每次处理一个实例；对于**小批量梯度下降**，每次处理一个小批量的实例。
+
+{.marker-none}
+
+### 模型决策边界
+
+#### 问题36：如何使用鸢尾花数据集来进行逻辑回归分类？
+
+![鸢尾花数据集](../assets/attachment/hands_on_machine_learning/鸢尾花数据集.png)
+**代码**：首先，我们从 `scikit-learn` 中加载 `iris` 数据集，并检查数据：
+
+```python
+from sklearn.datasets import load_iris
+iris = load_iris(as_frame=True)
+print(list(iris))  # 检查数据集中的内容
+
+iris.data.head(3)  # 显示前三行
+```
+
+输出显示：
+
+```
+   sepal length (cm)  sepal width (cm)  petal length (cm)  petal width (cm)
+0                5.1               3.5                1.4               0.2
+1                4.9               3.0                1.4               0.2
+2                4.7               3.2                1.3               0.2
+```
+
+我们要构建一个分类器，识别出花瓣宽度为特征时的 **Iris virginica**。
+
+
+
+#### 问题37：如何训练逻辑回归模型？
+
+**代码**：我们将数据集分为训练集和测试集，并训练逻辑回归模型：
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+X = iris.data[["petal width (cm)"]].values
+y = (iris.target == 2)  # 目标是 'virginica'
+
+# 拆分数据
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+# 训练模型
+log_reg = LogisticRegression(random_state=42)
+log_reg.fit(X_train, y_train)
+```
+
+
+#### 问题38：如何可视化模型的决策边界？
+
+**代码**：我们可视化模型对不同花瓣宽度的概率估计及决策边界：
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 生成新样本花瓣宽度
+X_new = np.linspace(0, 3, 1000).reshape(-1, 1)
+y_proba = log_reg.predict_proba(X_new)
+
+# 绘制概率与决策边界
+plt.plot(X_new, y_proba[:, 0], "b--", linewidth=2, label="Not Iris virginica proba")
+plt.plot(X_new, y_proba[:, 1], "g-", linewidth=2, label="Iris virginica proba")
+
+decision_boundary = X_new[y_proba[:, 1] >= 0.5][0]
+plt.axvline(x=decision_boundary, color='k', linestyle=":", linewidth=2, label="Decision boundary")
+plt.xlabel("Petal width (cm)")
+plt.ylabel("Probability")
+plt.legend()
+plt.show()
+```
+
+
+**图解**：![鸢尾花数据集中花瓣宽度0-3cm的概率估计图](../assets/attachment/hands_on_machine_learning/鸢尾花数据集中花瓣宽度0-3cm的概率估计图.png)这个图展示了模型对花瓣宽度范围从 0 到 3 cm 的花的概率估计。随着花瓣宽度增加，**Iris virginica** 的概率增加，而非 **Iris virginica** 的概率减少。在约 `1.6 cm` 时，模型的决策边界为 50%，即花瓣宽度大于 `1.6 cm` 时模型将预测为 **Iris virginica**。
+
+
+#### 问题39：如何通过逻辑回归模型进行预测？
+
+通过如下代码，检查决策边界并进行预测：
+
+```python
+decision_boundary = log_reg.predict_proba([[1.7], [1.5]])
+print(decision_boundary)
+```
+
+---
+
+#### 问题40：如何可视化基于两个特征的决策边界？
+
+我们也可以基于花瓣长度和花瓣宽度两个特征绘制决策边界：
+
+**代码**：
+
+```python
+X = iris.data[["petal width (cm)", "petal length (cm)"]].values
+y = (iris.target == 2)  # 目标是 'virginica'
+
+log_reg.fit(X, y)
+
+x0, x1 = np.meshgrid(
+    np.linspace(2.9, 7, 500).reshape(-1, 1),
+    np.linspace(0.8, 2.7, 200).reshape(-1, 1),
+)
+
+X_new = np.c_[x0.ravel(), x1.ravel()]
+y_proba = log_reg.predict_proba(X_new)
+
+zz = y_proba[:, 1].reshape(x0.shape)
+
+plt.contour(x0, x1, zz, cmap=plt.cm.brg)
+plt.xlabel("Petal length")
+plt.ylabel("Petal width")
+plt.show()
+```
+
+**图解**：![鸢尾花数据集中模型基于花瓣长度和花瓣宽度的决策边界](../assets/attachment/hands_on_machine_learning/鸢尾花数据集中模型基于花瓣长度和花瓣宽度的决策边界.png)这个图展示了模型基于花瓣长度和花瓣宽度的决策边界。图中展示了模型预测 **Iris virginica** 和非 **Iris virginica** 的概率，虚线表示 50% 的概率决策边界。
+
+### Softmax回归
+
+#### 问题41：什么是 Softmax 回归？它如何与逻辑回归不同？
+
+Softmax 回归是一种多分类的扩展，适用于处理多类分类问题，而逻辑回归通常用于二分类问题。Softmax 回归为每个类别 `KaTeX: k` 计算一个得分 `KaTeX: s_k(x)`，然后通过 Softmax 函数将这些得分转化为每个类别的概率。
+
+#### 问题42：Softmax 回归是如何计算每个类别的得分的？
+
+每个类别 `KaTeX:k` 的得分计算方式与线性回归相似，使用以下公式：
+
+```KaTeX
+s_k(x) = (\theta^{(k)})^{\top} x
+```
+
+其中：
+- `KaTeX: \theta^{(k)}` 是与类别 `KaTeX:k` 相关联的参数向量。
+
+每个类别 `KaTeX:k` 都有自己独立的参数向量 `KaTeX: \theta^{(k)}`，这些向量通常作为矩阵 `KaTeX: \Theta` 的行存储。
+
+
+#### 问题43：Softmax 函数如何将得分转化为概率？
+
+Softmax 函数将每个类别的得分转化为概率，公式如下：
+
+```KaTeX
+\hat{p}^{(k)} = \sigma(s(x))_k = \frac{\exp(s_k(x))}{\sum_{j=1}^{K} \exp(s_j(x))}
+```
+
+其中：
+- `KaTeX: K` 是类别的总数，
+- `KaTeX: s(x)` 是包含所有类别得分的向量，
+- `KaTeX: \sigma(s(x))_k` 是该实例属于类别 `KaTeX:k` 的概率估计。
+
+
+#### 问题44：如何通过 Softmax 回归进行预测？
+
+Softmax 回归通过预测最大概率的类别。也就是说，选择 `KaTeX: k` 使 `KaTeX: s_k(x)` 最大：
+
+```KaTeX
+\hat{y} = \arg\max_k \sigma(s(x))_k = \arg\max_k s_k(x)
+```
+
+这意味着 Softmax 回归会选择得分最高的类别作为预测结果。
+
+
+
+#### 问题45：Softmax 回归的损失函数是什么？
+
+Softmax 回归的损失函数是**交叉熵损失（Cross Entropy Loss）**，其定义为：
+
+```KaTeX
+J(\Theta) = -\frac{1}{m} \sum_{i=1}^{m} \sum_{k=1}^{K} y_k(i) \log(\hat{p}^{(k)}(i))
+```
+
+其中：
+- `KaTeX: y_k(i)` 是第 `KaTeX:i` 个样本是否属于类别 `KaTeX:k` 的标签（1 或 0），
+- `KaTeX: \hat{p}^{(k)}(i)` 是模型对第 `KaTeX:i` 个样本属于类别 `KaTeX:k` 的概率估计。
+
+当类别数 `KaTeX: K = 2` 时，这个损失函数与逻辑回归中的对数损失相同。
+
+
+#### 问题46：如何计算 Softmax 回归的梯度？
+
+Softmax 回归的梯度向量（对于每个类别 `KaTeX:k`）的公式为：
+
+```KaTeX
+\nabla_{\theta^{(k)}} J(\Theta) = \frac{1}{m} \sum_{i=1}^{m} \left( \hat{p}^{(k)}(i) - y_k(i) \right) x(i)
+```
+
+可以使用梯度下降或其他优化算法，通过该梯度来优化参数矩阵 `KaTeX: \Theta`。
+
+
+#### 问题47：如何使用 `scikit-learn` 实现 Softmax 回归？
+
+我们可以使用 `scikit-learn` 中的 `LogisticRegression`，并设置 `multi_class='multinomial'` 以实现 Softmax 回归：
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+# 加载鸢尾花数据集
+X = iris.data[["petal length (cm)", "petal width (cm)"]].values
+y = iris["target"]
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+# 训练 Softmax 回归模型
+softmax_reg = LogisticRegression(multi_class='multinomial', solver='lbfgs', C=30, random_state=42)
+softmax_reg.fit(X_train, y_train)
+```
+
+通过训练的模型，我们可以进行预测：
+
+```python
+# 预测类别
+softmax_reg.predict([[5, 2]])
+
+# 预测每个类别的概率
+softmax_reg.predict_proba([[5, 2]])
+```
+
+#### ↓图解
+
+- ![用Softmax回归对鸢尾花花瓣宽度类别的回归决策边界](../assets/attachment/hands_on_machine_learning/用Softmax回归对鸢尾花花瓣宽度类别的回归决策边界.png)
+
+  该图展示了 Softmax 回归的决策边界，以及每个类别的概率分布。图中的背景颜色代表每个类别的决策区域，曲线表示不同类别的概率分布，如 0.15、0.75 和 0.90 的边界线。注意，图中展示了 3 类鸢尾花数据集的不同分类结果。
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question  | 中文翻译  |
+| --- | --------- | -------- |
+| 1   | Which linear regression training algorithm can you use if you have a training set with millions of features? | 如果你的训练集有数百万个特征，您可以使用哪种线性回归训练算法？ |
+| 2   | Suppose the features in your training set have very different scales. Which algorithms might suffer from this, and how? What can you do about it? | 假设你的训练集中的特征尺度非常不同。哪些算法可能会因此受到影响，如何解决这个问题？ |
+| 3   | Can gradient descent get stuck in a local minimum when training a logistic regression model? | 在训练逻辑回归模型时，梯度下降会陷入局部最小值吗？ |
+| 4   | Do all gradient descent algorithms lead to the same model, provided you let them run long enough? | 如果运行足够长的时间，所有的梯度下降算法都会收敛到相同的模型吗？ |
+| 5   | Suppose you use batch gradient descent and you plot the validation error at every epoch. If you notice that the validation error consistently goes up, what is likely going on? How can you fix this? | 假设你使用批量梯度下降，并在每个周期绘制验证误差。如果你发现验证误差持续上升，可能是什么原因？如何解决？ |
+| 6   | Is it a good idea to stop mini-batch gradient descent immediately when the validation error goes up? | 当验证误差上升时，立即停止小批量梯度下降是个好主意吗？ |
+| 7   | Which gradient descent algorithm (among those we discussed) will reach the vicinity of the optimal solution the fastest? Which will actually converge? How can you make the others converge as well? | 在我们讨论的梯度下降算法中，哪一个能最快到达最优解的附近？哪一个最终会收敛？你如何使其他算法也收敛？ |
+| 8   | Suppose you are using polynomial regression. You plot the learning curves and you notice that there is a large gap between the training error and the validation error. What is happening? What are three ways to solve this? | 假设你正在使用多项式回归。你绘制了学习曲线，并注意到训练误差和验证误差之间有很大的差距。发生了什么？有哪三种方法可以解决这个问题？ |
+| 9   | Suppose you are using ridge regression and you notice that the training error and the validation error are almost equal and fairly high. Would you say that the model suffers from high bias or high variance? Should you increase the regularization hyperparameter alpha or reduce it? | 假设你使用的是岭回归，你注意到训练误差和验证误差几乎相等且都很高。你认为模型是高偏差还是高方差？你应该增加正则化超参数 α 还是减少它？ |
+| 10  | Why would you want to use: (a) Ridge regression instead of plain linear regression? (b) Lasso instead of ridge regression? (c) Elastic net instead of lasso regression? | 你为什么想使用：（a）岭回归而不是普通的线性回归（即没有任何正则化）？（b）Lasso 而不是岭回归？（c）弹性网络而不是 Lasso 回归？ |
+| 11  | Suppose you want to classify pictures as outdoor/indoor and daytime/nighttime. Should you implement two logistic regression classifiers or one softmax regression classifier? | 假设你想将图片分类为室外/室内和白天/夜间。你应该实现两个逻辑回归分类器还是一个 Softmax 回归分类器？ |
+| 12  | Implement batch gradient descent with early stopping for softmax regression without using Scikit-Learn, only NumPy. Use it on a classification task such as the iris dataset. | 使用 NumPy 实现带有提前停止的 Softmax 回归的批量梯度下降，不使用 Scikit-Learn。将其用于分类任务，如鸢尾花数据集。 |
+
+
+{.show-header .left-text}
+
+
+
+
+
+
+
 
 
 
