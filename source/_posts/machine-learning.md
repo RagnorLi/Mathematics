@@ -4360,16 +4360,809 @@ softmax_reg.predict_proba([[5, 2]])
 
 {.show-header .left-text}
 
+## Support Vector Machine
+
+### 线性SVM分类器
+
+#### 问题1：什么是支持向量机（SVM）的基本思想？
+
+SVM 的核心思想是通过找到能够最大化分类间距的线性决策边界来进行分类。SVM 尝试找到一个决策边界，使其不仅可以正确分类样本，还能最大化边界两侧样本点与边界的距离。这种策略称为**大间隔分类（large margin classification）**。
+
+**图解**：
+  - ![大间隔分类器图解](../assets/attachment/hands_on_machine_learning/大间隔分类器图解.png)
+  - 该图展示了不同线性分类器的决策边界。左图中的虚线分类器未能正确分类，右图中的实线分类器是 SVM 模型找到的决策边界。实线不仅正确分类了数据集中的所有样本，还最大化了与最近样本点（称为支持向量）的距离。
 
 
 
+#### 问题2：什么是支持向量？
+
+支持向量是最靠近决策边界的样本点。这些点对模型的决策边界有着关键的影响，新增的样本点（只要不落在决策边界附近）不会影响分类结果。支持向量机的决策边界完全由这些点（支持向量）决定。
+
+**图解**：
+- 支持向量在 ![大间隔分类器图解](../assets/attachment/hands_on_machine_learning/大间隔分类器图解.png)中被圈起来，这些点直接影响到最终的分类边界。
+
+
+#### 问题3：SVM 对特征尺度的敏感性如何？
+
+SVM 对特征的尺度非常敏感。如果不同特征的尺度差异较大，SVM 可能会偏向较大尺度的特征，从而导致模型的性能下降。因此，使用特征缩放（如标准化）是非常必要的。
+
+**图解**：
+  - ![特征缩放对svm的影响](../assets/attachment/hands_on_machine_learning/特征缩放对svm的影响.png)
+  - 左图展示了未经缩放的特征数据，SVM 决策边界几乎水平，无法很好地分离样本。右图展示了经过标准化后的数据，SVM 生成了更合适的分类边界。
+
+**解决方案**：
+- 使用 `scikit-learn` 中的 `StandardScaler` 进行特征缩放。
+
+```python
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+
+# 使用 SVM 并结合特征缩放
+svm_clf = Pipeline([
+    ("scaler", StandardScaler()),
+    ("linear_svc", SVC(kernel="linear", C=1))
+])
+
+svm_clf.fit(X_train, y_train)
+```
+
+
+#### 问题4：SVM 如何处理线性不可分数据？
+
+对于线性不可分的数据，SVM 可以通过引入**软间隔**来允许某些样本违反间隔约束。超参数 `C` 控制软间隔的大小：
+- 较大的 `C` 值会减少软间隔，严格限制误差，但可能导致过拟合。
+- 较小的 `C` 值允许更多误差，但更具泛化性。
+
+{.marker-round}
+
+### 软间隔分类器
+
+
+#### 问题1：什么是硬间隔分类？有哪些问题？
+
+**硬间隔分类（Hard Margin Classification）** 是一种严格要求所有样本都在街道（即间隔）之外并位于正确一侧的分类方法。然而，硬间隔分类有两个主要问题：
+1. **仅适用于线性可分的数据**，无法处理复杂的数据集。
+2. **对异常值非常敏感**，异常值会严重影响决策边界。
+
+**图解**：
+  - ![硬间隔分类器对异常值的敏感性](../assets/attachment/hands_on_machine_learning/硬间隔分类器对异常值的敏感性.png)图展示了硬间隔分类对异常值的敏感性。左侧图中，由于有一个异常值，决策边界无法正常工作；右侧图中的决策边界已被异常值严重影响，可能无法很好地推广到新数据。
+
+
+#### 问题2：什么是软间隔分类？
+
+为了避免硬间隔分类的问题，SVM 引入了**软间隔分类（Soft Margin Classification）**。其目标是在尽量保持大间隔的同时，允许部分样本违背间隔约束（即**间隔违规**，指落在街道中间甚至错误的一侧的样本点）。
+
+通过调整超参数 `C`，可以控制模型对违例样本的容忍度：
+- 较小的 `C` 值：更多样本允许违例，间隔更大，防止过拟合，但可能欠拟合。
+- 较大的 `C` 值：更少样本允许违例，模型会尽量减少错误，但可能过拟合。
+
+
+#### 问题3：如何使用 `scikit-learn` 实现软间隔分类？
+
+我们可以通过设置 `C` 值，使用 `LinearSVC` 实现软间隔分类。以下代码展示了如何通过 `Pipeline` 同时进行特征缩放和训练 SVM：
+
+```python
+from sklearn.datasets import load_iris
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+
+# 加载鸢尾花数据集
+iris = load_iris(as_frame=True)
+X = iris.data[["petal length (cm)", "petal width (cm)"]].values
+y = (iris.target == 2)  # 目标是 Iris virginica
+
+# 使用管道进行标准化和 SVM 训练
+svm_clf = make_pipeline(StandardScaler(), LinearSVC(C=1, random_state=42))
+svm_clf.fit(X, y)
+```
+
+使用训练好的模型进行预测：
+
+```python
+X_new = [[5.5, 1.7], [5.0, 1.5]]
+svm_clf.predict(X_new)
+```
+
+**图解**：
+  - ![大间隔分类器图解](../assets/attachment/hands_on_machine_learning/大间隔分类器图解.png)图展示了不同 `C` 值下的决策边界。左图的 `C=1` 模型允许更多的间隔违规，而右图的 `C=100` 模型则更严格，减少了间隔违规。
+
+
+#### 问题4：如何解释 SVM 模型的决策结果？
+
+通过 SVM 模型的 `decision_function` 方法，可以获得每个样本点到决策边界的带符号距离：
+
+```python
+svm_clf.decision_function(X_new)
+```
+
+结果中的正值表示样本在决策边界的正确一侧，负值表示错误一侧。
+
+
+#### 提示
+
+如果你的 SVM 模型过拟合，你可以通过降低 `C` 来进行正则化。
+
+{.marker-none}
+
+### 非线性支持向量机
+
+#### 问题1：如何使用 SVM 处理非线性数据集？
+
+虽然线性 SVM 分类器高效且效果好，但很多数据集并非线性可分。在处理非线性数据集时，一种方法是通过添加更多特征来使其线性可分，例如多项式特征。
+
+例如，在 **Figure 5-5** 中，![线性不可分数据通过添加一个新的特征变为线性可分](../assets/attachment/hands_on_machine_learning/线性不可分数据通过添加一个新的特征变为线性可分.png)左图仅包含一个特征 `KaTeX: x_1`，数据集不是线性可分的；而右图通过添加一个新的特征 `KaTeX: x_2 = (x_1)^2`，结果数据集变成了线性可分。
+
+
+#### 问题2：如何通过 `scikit-learn` 实现多项式特征的 SVM 分类？
+
+我们可以通过 `PolynomialFeatures` 生成多项式特征，接着使用标准化和 `LinearSVC` 来实现 SVM 分类。下面的代码展示了如何实现这一过程，并应用于经典的“月亮”数据集：
+
+```python
+from sklearn.datasets import make_moons
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+from sklearn.svm import LinearSVC
+from sklearn.preprocessing import StandardScaler
+
+# 生成非线性数据集
+X, y = make_moons(n_samples=100, noise=0.15, random_state=42)
+
+# 创建带有多项式特征的SVM分类器
+polynomial_svm_clf = make_pipeline(
+    PolynomialFeatures(degree=3),
+    StandardScaler(),
+    LinearSVC(C=10, max_iter=10000, random_state=42)
+)
+
+# 训练模型
+polynomial_svm_clf.fit(X, y)
+```
+
+
+#### 问题3：如何可视化非线性 SVM 分类的决策边界？
+
+使用上述模型进行训练后，可以可视化非线性决策边界。**Figure 5-6** 展示了 SVM 分类器使用多项式特征后的决策边界，该分类器可以很好地处理非线性数据。
+
+**图解**：
+  - ![通过添加多项式特征SVM实现对非线性数据生成决策边界](../assets/attachment/hands_on_machine_learning/通过添加多项式特征SVM实现对非线性数据生成决策边界.png)
+  - 图中的数据点为月亮形状的分布，通过添加多项式特征，SVM 能够划分数据并生成非线性决策边界。
+
+### 多项式核
+
+
+#### 问题1：为什么使用多项式核而不是直接添加多项式特征？
+
+虽然直接添加多项式特征可以帮助处理非线性数据，但这种方法可能导致特征数量迅速增长，尤其是当多项式阶数较高时。为了解决这个问题，SVM 可以使用一种数学技巧，称为**核技巧（kernel trick）**。核技巧可以在不实际添加高维特征的情况下，获得与添加高维多项式特征相同的效果。
 
 
 
+#### 问题2：如何在 SVM 中使用多项式核？
+
+通过在 `scikit-learn` 的 `SVC` 中指定 `kernel="poly"`，我们可以使用多项式核。以下代码展示了如何使用三阶多项式核在“月亮”数据集上训练 SVM：
+
+```python
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+# 使用多项式核的SVM分类器
+poly_kernel_svm_clf = make_pipeline(
+    StandardScaler(),
+    SVC(kernel="poly", degree=3, coef0=1, C=5)
+)
+
+# 训练模型
+poly_kernel_svm_clf.fit(X, y)
+```
+
+**解释**：
+- `degree=3`：表示使用三阶多项式核。
+- `coef0`：控制模型如何受到高阶与低阶特征的影响。较大的 `coef0` 值增加高阶特征的影响。
+- `C`：正则化参数，较小的 `C` 值允许更多的间隔违规。
+
+{.marker-round}
+
+#### 问题3：如何可视化不同多项式核的效果？
+
+**图解**：
+  - ![带多项式核的SVM分类器](../assets/attachment/hands_on_machine_learning/带多项式核的SVM分类器.png)左图使用三阶多项式核，右图使用十阶多项式核。较高阶的多项式核能够捕捉到更复杂的决策边界，但也可能导致过拟合。
+
+通过调整 `degree` 和 `coef0`，可以控制 SVM 如何处理复杂的非线性数据。如果模型过拟合，可以减小 `degree`；如果模型欠拟合，可以增加 `degree`。
+
+
+#### 提示
+虽然超参数通常通过随机搜索等自动调整，但了解每个超参数的作用有助于缩小搜索范围。
+
+{.marker-none}
+
+### 相似度特征
+
+#### 问题1：什么是相似度特征？如何在处理非线性问题时使用？
+
+相似度特征是一种用于处理非线性问题的技巧。通过使用相似度函数来计算每个实例与某个特定“标记点”（landmark）的相似度，可以将特征空间转换为一个线性可分的空间。例如，可以使用高斯径向基函数（Gaussian RBF）来计算每个实例到标记点的相似度。
 
 
 
+#### 问题2：如何定义相似度函数？
 
+相似度函数可以通过高斯径向基函数定义：
+
+```KaTeX
+\phi(x) = \exp(-\gamma \times ||x - \text{landmark}||^2)
+```
+
+- `KaTeX: \gamma` 是一个控制相似度的超参数，值越大，相似度衰减得越快。
+- `KaTeX: ||x - \text{landmark}||` 表示样本 `KaTeX: x` 与标记点的距离。
+
+例如，在图中的示例中，假设有两个标记点 `KaTeX: x_1 = -2` 和 `KaTeX: x_2 = 1`，然后使用 `KaTeX: \gamma = 0.3` 来定义相似度函数。对于样本点 `KaTeX: x = -1`，可以计算出相似度特征 `KaTeX: x_2` 和 `KaTeX: x_3` 的值。
+
+
+#### 问题3：如何通过相似度特征将非线性数据转换为线性可分？
+
+通过计算相似度特征，我们可以将非线性可分的数据转换为线性可分。例如，在 **Figure 5-8** 中，左图展示了数据的原始分布，右图展示了通过计算相似度特征后数据的分布。新的数据集变得线性可分。
+
+**图解**：
+  - ![使用高斯RBF后的相似特征](../assets/attachment/hands_on_machine_learning/使用高斯RBF后的相似特征.png)
+  - 左图展示了原始数据的分布，其中相似度特征 `KaTeX: \phi(x_1)` 和 `KaTeX: \phi(x_2)` 基于与标记点的距离计算得出。
+  - 右图展示了通过计算相似度特征后，数据在新特征空间中的分布，现在数据线性可分。
+
+
+#### 问题4：如何选择标记点？
+
+选择标记点的最简单方法是在数据集中每个实例的位置创建一个标记点。这将会创建与数据集实例一样多的特征，确保转换后的训练集线性可分。然而，这种方法的缺点是，当训练集非常大时，特征的数量也会变得非常大，可能导致计算成本的急剧上升。
+
+{.marker-none}
+
+### 高斯径向基核函数
+
+#### 问题 1：什么是高斯径向基核函数？为什么在非线性问题中有用？
+
+**解答**：
+高斯径向基核函数（Gaussian RBF Kernel）是一种常用的核函数，用于解决非线性分类问题。它通过将低维数据映射到高维空间，使得非线性问题在新的特征空间中变得线性可分。它使用的是核技巧（kernel trick），可以在不显式计算所有高维特征的情况下，获得类似于高维特征的效果。
+
+**公式**：RBF 核的公式如下：
+```KaTeX
+\text{RBF}(x, \text{landmark}) = \exp\left(-\gamma \cdot \|x - \text{landmark}\|^2\right)
+```
+- `KaTeX: \gamma` 是一个超参数，控制相似度的衰减速度，值越大，样本对模型的影响范围越小。
+
+
+
+#### 问题 2：如何使用 `scikit-learn` 实现带有 RBF 核函数的支持向量机？
+
+**解答**：
+你可以通过在 `SVC` 中指定 `kernel="rbf"` 来使用高斯核函数。以下是使用 `scikit-learn` 的代码示例：
+```python
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+# 使用RBF核的SVM分类器
+rbf_kernel_svm_clf = make_pipeline(
+    StandardScaler(),
+    SVC(kernel="rbf", gamma=5, C=0.001)
+)
+
+# 训练模型
+rbf_kernel_svm_clf.fit(X, y)
+```
+该代码实现了使用高斯 RBF 核的支持向量机分类器，并且对特征进行了标准化处理。
+
+
+#### 问题 3：`gamma` 和 `C` 这两个超参数如何影响 SVM 的分类效果？
+
+**解答**：
+- `gamma` 控制的是高斯函数的宽度，影响每个样本点对模型决策的作用范围。较大的 `gamma` 值会使得高斯曲线变得更窄，样本点的影响范围减小，模型的决策边界变得更复杂，可能会过拟合；而较小的 `gamma` 值会使影响范围更大，决策边界更加平滑，可能会欠拟合。
+
+- `C` 控制的是模型对误分类样本的容忍度。较小的 `C` 值允许更多的误分类，从而提高模型的泛化能力；而较大的 `C` 值会强迫模型尽量减少分类错误，但可能会过拟合。
+
+{.marker-round}
+
+#### 问题 4：高斯 RBF 核在不同参数下的效果如何？
+
+**解答**：
+通过调整 `gamma` 和 `C`，可以看到模型的决策边界如何变化。**Figure 5-9** 展示了在不同参数设置下，高斯 RBF 核的效果：
+
+- 左上角：`gamma=0.1, C=0.001`，模型的决策边界较为平滑，可能存在欠拟合。
+- 右上角：`gamma=0.1, C=1000`，较高的 `C` 值让模型的决策边界更加复杂，可能会过拟合。
+- 左下角：`gamma=5, C=0.001`，较大的 `gamma` 值使得模型在样本点附近变得更加敏感，决策边界复杂。
+- 右下角：`gamma=5, C=1000`，此设置下模型极为复杂，可能会导致严重的过拟合。
+
+{.marker-round}
+
+![不同参数设置下高斯RBF核的效果](../assets/attachment/hands_on_machine_learning/不同参数设置下高斯RBF核的效果.png)该图展示了不同 `gamma` 和 `C` 值对分类边界的影响，图中显示了不同的模型表现如何变化。
+
+
+#### 问题 5：如何选择合适的核函数？
+
+**解答**：
+选择核函数时的经验法则是先从线性核函数（`LinearSVC`）开始，如果数据集的非线性结构较为复杂，再尝试非线性核，如高斯 RBF 核。在处理特定类型的数据（如文本或序列数据）时，也可以考虑使用专门的核函数（如字符串核）。具体选择取决于数据集的结构和任务的需求。
+
+**TIP**：对于许多数据集，RBF 核是默认的选择，它能够很好地处理大部分非线性问题。你可以先进行超参数搜索（如 `GridSearchCV`）来自动选择合适的参数。
+
+
+#### 总结
+
+高斯 RBF 核在处理非线性数据时非常有用，它通过 `gamma` 和 `C` 参数来控制模型的复杂度。通过合适的参数调节，能够有效避免过拟合和欠拟合。该核函数能够在大多数非线性问题上表现良好，是支持向量机中常用的选择之一。
+
+{.marker-none}
+
+### SVM类别与计算复杂度 {.col-span-2}
+
+#### 问题1：在 `scikit-learn` 中有哪些支持向量机（SVM）的分类器？
+
+**解答**：在 `scikit-learn` 中，主要有三类用于 SVM 的分类器：
+- `KaTeX: \text{LinearSVC}`
+- `KaTeX: \text{SVC}`
+- `KaTeX: \text{SGDClassifier}`
+
+{.marker-round}
+这些分类器根据不同的场景和需求有不同的特点和计算复杂度。下文会详细介绍每种分类器的特点。
+
+
+
+#### 问题2：`LinearSVC` 的计算复杂度是什么？它的主要应用场景是什么？
+
+**解答**：`KaTeX: \text{LinearSVC}` 基于 `liblinear` 库实现，支持线性 SVM 分类器，它不支持核技巧（kernel trick），因此只能用于线性可分的问题。
+
+- **计算复杂度**：`KaTeX: \text{LinearSVC}` 的训练时间复杂度大约为 `KaTeX: O(m \times n)`，其中 `KaTeX: m` 是训练样本的数量，`KaTeX: n` 是特征数量。
+- **应用场景**：由于其计算复杂度较低，它非常适用于大规模线性分类问题。
+- **超参数**：`KaTeX: \text{LinearSVC}` 中的容差超参数 `KaTeX: \epsilon` 可以通过 `tol` 来控制分类器的精度要求。如果需要更高的精度，算法可能需要更多的时间。
+
+{.marker-round}
+
+#### 问题3：`SVC` 类支持核技巧吗？它的计算复杂度如何？
+
+**解答**：`KaTeX: \text{SVC}` 基于 `libsvm` 库实现，支持核技巧，因此可以处理非线性分类任务。然而，它的计算复杂度相对较高。
+
+- **计算复杂度**：`KaTeX: \text{SVC}` 的时间复杂度介于 `KaTeX: O(m^2 \times n)` 到 `KaTeX: O(m^3 \times n)` 之间。对于大规模数据集来说，训练时间可能会变得非常长，特别是当 `KaTeX: m` 很大时。
+- **应用场景**：`KaTeX: \text{SVC}` 非常适合中小型的非线性训练集，尤其在样本数量相对少但特征维度高的情况下。它能够很好地处理非线性问题。
+
+{.marker-round}
+
+#### 问题4：`SGDClassifier` 如何使用随机梯度下降来进行大规模分类？
+
+**解答**：`KaTeX: \text{SGDClassifier}` 使用随机梯度下降（Stochastic Gradient Descent, SGD）进行训练，并且可以支持大规模线性分类。
+
+- **计算复杂度**：其时间复杂度为 `KaTeX: O(m \times n)`，非常适合处理大规模数据集。
+- **应用场景**：`KaTeX: \text{SGDClassifier}` 支持增量学习，因此特别适合处理无法完全加载进内存的大型数据集。通过逐步学习，它可以在每次仅加载一部分数据的情况下完成模型训练。
+
+{.marker-round}
+
+#### 问题5：`LinearSVC`、`SVC` 和 `SGDClassifier` 之间有哪些关键区别？
+
+**解答**：
+下表展示了 `scikit-learn` 中这三种支持向量机的关键对比：
+
+| Class           | Time complexity       | Out-of-core support | Scaling required | Kernel trick |
+| --------------- | --------------------- | ------------------- | ---------------- | ------------ |
+| **LinearSVC**    | `KaTeX: O(m \times n)`        | No                  | Yes              | No           |
+| **SVC**          | `KaTeX: O(m^2 \times n)` to `KaTeX: O(m^3 \times n)` | No | Yes | Yes |
+| **SGDClassifier**| `KaTeX: O(m \times n)`        | Yes                 | Yes              | No           |
+
+{.show-header .left-text}
+
+**说明**：
+- **Time complexity**（时间复杂度）：`KaTeX: \text{SVC}` 的复杂度显著高于 `KaTeX: \text{LinearSVC}` 和 `KaTeX: \text{SGDClassifier}`，因此在大规模数据集上 `KaTeX: \text{SVC}` 的训练速度较慢。
+- **Out-of-core support**（支持增量学习）：`KaTeX: \text{SGDClassifier}` 支持增量学习，非常适合无法加载到内存的大型数据集。
+- **Scaling required**（是否需要特征缩放）：所有的算法在应用之前都需要特征缩放。
+- **Kernel trick**（支持核技巧）：只有 `KaTeX: \text{SVC}` 支持核技巧，因此可以处理非线性问题。
+
+{.marker-round}
+
+#### 总结：
+`KaTeX: \text{LinearSVC}` 适用于大规模线性问题，而 `KaTeX: \text{SVC}` 支持非线性分类但计算复杂度较高。`KaTeX: \text{SGDClassifier}` 使用随机梯度下降，支持大规模数据的增量学习。选择合适的分类器应根据数据规模、是否需要处理非线性问题以及计算资源的限制来决定。
+
+{.marker-none}
+
+### SVM回归
+
+#### 问题 1：SVM 回归与 SVM 分类的区别是什么？
+
+**解答**：
+在 **SVM 回归** 中，目标不是找到分隔两类数据的最大边界，而是找到一个**最大宽度的街道**，使得尽可能多的样本点**落在街道内**，同时限制超出街道的点的数量（即，**边界违规**）。
+
+SVM 回归的主要区别在于：
+- **分类任务**：SVM 尝试找到分隔类的最大边界。
+- **回归任务**：SVM 尝试找到能包含尽量多样本的最大“街道”。
+
+{.marker-round}
+这个“街道”的宽度由超参数 `KaTeX: \epsilon` 控制。宽度越大，模型越容忍样本点在“街道”外的位置。
+
+
+
+#### 问题 2：如何通过 SVM 实现线性回归？如何控制模型的边界宽度？
+
+**解答**：
+SVM 回归可以通过调节 `KaTeX: \epsilon` 来控制“街道”的宽度。`KaTeX: \epsilon` 的值越大，模型允许更多的样本点超出边界，而不会对这些样本点进行惩罚。
+
+**图解**：
+  - ![SVM回归示意图](../assets/attachment/hands_on_machine_learning/SVM回归示意图.png)
+  - 左图：`KaTeX: \epsilon=0.5`，街道较窄，更多样本落在街道外。
+  - 右图：`KaTeX: \epsilon=1.2`，街道较宽，更多样本被容忍在街道内。
+
+{.marker-round}
+
+你可以通过以下代码来实现线性 SVM 回归：
+
+```python
+from sklearn.svm import LinearSVR
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+X, y = [...]  # 线性数据集
+svm_reg = make_pipeline(StandardScaler(),
+                        LinearSVR(epsilon=0.5, random_state=42))
+svm_reg.fit(X, y)
+```
+
+**解释**：
+- `LinearSVR` 用于线性回归。
+- `epsilon=0.5` 控制“街道”的宽度。
+
+{.marker-round}
+
+#### 问题 3：如何通过 SVM 处理非线性回归问题？
+
+**解答**：
+要解决非线性回归问题，可以使用**核技巧**（kernel trick）将低维输入映射到高维空间。通过 `SVR` 类可以应用不同的核，例如多项式核或径向基核（RBF）。
+
+**图解**：
+  - ![使用二级多项式核的SVM回归](../assets/attachment/hands_on_machine_learning/使用二级多项式核的SVM回归.png)
+  - 左图：`degree=2, C=0.01`，小的 `C` 值增加正则化，使得决策边界更平滑。
+  - 右图：`degree=2, C=100`，大的 `C` 值使得模型对训练数据拟合得更紧密，减少了正则化。
+
+以下代码展示了如何使用 `SVR` 类实现带多项式核的非线性回归：
+
+```python
+from sklearn.svm import SVR
+
+X, y = [...]  # 非线性数据集
+svm_poly_reg = make_pipeline(StandardScaler(),
+                             SVR(kernel="poly", degree=2, C=0.01, epsilon=0.1))
+svm_poly_reg.fit(X, y)
+```
+
+**解释**：
+- `kernel="poly"` 表示使用多项式核。
+- `degree=2` 指定使用二次多项式核。
+- `C=0.01` 控制正则化的强度，值越小正则化越强。
+
+{.marker-round}
+
+#### 问题 4：`LinearSVR` 和 `SVR` 之间有什么区别？
+
+**解答**：
+- **`LinearSVR`**：用于线性回归，时间复杂度为 `KaTeX: O(m \times n)`，它适合处理大规模数据集，并且在数据集增大的时候依然能保持较好的性能。
+- **`SVR`**：支持核技巧（例如多项式核或 RBF 核），可以处理非线性回归问题。由于核技巧的计算开销较大，`SVR` 在面对大规模数据集时会变得非常慢。
+
+{.marker-round}
+
+总结来说：
+- 如果数据是线性的，选择 `LinearSVR`。
+- 如果数据是非线性的，使用 `SVR` 并选择合适的核。
+
+{.marker-round}
+
+#### 总结：
+
+- 在 SVM 回归中，通过调节 `KaTeX: \epsilon` 来控制“街道”的宽度。
+- 线性回归使用 `LinearSVR`，而非线性回归可以通过 `SVR` 和核技巧来实现。
+- 正则化参数 `KaTeX: C` 控制模型对训练数据的拟合程度，较小的 `KaTeX: C` 值增强正则化，较大的 `KaTeX: C` 值减弱正则化。
+
+{.marker-round}
+
+### 线性SVM分类器的内部机制
+
+#### 问题 1：线性 SVM 如何进行预测？
+
+**解答**：线性 SVM 分类器通过计算**决策函数**来预测新实例的类别。假设给定实例 `KaTeX: \mathbf{x}`，SVM 首先计算以下决策函数：
+
+```KaTeX
+\hat{y} = \mathbf{\theta}^\top \mathbf{x} = \theta_0 x_0 + \theta_1 x_1 + \cdots + \theta_n x_n
+```
+
+其中 `KaTeX: x_0` 是偏差特征（恒为 1），`KaTeX: \theta_0` 是偏差项。如果该值为正，预测结果为正类（`KaTeX: \hat{y} = 1`）；否则，预测结果为负类（`KaTeX: \hat{y} = 0`）。这与**逻辑回归**的原理类似。
+
+
+
+#### 问题 2：SVM 如何训练以找到最优的权重向量 `KaTeX: \mathbf{w}` 和偏差项 `KaTeX: b`？
+
+**解答**：
+训练 SVM 的目标是找到一个权重向量 `KaTeX: \mathbf{w}` 和偏差项 `KaTeX: b`，使得分类的“街道”尽可能宽，且限制边界违例的数量。为了增大街道的宽度，我们需要使 `KaTeX: \mathbf{w}` 尽量小。
+
+**图解**：
+  - ![SVM权重向量较大vs较小示意图](../assets/attachment/hands_on_machine_learning/SVM权重向量较大vs较小示意图.png)
+  - 左图：`KaTeX: w_1 = 1`，权重较大，街道较窄。
+  - 右图：`KaTeX: w_1 = 0.5`，权重较小，街道较宽。
+
+
+
+#### 问题 3：如何避免边界违例？硬边界 SVM 的目标函数如何表示？
+
+**解答**：
+为了避免边界违例，我们需要确保：
+- 对于所有正类样本，决策函数的结果大于 1；
+- 对于所有负类样本，决策函数的结果小于 -1。
+
+可以将其表达为以下约束条件：
+
+```KaTeX
+t^{(i)} (\mathbf{w}^\top \mathbf{x}^{(i)} + b) \geq 1
+```
+
+其中 `KaTeX: t^{(i)}` 为样本 `i` 的类别（正类时 `KaTeX: t^{(i)} = 1`，负类时 `KaTeX: t^{(i)} = -1`）。
+
+硬边界 SVM 的目标函数可以表示为一个**带约束的优化问题**。
+
+```KaTeX
+\min_{\mathbf{w}, b} \frac{1}{2} \mathbf{w}^\top \mathbf{w}
+```
+
+约束条件为：
+
+```KaTeX
+t^{(i)} (\mathbf{w}^\top \mathbf{x}^{(i)} + b) \geq 1 \quad \text{for} \quad i = 1, 2, \dots, m
+```
+
+
+
+#### 问题 4：什么是软边界 SVM？如何通过引入松弛变量解决边界违例？
+
+**解答**：
+在软边界 SVM 中，我们通过引入一个松弛变量 `KaTeX: \zeta^{(i)}`，使得样本点可以允许违例。`KaTeX: \zeta^{(i)} \geq 0` 表示第 `i` 个样本允许违例的程度。
+
+软边界 SVM 的优化目标变为：
+
+```KaTeX
+\min_{\mathbf{w}, b, \zeta} \frac{1}{2} \mathbf{w}^\top \mathbf{w} + C \sum_{i=1}^{m} \zeta^{(i)}
+```
+
+约束条件为：
+
+```KaTeX
+t^{(i)} (\mathbf{w}^\top \mathbf{x}^{(i)} + b) \geq 1 - \zeta^{(i)} \quad \text{and} \quad \zeta^{(i)} \geq 0 \quad \text{for} \quad i = 1, 2, \dots, m
+```
+
+
+
+#### 问题 5：SVM 优化中什么是 hinge loss 和 squared hinge loss？
+
+**解答**：
+**Hinge Loss** 是常用于 SVM 的损失函数，用来衡量样本点与决策边界之间的距离。对于一个正类样本 `KaTeX: t = 1`，其 hinge loss 定义为：
+
+```KaTeX
+\text{Hinge loss} = \max(0, 1 - s t)
+```
+
+其中 `KaTeX: s = \mathbf{w}^\top \mathbf{x} + b` 为决策函数的输出。
+
+**图解**：
+  - ![合页损失函数vs平方合页损失函数](../assets/attachment/hands_on_machine_learning/合页损失函数vs平方合页损失函数.png)
+  - 左图展示了标准 hinge loss。
+  - 右图展示了 squared hinge loss，其对边界外的样本惩罚较大。
+
+**Squared Hinge Loss** 的损失函数定义为：
+
+```KaTeX
+\text{Squared hinge loss} = \max(0, 1 - s t)^2
+```
+
+与标准 hinge loss 相比，**squared hinge loss** 更加敏感于异常值。
+
+
+
+#### 总结：
+- 线性 SVM 分类器通过计算决策函数 `KaTeX: \mathbf{w}^\top \mathbf{x} + b` 来预测类别。
+- 训练 SVM 的目标是最大化边界的宽度，并最小化边界违例。
+- 硬边界 SVM 通过严格的约束实现，而软边界 SVM 引入松弛变量来允许边界违例。
+- Hinge loss 和 squared hinge loss 是常用于 SVM 优化的损失函数。
+
+{.marker-round}
+
+### SVM中使用对偶问题
+
+#### 问题 1：什么是对偶问题？为什么在 SVM 中使用对偶问题？
+
+**解答**：
+在约束优化问题中，原始问题（**primal problem**）可以通过构造一个不同但密切相关的问题，称为**对偶问题**（**dual problem**）。对偶问题的解通常为原始问题的下界，在某些条件下，对偶问题的解与原始问题的解相同。幸运的是，SVM 的问题满足这些条件，因此可以选择解决原始问题或对偶问题，两者会得到相同的解。
+
+SVM 的对偶形式更容易求解，尤其是当训练实例的数量少于特征数量时。此外，对偶问题允许我们使用**核技巧**（kernel trick），这在原始问题中是无法实现的。
+
+
+
+#### 问题 2：SVM 的对偶问题如何表达？
+
+**解答**：
+线性 SVM 的对偶问题目标函数如下：
+
+```KaTeX
+\min_{\alpha} \frac{1}{2} \sum_{i=1}^{m} \sum_{j=1}^{m} \alpha(i) \alpha(j) t(i)t(j)\mathbf{x}(i)^\top \mathbf{x}(j) - \sum_{i=1}^{m} \alpha(i)
+```
+
+约束条件为：
+
+```KaTeX
+\alpha(i) \geq 0 \quad \text{for all} \quad i = 1, 2, \dots, m
+```
+
+并且：
+
+```KaTeX
+\sum_{i=1}^{m} \alpha(i)t(i) = 0
+```
+
+其中 `KaTeX: \alpha(i)` 是对偶变量。
+
+
+
+#### 问题 3：从对偶解如何得到原始问题的解？
+
+**解答**：
+一旦找到能最小化上述对偶问题的向量 `KaTeX: \hat{\alpha}`（通常通过 QP 解算器实现），可以使用以下公式计算原始问题中的 `KaTeX: \hat{\mathbf{w}}` 和 `KaTeX: \hat{b}`：
+
+```KaTeX
+\hat{\mathbf{w}} = \sum_{i=1}^{m} \hat{\alpha}(i) t(i) \mathbf{x}(i)
+```
+
+`KaTeX: \hat{b}` 则由支持向量 `KaTeX: \mathbf{x}^{(i)}` 求得，满足 `KaTeX: \hat{\alpha}(i) > 0`。公式如下：
+
+```KaTeX
+\hat{b} = \frac{1}{n_s} \sum_{i=1}^{m} t(i) - \mathbf{w}^\top \mathbf{x}^{(i)}
+```
+
+其中 `KaTeX: n_s` 是支持向量的数量。
+
+
+
+#### 问题 4：为什么对偶问题比原始问题更容易解决？
+
+**解答**：
+对偶问题在训练实例数量（`KaTeX: m`）小于特征数量（`KaTeX: n`）时更容易求解。此外，使用对偶问题还允许使用**核技巧**，这一点在原始问题中是无法实现的。
+
+
+
+#### 总结：
+- 对偶问题是 SVM 的另一种优化形式，在某些情况下比原始问题更容易求解。
+- SVM 的对偶问题允许我们使用核技巧来处理更复杂的数据集。
+- 通过求解对偶问题，我们可以从对偶解中推导出原始问题的解，包括权重向量 `KaTeX: \mathbf{w}` 和偏差 `KaTeX: b`。
+
+{.marker-round}
+
+### 核化SVM
+
+#### 问题 1：什么是核化的 SVM？如何应用二次多项式映射？
+
+**解答**：
+在核化 SVM 中，我们通过**核技巧**避免了显式地进行映射操作。假设你要将一个二维训练集（如 moons 数据集）应用二次多项式映射，然后对变换后的训练集训练线性 SVM 分类器。映射函数 `KaTeX: \phi` 如下所示：
+
+```KaTeX
+\phi(\mathbf{x}) = \phi\left( \begin{bmatrix} x_1 \\ x_2 \end{bmatrix} \right) = \begin{bmatrix} x_1 \\ x_2 \\ x_1^2 \\ \sqrt{2} x_1 x_2 \\ x_2^2 \end{bmatrix}
+```
+
+可以看到，经过映射后，原始二维向量变成了三维向量。
+
+
+
+#### 问题 2：如何计算映射后向量之间的点积？
+
+**解答**：
+对于两个二维向量 `KaTeX: \mathbf{a}` 和 `KaTeX: \mathbf{b}`，如果我们应用上述二次多项式映射 `KaTeX: \phi` 并计算映射后向量的点积，可以得到：
+
+- 首先应用二次多项式映射 `KaTeX: \phi`，如下所示：
+
+  ```KaTeX
+  \phi(\mathbf{a}) = \begin{bmatrix} a_1 \\ a_2 \\ a_1^2 \\ \sqrt{2} a_1 a_2 \\ a_2^2 \end{bmatrix}, \quad \phi(\mathbf{b}) = \begin{bmatrix} b_1 \\ b_2 \\ b_1^2 \\ \sqrt{2} b_1 b_2 \\ b_2^2 \end{bmatrix}
+  ```
+
+- 然后计算映射后的点积 `KaTeX: \phi(\mathbf{a})^\top \phi(\mathbf{b})`：
+
+  ```KaTeX
+  \phi(\mathbf{a})^\top \phi(\mathbf{b}) = a_1 b_1 + a_2 b_2 + a_1^2 b_1^2 + 2 a_1 a_2 b_1 b_2 + a_2^2 b_2^2
+  ```
+
+- 将各项重新排列并归并，可以得到：
+
+  ```KaTeX
+  = (a_1 b_1 + a_2 b_2)^2
+  ```
+
+{.marker-timeline}
+
+最终可以看到，映射后的点积等于原始向量点积的平方。这就是核技巧在二次多项式映射中的应用结果。 由此可见，映射后的点积等于原始向量点积的平方。这就是**核技巧**的关键点：通过核函数可以直接计算点积，而无需实际进行映射操作。
+
+
+
+#### 问题 3：SVM 中常用的核函数有哪些？
+
+**解答**：
+不同的核函数适用于不同类型的数据。以下是一些常见的核函数：
+
+```KaTeX
+\text{Linear:} \quad K(\mathbf{a}, \mathbf{b}) = \mathbf{a}^\top \mathbf{b}
+```
+
+```KaTeX
+\text{Polynomial:} \quad K(\mathbf{a}, \mathbf{b}) = (\gamma \mathbf{a}^\top \mathbf{b} + r)^d
+```
+
+```KaTeX
+\text{Gaussian RBF:} \quad K(\mathbf{a}, \mathbf{b}) = \exp \left( -\gamma \|\mathbf{a} - \mathbf{b}\|^2 \right)
+```
+
+```KaTeX
+\text{Sigmoid:} \quad K(\mathbf{a}, \mathbf{b}) = \tanh(\gamma \mathbf{a}^\top \mathbf{b} + r)
+```
+
+
+
+#### 问题 4：什么是 Mercer's 定理？它与核函数的关系是什么？
+
+**解答**：
+根据 Mercer's 定理，如果一个核函数 `KaTeX: K(\mathbf{a}, \mathbf{b})` 满足 Mercer's 条件，则存在一个映射 `KaTeX: \phi` 将 `KaTeX: \mathbf{a}` 和 `KaTeX: \mathbf{b}` 映射到另一个空间中（可能维度更高），使得：
+
+```KaTeX
+K(\mathbf{a}, \mathbf{b}) = \phi(\mathbf{a})^\top \phi(\mathbf{b})
+```
+
+这意味着我们可以使用核函数而无需知道具体的映射 `KaTeX: \phi`。
+
+
+
+#### 问题 5：如何用核化的 SVM 进行预测？
+
+**解答**：
+当我们使用核技巧时，决策函数中的 `KaTeX: \mathbf{w}^\top \phi(\mathbf{x})` 项将变得很大甚至是无限维度，因此无法直接计算 `KaTeX: \hat{\mathbf{w}}`。幸运的是，可以将 `KaTeX: \hat{\mathbf{w}}` 的公式代入到决策函数中，从而得到只涉及输入向量点积的等式。
+
+```KaTeX
+\hat{y} = \mathbf{w}^\top \phi(\mathbf{x}^{(n)}) + \hat{b} = \sum_{i=1}^{m} \hat{\alpha}(i) t(i) K(\mathbf{x}^{(i)}, \mathbf{x}^{(n)}) + \hat{b}
+```
+
+这个公式表明预测只依赖于支持向量之间的核函数计算，而不需要显式地进行高维映射。
+
+
+
+#### 问题 6：如何使用核技巧计算偏差项 `KaTeX: \hat{b}`？
+
+**解答**：
+偏差项 `KaTeX: \hat{b}` 的计算也可以通过核函数来实现。偏差项公式如下：
+
+```KaTeX
+\hat{b} = \frac{1}{n_s} \sum_{i=1}^{m} t(i) - \sum_{j=1}^{m} \hat{\alpha}(j) t(j) K(\mathbf{x}^{(j)}, \mathbf{x}^{(i)})
+```
+
+其中 `KaTeX: n_s` 是支持向量的数量。
+
+
+
+#### 总结：
+- **核化 SVM** 通过核函数计算高维空间中的点积，而无需显式进行映射。
+- 常见的核函数包括线性核、多项式核、RBF 核和 Sigmoid 核。
+- **Mercer's 定理** 允许我们在不知道映射 `KaTeX: \phi` 的情况下使用核函数。
+- 核化 SVM 的预测和偏差项计算都依赖于核函数的计算，而不是显式的向量映射。
+
+{.marker-round}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                       | 中文翻译                                                                                                      |
+|-----|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| 1   | What is the fundamental idea behind support vector machines?                                                                   | 支持向量机的基本思想是什么？                                                                                     |
+| 2   | What is a support vector?                                                                                                      | 什么是支持向量？                                                                                               |
+| 3   | Why is it important to scale the inputs when using SVMs?                                                                       | 为什么在使用 SVM 时需要对输入进行缩放？                                                                           |
+| 4   | Can an SVM classifier output a confidence score when it classifies an instance? What about a probability?                      | SVM 分类器在分类实例时能输出置信度分数吗？概率呢？                                                                |
+| 5   | How can you choose between LinearSVC, SVC, and SGDClassifier?                                                                  | 如何在 LinearSVC、SVC 和 SGDClassifier 之间进行选择？                                                             |
+| 6   | Say you’ve trained an SVM classifier with an RBF kernel, but it seems to underfit the training set. Should you increase or decrease γ (gamma)? What about C? | 假设你训练了一个带有 RBF 核的 SVM 分类器，但它似乎欠拟合训练集。你应该增加还是减少 γ（gamma）？C 又如何？             |
+| 7   | What does it mean for a model to be ε-insensitive?                                                                             | 模型对 ε 不敏感是什么意思？                                                                                       |
+| 8   | What is the point of using the kernel trick?                                                                                   | 使用核技巧的意义是什么？                                                                                         |
+| 9   | Train a LinearSVC on a linearly separable dataset. Then train an SVC and a SGDClassifier on the same dataset. See if you can get them to produce roughly the same model. | 在一个线性可分的数据集上训练 LinearSVC，然后在相同的数据集上训练 SVC 和 SGDClassifier。看看它们是否能生成大致相同的模型。 |
+| 10  | Train an SVM classifier on the wine dataset, which you can load using sklearn.datasets.load_wine(). This dataset contains the chemical analyses of 178 wine samples produced by 3 different cultivators: the goal is to train a classification model capable of predicting the cultivator based on the wine’s chemical analysis. Since SVM classifiers are binary classifiers, you will need to use one-versus-all to classify all three classes. What accuracy can you reach? | 在 wine 数据集上训练 SVM 分类器，你可以使用 sklearn.datasets.load_wine() 加载数据集。该数据集包含由三种不同栽培者生产的178个葡萄酒样本的化学分析。目标是训练一个分类模型，能够根据葡萄酒的化学分析预测栽培者。由于 SVM 分类器是二元分类器，你需要使用一对多的方法来对三类进行分类。你能达到什么精度？ |
+| 11  | Train and fine-tune an SVM regressor on the California housing dataset. You can use the original dataset rather than the tweaked version we used in Chapter 2, which you can load using sklearn.datasets.fetch_california_housing(). The targets represent hundreds of thousands of dollars. Since there are over 20,000 instances, SVMs can be slow, so for hyperparameter tuning you should use far fewer instances (e.g., 2,000) to test many more hyperparameter combinations. What is your best model’s RMSE? | 在加州住房数据集上训练和微调一个 SVM 回归器。你可以使用原始数据集，而不是我们在第2章中使用的调整版本。目标代表数十万美元。由于有超过2万个实例，SVM 可能会很慢，因此在超参数调整时你应该使用更少的实例（例如2000个）来测试更多的超参数组合。你最佳模型的RMSE是多少？ |
+
+
+{.show-header .left-text}
 
 
 
