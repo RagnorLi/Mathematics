@@ -5164,6 +5164,508 @@ K(\mathbf{a}, \mathbf{b}) = \phi(\mathbf{a})^\top \phi(\mathbf{b})
 
 {.show-header .left-text}
 
+## Decision Trees
+
+### Step-01 训练并可视化一棵决策树
+
+#### 问题 1: 如何在 Iris 数据集上训练并可视化一个决策树？
+
+解答：
+- **加载数据集并训练决策树**：
+   我们使用 `sklearn.datasets` 加载 Iris 数据集，并通过 `DecisionTreeClassifier` 来训练一个决策树。示例代码如下：
+
+   ```python
+   from sklearn.datasets import load_iris
+   from sklearn.tree import DecisionTreeClassifier
+
+   iris = load_iris(as_frame=True)
+   X_iris = iris.data[["petal length (cm)", "petal width (cm)"]].values
+   y_iris = iris.target
+
+   tree_clf = DecisionTreeClassifier(max_depth=2, random_state=42)
+   tree_clf.fit(X_iris, y_iris)
+   ```
+
+- **使用 `export_graphviz` 导出决策树**：
+   可以通过 `export_graphviz` 函数导出一个图形定义文件，以便后续可视化：
+
+   ```python
+   from sklearn.tree import export_graphviz
+
+   export_graphviz(
+       tree_clf,
+       out_file="iris_tree.dot",
+       feature_names=["petal length (cm)", "petal width (cm)"],
+       class_names=iris.target_names,
+       rounded=True,
+       filled=True
+   )
+   ```
+
+- **使用 Graphviz 进行决策树可视化**：
+   通过 `graphviz.Source.from_file()` 可以加载并显示 `.dot` 文件：
+
+   ```python
+   from graphviz import Source
+
+   Source.from_file("iris_tree.dot")
+   ```
+
+{.marker-timeline}
+
+
+#### 问题 2: 生成的决策树是如何解释的？
+
+解答：
+![鸢尾花数据集决策树](../assets/attachment/hands_on_machine_learning/鸢尾花数据集决策树.png)
+根据训练好的决策树的可视化输出，我们可以分析各个节点的信息，如图 **Figure 6-1** 所示：
+
+- **根节点**（Root Node）：
+  - 条件：`petal length (cm) <= 2.45`
+  - 基尼指数：`gini = 0.667`
+  - 样本数：`samples = 150`
+  - 每个类别的样本数量：`value = [50, 50, 50]`
+  - 最终分类：`class = setosa`
+
+- **叶节点**（Leaf Node）：
+  - `True` 分支：
+    - 条件：`gini = 0.0`
+    - 样本数：`samples = 50`
+    - 每个类别的样本数量：`value = [50, 0, 0]`
+    - 最终分类：`class = setosa`
+
+- **内部节点**（Split Node）：
+  - 条件：`petal width (cm) <= 1.75`
+  - 基尼指数：`gini = 0.5`
+  - 样本数：`samples = 100`
+  - 每个类别的样本数量：`value = [0, 50, 50]`
+  - 最终分类：`class = versicolor`
+
+- **终止条件**：
+  决策树会根据不同的特征值和基尼系数来递归地分割数据，直到满足预设的最大深度（如本例中的 `max_depth=2`），或者所有节点纯度达到最优（基尼系数为 0）。通过这个决策树的可视化图可以清晰地看到模型如何在每个分割节点做出决策。
+
+{.marker-round}
+
+### Step-02 做决策
+
+#### 问题 3: 决策树是如何根据花瓣长度和宽度做出预测的？
+
+解答：
+- **从根节点开始判断**： 如果 `petal length (cm) <= 2.45`，则该花属于 **Iris setosa**，因为此时我们到了图 **Figure 6-1** 中的左叶节点，基尼指数为 0，样本全为 **Iris setosa**。
+
+- **如果花瓣长度大于 2.45 cm**： 接下来我们进入右分支，进行下一步判断：如果 `petal width (cm) <= 1.75`，则该花被分类为 **Iris versicolor**，如 **Figure 6-1** 的深度 2 左节点所示。
+
+- **如果花瓣宽度也大于 1.75 cm**： 则决策树会继续进入右分支，将该花分类为 **Iris virginica**，如 **Figure 6-1** 的深度 2 右节点所示。
+
+通过这种递归判断，决策树可以逐步缩小预测的范围，直至找到最合适的分类。
+
+#### 问题 4: 决策树如何计算基尼指数？
+
+解答：
+决策树使用基尼指数（Gini Impurity）来衡量每个节点的纯度，公式如下：
+
+```KaTeX
+G_i = 1 - \sum_{k=1}^{n} p_{i,k}^2
+```
+
+其中：
+- `KaTeX:G_i` 是第 `KaTeX:i` 个节点的基尼指数；
+- `KaTeX:p_{i,k}` 是节点中第 `KaTeX:k` 类的样本比例。
+
+例如，在图 ![鸢尾花数据集决策树](../assets/attachment/hands_on_machine_learning/鸢尾花数据集决策树.png)深度 2 左节点有 54 个样本，其中 49 个属于 **Iris versicolor**，5 个属于 **Iris virginica**。因此，该节点的基尼指数为：
+
+```KaTeX
+G = 1 - \left(\frac{49}{54}\right)^2 - \left(\frac{5}{54}\right)^2 \approx 0.168
+```
+
+#### 问题 5: 如何理解决策树的决策边界？
+
+解答：
+![决策树的决策边界](../assets/attachment/hands_on_machine_learning/决策树的决策边界.png)显示了决策树的决策边界：
+- **深度 0**：根节点的决策边界在 `petal length = 2.45` cm，左侧区域全部分类为 **Iris setosa**。
+- **深度 1**：右侧区域继续按照 `petal width = 1.75` cm 进行分割，形成两个新的区域，分别对应 **Iris versicolor** 和 **Iris virginica**。
+
+这两条决策线将数据集的空间分割为不同的类别区域。每个节点的深度越大，模型的决策边界也越复杂。
+
+{.marker-none}
+
+### Step-03 估计所属类别的概率
+
+#### 问题 6: 如何使用决策树估计实例属于某个类别的概率？
+
+解答：
+决策树不仅可以给出类别预测，还可以估计某个实例属于各个类别的概率。决策树通过以下步骤来估算类别概率：
+
+- **遍历决策树找到对应的叶节点**：
+   决策树首先会根据实例的特征遍历树，找到对应的叶节点。
+
+- **计算类别的概率**：
+   在找到叶节点之后，决策树会返回该节点中每个类别的样本比例作为概率。假设一个花的花瓣长度为 5 cm，花瓣宽度为 1.5 cm，经过模型预测，它落入深度 2 左节点，概率估计如下：
+
+  - **Iris setosa** 的概率为 0%（0/54）。
+  - **Iris versicolor** 的概率为 90.7%（49/54）。
+  - **Iris virginica** 的概率为 9.3%（5/54）。
+
+   预测结果为 **Iris versicolor**，因为它的概率最高。
+
+- **代码验证**：
+   通过 `tree_clf.predict_proba` 函数，可以获取预测的概率值：
+
+   ```python
+   tree_clf.predict_proba([[5, 1.5]]).round(3)
+   # array([[0.   , 0.907, 0.093]])
+
+   tree_clf.predict([[5, 1.5]])
+   # array([1])
+   ```
+
+- **解释结果**：
+   如代码结果所示，预测的类别为 **Iris versicolor**（类别标签为 1），这是因为它在对应叶节点中的样本比例最高（90.7%）。
+
+- **决策边界的影响**：
+   此外，无论实例落在 **Figure 6-2** 中底部右下角矩形区域的哪个位置，只要在该区域内，决策树估计的概率都是一样的。即使花瓣长度为 6 cm，花瓣宽度为 1.5 cm，模型也会做出相同的预测。
+
+{.marker-timeline}
+
+### Step-04 CART算法
+
+#### 问题 7: 什么是 CART 训练算法，它如何工作？
+
+解答：
+
+- **CART（分类与回归树）算法**：
+  - CART 算法用于训练决策树模型。它的核心思路是递归地将训练集分割为两个子集（左右子树），直到满足停止条件。
+  - CART 算法首先在特征 `k` 上找到一个分割点 `KaTeX:t_k`，如花瓣长度是否小于等于 2.45 cm (`petal length ≤ 2.45 cm`)。
+
+- **如何选择最佳分割点**：
+  - CART 会通过搜索一对 `k` 和 `KaTeX:t_k`，找到能够生成最纯子集的组合。
+  - 算法使用如下的成本函数（**Equation 6-2**）来衡量分割后的纯度，目标是最小化该函数：
+
+   ```KaTeX
+   J(k, t_k) = m_{left} \cdot G_{left} + m_{right} \cdot G_{right}
+   ```
+
+  - 其中：
+    - `KaTeX:G_{left/right}` 是左右子集的基尼指数（或者其他纯度度量）。
+    - `KaTeX:m_{left/right}` 是左右子集中样本的数量。
+
+- **递归分割**：
+  - 当 CART 找到最佳的分割点之后，它会递归地对每个子集进行相同的分割操作，继续寻找最佳的分割点，直到满足停止条件。
+
+- **停止条件**：
+  - 递归停止的条件可能有：
+    - 达到最大深度（由超参数 `max_depth` 控制）。
+    - 无法找到能够减少纯度的分割点。
+    - 其他超参数如 `min_samples_split`（最小样本分割数）、`min_samples_leaf`（叶节点的最小样本数）、`min_weight_fraction_leaf` 和 `max_leaf_nodes` 也可以作为停止条件。
+
+{.marker-timeline}
+
+#### 问题 8: CART 算法有哪些局限性？
+
+解答：
+- **贪婪算法的特性**：
+  - CART 是一个 **贪婪算法**，它在每一步都寻找当前最优的分割，而不考虑后续层次上的效果。这意味着它不会检查某个分割是否会导致将来层次的最优解。贪婪算法往往只能找到“合理的好”解，而非全局最优解。
+
+- **复杂性问题**：
+  - 由于找到最优决策树是一个 **NP 完全问题**，对于较大的数据集，找到全局最优解的时间复杂度非常高（O(exp(m))），在大部分情况下是不可行的。因此，训练决策树时只能追求“合理的好”解，而非真正的全局最优解。
+
+{.marker-round}
+
+### Step-05 决策树的计算复杂度分析
+
+#### 问题 9: 决策树的计算复杂度是多少？
+
+解答：
+
+- **预测复杂度**：
+  - 决策树通常是近似平衡的，预测时从根节点到叶节点的路径长度大约是 `KaTeX:O(\log_2(m))`，其中 `KaTeX:m` 是训练样本的数量。
+  - 这里的 `KaTeX:\log_2(m)` 表示以 2 为底的对数，定义为 `KaTeX:\log(m) / \log(2)`。
+  - 每个节点只需要检查一个特征的值，因此整个预测过程的复杂度是 `KaTeX:O(\log_2(m))`，与特征数量无关。
+
+   这意味着，即使面对较大的训练集，决策树的预测速度依然非常快。
+
+- **训练复杂度**：
+  - 在训练过程中，算法需要比较每个节点上的所有特征（或部分特征，如果设置了 `KaTeX:max\_features` 参数），并将其应用于所有样本。
+  - 对于每个节点，比较所有特征和样本的时间复杂度为 `KaTeX:O(n \times m \log_2(m))`，其中 `KaTeX:n` 是特征数量，`KaTeX:m` 是样本数量。
+
+  因此，决策树的预测效率很高，但在训练时需要更多的计算资源，尤其是在大规模数据集上进行训练时。
+
+{.marker-round}
+
+### Step-06 决策树中选择Gini还是Entropy
+
+
+#### 问题 10: 在决策树中应该使用基尼系数（Gini Impurity）还是熵（Entropy）作为纯度度量？
+
+解答：
+
+- **基尼系数和熵的选择**：
+  - 默认情况下，`DecisionTreeClassifier` 类使用 **Gini impurity** 作为纯度度量。你也可以通过设置 `criterion` 参数为 `"entropy"` 来选择使用 **Entropy** 作为纯度度量。
+
+- **熵的概念**：
+  - 熵的概念最早来源于热力学，用来衡量分子系统的无序程度。当系统完全有序时，熵为 0。同样，熵也被引入到信息论中，用来衡量消息的不确定性。当消息内容完全相同且无变化时，熵为 0。
+  - 在机器学习中，熵常用于作为纯度度量，集合中仅包含一个类别时，熵为 0。**Equation 6-3** 展示了熵的计算公式：
+
+   ```KaTeX
+   H_i = - \sum_{k=1}^{n} p_{i,k} \log_2 \left( p_{i,k} \right)
+   ```
+
+  - 其中：
+    - `KaTeX:H_i` 是第 `i` 个节点的熵。
+    - `KaTeX:p_{i,k}` 是第 `i` 个节点中第 `k` 类的样本比例。
+
+- **熵的计算示例**：
+   在 **Figure 6-1** 中，深度 2 左侧节点包含 49 个 **Iris versicolor** 样本和 5 个 **Iris virginica** 样本。其熵的计算为：
+
+   ```KaTeX
+   H = -\left(\frac{49}{54}\right) \log_2 \left(\frac{49}{54}\right) - \left(\frac{5}{54}\right) \log_2 \left(\frac{5}{54}\right) \approx 0.445
+   ```
+
+- **基尼系数 vs. 熵**：
+  - **Gini impurity** 和 **Entropy** 的区别在于，基尼系数通常更快计算，因此是默认选择。在多数情况下，这两者的选择不会对决策树的效果造成太大影响，最终生成的树结构会比较相似。
+  - 但是，当两者结果不同时，基尼系数倾向于将最常见的类别单独放入一个分支，而熵则会生成更加平衡的树结构。
+
+{.marker-round}
+
+### Step-07 决策树中的正则化超参数
+
+#### 问题 11: 决策树中的正则化超参数有哪些？
+
+解答：
+
+- **非参数模型与参数模型**：
+  - 决策树是一种**非参数模型**，它不对训练数据做太多假设。非参数模型的参数数量在训练前是未知的，模型的复杂性随着数据的变化而变化。如果没有正则化，决策树会过度拟合训练数据。
+  - 相比之下，**参数模型**（如线性模型）有预设的参数数量，模型自由度有限，过拟合的风险较低，但也有可能欠拟合。
+
+- **正则化的必要性**：
+  - 为了防止决策树过度拟合，需要限制其训练时的自由度，这就是所谓的正则化。正则化超参数限制了决策树的复杂度。
+
+- **常用正则化超参数**：
+  - `KaTeX:max\_features`：每个节点用于分割的最大特征数量。
+  - `KaTeX:max\_leaf\_nodes`：叶节点的最大数量。
+  - `KaTeX:min\_samples\_split`：节点分裂所需的最小样本数。
+  - `KaTeX:min\_samples\_leaf`：叶节点所需的最小样本数。
+  - `KaTeX:min\_weight\_fraction\_leaf`：叶节点中样本的权重分数（针对加权样本）。
+
+- **超参数的作用**：
+  - 提高 `KaTeX:min\_*` 参数或降低 `KaTeX:max\_*` 参数可以有效地正则化模型，减少过拟合的风险。
+
+{.marker-round}
+
+#### 问题 12: 如何在 Moons 数据集上验证决策树的正则化效果？
+
+解答：
+
+- **Moons 数据集**：
+  - 在 **Chapter 5** 中，我们引入了 Moons 数据集。这里我们分别训练了一个没有正则化的决策树和一个使用 `min_samples_leaf=5` 的正则化决策树。
+
+- **训练代码**：
+   下面的代码展示了如何训练两个决策树：
+
+   ```python
+   from sklearn.datasets import make_moons
+
+   X_moons, y_moons = make_moons(n_samples=150, noise=0.2, random_state=42)
+
+   tree_clf1 = DecisionTreeClassifier(random_state=42)
+   tree_clf2 = DecisionTreeClassifier(min_samples_leaf=5, random_state=42)
+
+   tree_clf1.fit(X_moons, y_moons)
+   tree_clf2.fit(X_moons, y_moons)
+   ```
+
+- **决策边界对比**：
+    - **Figure 6-3** ![未正则化vs正则化后的决策树模型鞠策边界示意图](../assets/attachment/hands_on_machine_learning/未正则化vs正则化后的决策树模型鞠策边界示意图.png)展示了两个决策树的决策边界：
+    - 左边是未正则化的模型，明显存在过拟合现象。
+    - 右边是正则化后的模型，其边界更加平滑，可能具有更好的泛化能力。
+
+- **测试集上的验证**：
+   我们通过不同的随机种子生成测试集，并验证两个模型的准确率：
+
+   ```python
+   X_moons_test, y_moons_test = make_moons(n_samples=1000, noise=0.2, random_state=43)
+   
+   tree_clf1.score(X_moons_test, y_moons_test)
+   # 0.898
+
+   tree_clf2.score(X_moons_test, y_moons_test)
+   # 0.92
+   ```
+
+   结果表明，正则化后的模型在测试集上有更好的准确率，表明其泛化能力更强。
+
+{.marker-timeline}
+
+### Step-08 决策树用于回归任务
+
+#### 问题 13: 决策树如何用于回归任务？
+
+解答：
+
+- **回归树模型的训练**：
+   我们可以使用 `DecisionTreeRegressor` 类在一个带噪声的二次曲线数据集上训练回归树。下面的代码展示了如何生成数据并训练模型：
+
+   ```python
+   import numpy as np
+   from sklearn.tree import DecisionTreeRegressor
+
+   np.random.seed(42)
+   X_quad = np.random.rand(200, 1) - 0.5  # 单个随机输入特征
+   y_quad = X_quad ** 2 + 0.025 * np.random.randn(200, 1)
+
+   tree_reg = DecisionTreeRegressor(max_depth=2, random_state=42)
+   tree_reg.fit(X_quad, y_quad)
+   ```
+
+- **生成的回归树**：
+   训练后的回归树如 **Figure 6-4** 所示，![决策树用于回归任务示意图](../assets/attachment/hands_on_machine_learning/决策树用于回归任务示意图.png)树的每个节点都不再预测类别，而是预测一个值。与分类树类似，回归树也通过逐步分割数据来作出预测。
+
+- **如何预测新实例**：
+   假设我们有一个新的实例 `x_1 = 0.2`，预测过程如下：
+  - 首先检查根节点 `x_1 <= 0.197`，由于该条件不成立，算法进入右子节点。
+  - 右子节点的条件是 `x_1 <= 0.772`，该条件成立，因此进入左子节点，该叶节点预测的值为 `0.111`。该值是节点内 110 个训练实例的平均值，平均平方误差（MSE）为 `0.015`。
+
+
+{.marker-timeline}
+
+#### 问题 14: 回归树的 CART 算法是如何工作的？
+
+解答：
+
+- **CART 回归算法**：
+   回归树的 CART 算法与分类任务类似，但它的目标是最小化均方误差（MSE），而不是纯度度量（如基尼指数或熵）。**Equation 6-4** 展示了回归任务的 CART 成本函数：
+
+   ```KaTeX
+   J(k, t_k) = m_{left} \cdot MSE_{left} + m_{right} \cdot MSE_{right}
+   ```
+
+   其中：
+  - `KaTeX:MSE_{left/right}` 是左右子节点的均方误差。
+  - `KaTeX:m_{left/right}` 是左右子节点中的样本数量。
+
+- **回归树的表现**：
+    ![两个不同深度的回归树的预测](../assets/attachment/hands_on_machine_learning/两个不同深度的回归树的预测.png)图 **Figure 6-5** 展示了两个不同深度的回归树模型的预测效果：
+  - 当 `max_depth=2` 时，模型的预测较为粗糙，无法很好拟合曲线。
+  - 当 `max_depth=3` 时，模型能够更好地捕捉到数据中的变化。
+
+{.marker-timeline}
+
+#### 问题 15: 回归树如何防止过拟合？
+
+解答：
+
+- **未正则化的回归树容易过拟合**：
+   ![未正则化的回归树vs正则化的回归树决策边界对比](../assets/attachment/hands_on_machine_learning/未正则化的回归树vs正则化的回归树决策边界对比.png)如图 **Figure 6-6** 所示，未正则化的回归树（左图）严重过拟合训练集，预测曲线过于复杂，无法很好地泛化到新的数据。
+
+- **通过设置 `min_samples_leaf` 防止过拟合**：
+   在设置了 `min_samples_leaf=10` 后，回归树模型（右图）变得更加平滑，减少了过拟合，能够更好地泛化到新的数据。
+
+{.marker-timeline}
+
+### Step-09 决策树对数据轴方向的敏感度
+
+#### 问题 16: 决策树对数据轴方向敏感吗？
+
+解答：
+
+- **正交分割的局限性**：
+  - 决策树的分割都是正交的（与坐标轴垂直），这使得它对数据的轴方向非常敏感。正因为如此，数据的旋转可能会对决策树的表现产生显著影响。
+  - 如图 **Figure 6-7** 所示，![数据集旋转45°后的决策树效果示意图](../assets/attachment/hands_on_machine_learning/数据集旋转45°后的决策树效果示意图.png)左侧图中，决策树很容易分割线性可分的数据集。然而，当数据旋转 45° 后（右侧图），决策边界变得复杂且不规则，虽然决策树在训练集上拟合得很好，但可能无法很好地泛化到新数据。
+
+- **旋转数据的影响**：
+  - 尽管两个决策树都在训练集上表现良好，但右侧旋转后的模型边界看起来过于复杂，显示出过拟合的迹象。这表明旋转数据后，决策树的表现可能会变差。
+
+{.marker-round}
+
+#### 问题 17: 如何通过数据缩放和 PCA 降维来减少决策树对轴方向的敏感性？
+
+解答：
+
+- **缩放和 PCA**：
+  - 通过数据缩放和主成分分析（PCA）变换，可以将数据旋转到一个新空间，减少特征之间的相关性，使得决策树更容易找到简单的分割边界。
+  - 在 **Chapter 8** 会详细介绍 PCA，这里我们简单了解 PCA 是如何旋转数据的。
+
+- **通过 PCA 改善决策边界**：
+   下面的代码展示了如何使用 PCA 旋转数据并训练决策树：
+
+   ```python
+   from sklearn.decomposition import PCA
+   from sklearn.pipeline import make_pipeline
+   from sklearn.preprocessing import StandardScaler
+
+   pca_pipeline = make_pipeline(StandardScaler(), PCA())
+   X_iris_rotated = pca_pipeline.fit_transform(X_iris)
+   tree_clf_pca = DecisionTreeClassifier(max_depth=2, random_state=42)
+   tree_clf_pca.fit(X_iris_rotated, y_iris)
+   ```
+
+   结果如 **Figure 6-8** 所示，![使用PCA旋转数据训练决策树效果示意图](../assets/attachment/hands_on_machine_learning/使用PCA旋转数据训练决策树效果示意图.png)旋转后的数据使得决策树仅用一个特征 `KaTeX:z_1` 就能够很好地拟合数据。`KaTeX:z_1` 是花瓣长度和宽度的线性函数，表示 PCA 变换后的第一个主成分。
+
+{.marker-timeline}
+
+### Step-10 决策树模型的方差为何高
+
+#### 问题 18: 为什么决策树模型的方差高？
+
+解答：
+
+- **高方差的表现**：
+  - 决策树的主要问题之一是其**方差很高**。微小的超参数变化或者数据集的轻微变动，可能会产生完全不同的模型。
+  - 决策树的训练过程是**随机的**，比如 Scikit-Learn 的训练算法会随机选择要在每个节点评估的特征集。因此，即便是在相同的数据集上重新训练模型，也可能会产生一个截然不同的决策树，正如 **Figure 6-9** 所示。
+  - 与之前的 **Figure 6-2** 相比，![同样的训练数据重训练后的决策树模型会大相径庭](../assets/attachment/hands_on_machine_learning/同样的训练数据重训练后的决策树模型会大相径庭.png)重新训练后的决策树边界完全不同，表现出决策树模型对随机性和数据变化的敏感性。
+
+- **随机性带来的影响**：
+  - 除非设定 `KaTeX:random_state` 超参数固定随机种子，否则每次训练的决策树模型可能会大相径庭。正因为这个原因，决策树的方差较高，难以在小的超参数或数据变化下保持稳定。
+
+{.marker-round}
+
+#### 问题 19: 如何减少决策树的高方差？
+
+解答：
+
+- **集成方法**：
+  - 幸运的是，通过**集成方法（Ensemble methods）**，可以显著减少决策树的方差。通过平均多个决策树的预测结果，方差会显著降低，从而提升模型的泛化能力。
+
+- **随机森林（Random Forest）**：
+  - 多个决策树的集成称为**随机森林（Random Forest）**，它是当前最强大的模型之一。随机森林通过训练多棵决策树并将它们的预测结果平均来降低方差，并提高预测的鲁棒性。
+
+{.marker-round}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                                        | 中文翻译                                                                                                                                                     | 注意                            |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| 1   | What is the approximate depth of a decision tree trained (without restrictions) on a training set with one million instances?                   | 在一个有一百万个实例的训练集上训练（不受限制的）决策树的近似深度是多少？                                                                                      |                                 |
+| 2   | Is a node’s Gini impurity generally lower or higher than its parent’s? Is it generally lower/higher, or always lower/higher?                    | 节点的基尼不纯度通常比其父节点低还是高？它是通常低/高，还是总是低/高？                                                                                      |                                 |
+| 3   | If a decision tree is overfitting the training set, is it a good idea to try decreasing max_depth?                                              | 如果决策树对训练集过拟合，尝试减少max_depth是一个好主意吗？                                                                                                  |                                 |
+| 4   | If a decision tree is underfitting the training set, is it a good idea to try scaling the input features?                                        | 如果决策树对训练集欠拟合，尝试缩放输入特征是一个好主意吗？                                                                                                  |                                 |
+| 5   | If it takes one hour to train a decision tree on a training set containing one million instances, roughly how much time will it take to train another decision tree on a training set containing ten million instances? Hint: consider the CART algorithm’s computational complexity. | 如果在一个包含一百万个实例的训练集上训练决策树需要一小时，训练集包含一千万个实例的另一个决策树大约需要多少时间？提示：考虑CART算法的计算复杂度。                     | 考虑CART算法的计算复杂度         |
+| 6   | If it takes one hour to train a decision tree on a given training set, roughly how much time will it take if you double the number of features?  | 如果在给定的训练集上训练决策树需要一小时，增加一倍特征数量大约需要多少时间？                                                                                  |                                 |
+| 7   | Train and fine-tune a decision tree for the moons dataset by following these steps:<br>a. Use make_moons(n_samples=10000, noise=0.4) to generate a moons dataset.<br>b. Use train_test_split() to split the dataset into a training set and a test set.<br>c. Use grid search with cross-validation (with the help of the GridSearchCV class) to find good hyperparameter values for a DecisionTreeClassifier. Hint: try various values for max_leaf_nodes.<br>d. Train it on the full training set using these hyperparameters, and measure your model’s performance on the test set. You should get roughly 85% to 87% accuracy. | 按以下步骤训练并微调moons数据集的决策树：<br>a. 使用make_moons(n_samples=10000, noise=0.4)生成moons数据集。<br>b. 使用train_test_split()将数据集拆分为训练集和测试集。<br>c. 使用网格搜索和交叉验证（借助GridSearchCV类）找到DecisionTreeClassifier的超参数值。提示：尝试各种max_leaf_nodes值。<br>d. 使用这些超参数在整个训练集上训练，并在测试集上衡量模型的性能。你应该得到大约85%到87%的准确率。 |                                 |
+| 8   | Grow a forest by following these steps:<br>a. Continuing the previous exercise, generate 1,000 subsets of the training set, each containing 100 instances selected randomly. Hint: you can use Scikit-Learn’s ShuffleSplit class for this.<br>b. Train one decision tree on each subset, using the best hyperparameter values found in the previous exercise. Evaluate these 1,000 decision trees on the test set. Since they were trained on smaller sets, these decision trees will likely perform worse than the first decision tree, achieving only about 80% accuracy.<br>c. Now comes the magic. For each test set instance, generate the predictions of the 1,000 decision trees, and keep only the most frequent prediction (you can use SciPy’s mode() function for this). This approach gives you majority-vote predictions over the test set.<br>d. Evaluate these predictions on the test set: you should obtain a slightly higher accuracy than your first model (about 0.5 to 1.5% higher). Congratulations, you have trained a random forest classifier! | 按以下步骤生成森林：<br>a. 继续之前的练习，生成1000个训练集的子集，每个子集随机选择100个实例。提示：你可以使用Scikit-Learn的ShuffleSplit类。<br>b. 在每个子集上训练一棵决策树，使用之前找到的最佳超参数值。在测试集上评估这1000棵决策树。由于它们是在较小的数据集上训练的，因此这些决策树的表现可能比第一个决策树差，准确率约为80%。<br>c. 现在见证奇迹。对于测试集中的每个实例，生成1000棵决策树的预测，只保留最常见的预测（可以使用SciPy的mode()函数）。这种方法为测试集提供了多数投票预测。<br>d. 在测试集上评估这些预测：你的模型准确率将比第一个模型稍高（约高出0.5%到1.5%）。恭喜你，训练出了一棵随机森林分类器！ |                                 |
+
+
+{.show-header .left-text}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
