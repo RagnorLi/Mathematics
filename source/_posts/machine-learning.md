@@ -5647,10 +5647,751 @@ G = 1 - \left(\frac{49}{54}\right)^2 - \left(\frac{5}{54}\right)^2 \approx 0.168
 
 {.show-header .left-text}
 
+## Ensemble Learning and Random Forests
+
+
+### 投票分类器
+
+#### 问题 1: 什么是投票分类器？
+
+**解答**：
+
+- **投票分类器的概念**：
+  - 假设你训练了几个分类器，每个分类器的准确率约为 80%，例如逻辑回归分类器、SVM 分类器、随机森林分类器和 K-最近邻分类器等。通过**投票分类器（Voting Classifier）**可以汇总多个分类器的预测结果，从而创建一个更强的分类器。
+  - 最简单的方法是使用**硬投票（Hard Voting）**：每个分类器对实例做出预测，获得最多票数的类别即为最终预测结果。
+
+- **投票分类器如何工作？**
+  - **Figure 7-1** ![Figure7-1训练多样化的分类器](../assets/attachment/hands_on_machine_learning/Figure7-1训练多样化的分类器.png)和 **Figure 7-2** ![Figure7-2硬投票分类预测](../assets/attachment/hands_on_machine_learning/Figure7-2硬投票分类预测.png)展示了多个多样化分类器如何组合成投票分类器。每个分类器对新实例进行预测，汇总之后通过多数票方式确定最终分类。
+  - 即使分类器表现各异，只要它们的预测偏差不完全相同，投票分类器就能通过综合多个分类器的结果提升整体准确率。
+
+- **投票分类器为什么有效？**
+  - 投票分类器往往能超过每个单独分类器的表现，即便每个分类器只是一个弱学习器（表现略好于随机猜测）。只要集成中的弱学习器足够多且足够多样化，集成模型就能够表现为一个强学习器。
+  - 通过抛硬币的类比（如 **Figure 7-3**），![Figure7-3抛硬币中通过投票机制提高准确性](../assets/attachment/hands_on_machine_learning/Figure7-3抛硬币中通过投票机制提高准确性.png)可以理解当多个分类器的表现稍有差异时，如何通过投票机制提高准确率。
+
+{.marker-round}  
+
+#### 问题 2: 硬投票与软投票的区别是什么？
+
+**解答**：
+
+- **硬投票**：
+  - 硬投票分类器只关注每个分类器的最终预测结果，选取获得最多票数的类别作为最终分类。
+
+- **软投票**：
+  - 软投票则结合每个分类器的**预测概率**，为置信度高的预测赋予更大的权重。相比硬投票，软投票通常表现更好，特别是在分类器能够提供概率预测时。
+
+   以下是使用硬投票的代码实现：
+
+   ```python
+   from sklearn.datasets import make_moons
+   from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+   from sklearn.linear_model import LogisticRegression
+   from sklearn.model_selection import train_test_split
+   from sklearn.svm import SVC
+
+   # 生成 Moons 数据集
+   X, y = make_moons(n_samples=500, noise=0.30, random_state=42)
+   X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+   # 创建 Voting Classifier, 使用硬投票
+   voting_clf = VotingClassifier(
+       estimators=[
+           ('lr', LogisticRegression(random_state=42)),
+           ('rf', RandomForestClassifier(random_state=42)),
+           ('svc', SVC(random_state=42))
+       ],
+       voting='hard'  # 硬投票
+   )
+   voting_clf.fit(X_train, y_train)
+
+   # 输出各个分类器的准确率
+   for name, clf in voting_clf.named_estimators_.items():
+       print(name, clf.score(X_test, y_test))
+   
+   # 硬投票分类器的准确率
+   print("Voting classifier (hard voting):", voting_clf.score(X_test, y_test))
+   ```
+
+   输出结果会显示每个分类器的准确率以及硬投票分类器的整体准确率：
+
+   ```text
+   lr 0.864
+   rf 0.896
+   svc 0.896
+   Voting classifier (hard voting): 0.912
+   ```
+
+   可以看到，投票分类器的准确率超过了单个分类器的准确率。
+
+- **使用软投票**：
+  - 如果所有分类器都能够输出类概率（即有 `predict_proba()` 方法），我们可以将投票方式改为软投票，并让分类器根据最高的平均概率进行分类。以下是修改后的代码：
+
+   ```python
+   # 将 VotingClassifier 改为软投票
+   voting_clf.voting = "soft"
+   voting_clf.named_estimators["svc"].probability = True  # 确保 SVC 能输出类概率
+   voting_clf.fit(X_train, y_train)
+
+   # 使用软投票进行预测，并输出准确率
+   print("Voting classifier (soft voting):", voting_clf.score(X_test, y_test))
+   ```
+
+   在本例中，使用软投票后，分类器的准确率达到了 92%：
+
+   ```text
+   Voting classifier (soft voting): 0.92
+   ```
+
+{.marker-round}
+
+### Bagging&Pasting
+
+
+#### 问题 3: 什么是 Bagging 和 Pasting，它们有什么区别？
+
+**解答**：
+
+- **Bagging 和 Pasting 的概念**：
+  - **Bagging** 是指在**有放回**的情况下对训练集进行随机采样，然后在不同的随机子集上训练多个预测器。它的全称是**bootstrap aggregating**。
+  - **Pasting** 则是在**无放回**的情况下对训练集进行随机采样，同样是在不同的随机子集上训练多个预测器。
+
+- **两者的区别**：
+  - Bagging 允许样本多次被采样到同一个训练子集中，而 Pasting 不允许样本重复出现在子集中。Bagging 由于有放回，允许同一个样本多次出现在同一模型的训练集中，Pasting 则每个样本只能被采样一次。
+
+- **过程图解**：
+  - ![Figure7-4Bagging&Pasting在训练集的不同随机样本上训练多个预测器示意图](../assets/attachment/hands_on_machine_learning/Figure7-4Bagging&Pasting在训练集的不同随机样本上训练多个预测器示意图.png)**Figure 7-4** 展示了 Bagging 和 Pasting 的过程。每个分类器在一个随机子集上进行训练，之后通过集成的方式来汇总这些预测器的结果。
+
+{.marker-round}
+
+#### 问题 4: Bagging 和 Pasting 如何改善模型性能？
+
+**解答**：
+
+- **降低方差**：
+  - 每个单独的预测器如果只是在原始训练集上训练，可能具有更高的偏差。然而，通过 Bagging 和 Pasting 结合多个模型的预测，可以有效地降低模型的方差。
+
+- **集成预测**：
+  - 集成方法中的聚合函数一般使用**统计模式（mode）**来进行分类（即硬投票分类器），或者使用均值来进行回归。聚合的结果既降低了偏差也降低了方差。
+  - 整体效果是：虽然偏差与单个训练集上的预测器相似，但方差更低，使得集成模型比单个模型泛化能力更强。
+
+- **并行化**：
+  - Bagging 和 Pasting 非常适合并行化处理：如 **Figure 7-4** 所示，不同的预测器可以在不同的 CPU 核心或服务器上并行训练，同样地，预测过程也可以并行进行。这使得 Bagging 和 Pasting 具备良好的扩展性，是广受欢迎的集成方法之一。
+
+{.marker-round}
+
+### 在sklearn中使用Bagging和Pasting
+
+#### 问题 5: 如何在Scikit-Learn中实现Bagging和Pasting？
+
+**解答**：
+
+- **Bagging 和 Pasting API**：
+  - Scikit-Learn 提供了简单的 API 来实现 Bagging 和 Pasting。可以使用 `BaggingClassifier` 类来实现分类任务的 Bagging（或者使用 `BaggingRegressor` 来实现回归任务）。
+  - 代码展示了如何使用 BaggingClassifier 训练一个包含 500 棵决策树的 Bagging 集成模型：
+
+   ```python
+   from sklearn.ensemble import BaggingClassifier
+   from sklearn.tree import DecisionTreeClassifier
+
+   bag_clf = BaggingClassifier(
+       DecisionTreeClassifier(), n_estimators=500, 
+       max_samples=100, n_jobs=-1, random_state=42
+   )
+   bag_clf.fit(X_train, y_train)
+   ```
+
+   这里的 `n_estimators` 参数表示集成中的决策树数量，`max_samples` 控制每棵树的训练样本数量。通过设置 `bootstrap=False`，可以实现 Pasting。
+
+- **自动软投票**：
+  - `BaggingClassifier` 会在基础分类器可以估计类概率的情况下，自动执行**软投票**而非硬投票。这意味着每棵决策树预测的概率会被平均，然后根据最高的平均概率来决定最终的分类。
+
+{.marker-round}
+
+#### 问题 6: Bagging 如何改进决策树的泛化能力？
+
+**解答**：
+
+- **Bagging 的优势**：
+  - ![Figure7-5单棵决策树(左)与由500棵树组成的装袋集合(右)](../assets/attachment/hands_on_machine_learning/Figure7-5单棵决策树(左)与由500棵树组成的装袋集合(右).png)**Figure 7-5** 展示了单棵决策树和 500 棵决策树的 Bagging 集成模型在 Moons 数据集上的决策边界对比。可以看到，Bagging 的预测边界更加平滑，模型的方差明显降低。
+  - 虽然 Bagging 集成的偏差与单棵决策树相近，但方差较小，这使得集成模型比单一决策树在测试集上表现得更好。
+
+- **Bagging 与 Pasting 的对比**：
+  - Bagging 比 Pasting 引入了更多的多样性，因为它允许相同的样本被多次采样到同一个训练集。虽然 Bagging 相比 Pasting 偏差略高，但更低的方差通常会带来更好的泛化性能。
+  - Bagging 常常在多种场景下表现更优，因此通常更受欢迎。不过，如果有足够的时间和计算资源，也可以通过交叉验证来评估 Bagging 和 Pasting，以选择效果更好的方法。
+
+{.marker-round}
+
+### OOB评估
+
+#### 问题 3: 什么是 Out-of-Bag (OOB) 评估？
+
+**解答**：
+
+- **OOB 的概念**：
+  - 在 Bagging 中，某些训练样本会被多次采样，而其他样本可能根本不会被采样。默认情况下，BaggingClassifier 会对训练集进行有放回的采样（bootstrap=True）。数学上证明，对于每个预测器，平均只有大约 63% 的训练实例会被采样，而剩下的 37% 的实例则被称为**袋外样本（Out-of-Bag, OOB）**。
+
+- **OOB 样本的作用**：
+  - 由于这些 OOB 样本没有参与训练，可以将它们视为一个独立的验证集，用于评估 Bagging 集成模型的性能。这样我们就不需要再专门划分出一个验证集。每个分类器都可以使用 OOB 样本对其性能进行评估，并计算出整体的 OOB 评分。
+
+{.marker-round}
+
+#### 问题 4: 如何在 Scikit-Learn 中使用 OOB 评估？
+
+**解答**：
+
+- **启用 OOB 评估**：
+  - 在 Scikit-Learn 中，可以通过设置 `oob_score=True` 来启用 OOB 评估。以下代码展示了如何实现 OOB 评估：
+
+   ```python
+   from sklearn.ensemble import BaggingClassifier
+   from sklearn.tree import DecisionTreeClassifier
+
+   bag_clf = BaggingClassifier(
+       DecisionTreeClassifier(), n_estimators=500,
+       oob_score=True, n_jobs=-1, random_state=42
+   )
+   bag_clf.fit(X_train, y_train)
+
+   # 打印 OOB 评分
+   print("OOB score:", bag_clf.oob_score_)
+   ```
+
+   在这个例子中，OOB 评估的准确率约为 89.6%。
+
+- **验证 OOB 评估的准确性**：
+  - 我们可以通过在测试集上评估模型来验证 OOB 评分的准确性，代码如下：
+
+   ```python
+   from sklearn.metrics import accuracy_score
+
+   y_pred = bag_clf.predict(X_test)
+   print("Test set accuracy:", accuracy_score(y_test, y_pred))
+   ```
+
+   在测试集上的准确率为 92%，比 OOB 评分稍高，OOB 评估略显保守，低于测试集上的表现约 2%。
+
+- **OOB 决策函数**：
+  - OOB 决策函数可以通过 `oob_decision_function_` 属性访问，它返回每个训练实例的类概率（假设基础分类器有 `predict_proba()` 方法）。例如，对于前 3 个训练实例，Bagging 集成模型返回的概率如下：
+
+   ```python
+   bag_clf.oob_decision_function_[:3]
+   ```
+
+   输出如下：
+
+   ```text
+   array([[0.32352941, 0.67647059],
+          [0.3375    , 0.6625    ],
+          [1.        , 0.        ]])
+   ```
+
+   这表示第一个实例有 67.6% 的概率属于正类，32.4% 的概率属于负类。
+
+{.marker-round}
+
+### Random Patches和Random Subspaces
+
+#### 问题 5: 什么是随机补丁（Random Patches）和随机子空间（Random Subspaces）方法？
+
+**解答**：
+
+- **随机补丁和随机子空间**：
+  - `BaggingClassifier` 类不仅支持对样本进行采样，还可以对**特征**进行采样。通过两个超参数控制特征采样：
+    - `max_features`: 用来控制特征的采样数量。
+    - `bootstrap_features`: 控制特征是否有放回地进行采样（类似于对样本的 `bootstrap` 参数）。
+
+- **随机补丁方法**：
+  - 随机补丁方法同时对**训练实例**和**特征**进行采样。这种方法非常适用于高维数据（如图像），因为它能够显著加快训练速度。
+
+- **随机子空间方法**：
+  - 在随机子空间方法中，所有训练实例都被保留（通过设置 `bootstrap=False` 和 `max_samples=1.0`），但对特征进行采样（通过设置 `bootstrap_features=True` 和/或将 `max_features` 设置为小于 1.0 的值）。
+
+- **方法的效果**：
+  - 特征采样引入了更多的预测器多样性，通常以**略高的偏差**换取**更低的方差**。这种方法尤其适合需要降低方差的场景，并且可以通过更多的随机性来提升泛化能力。
+
+{.marker-round}
+
+### 随机森林
+
+
+#### 问题 6: 什么是随机森林（Random Forest）？
+
+**解答**：
+
+- **随机森林的概念**：
+  - 随机森林是决策树的集成模型，通常使用 Bagging 方法进行训练（有时也使用 Pasting）。Bagging 的 `max_samples` 参数通常设置为训练集的大小。
+  - 相比于手动使用 `BaggingClassifier` 和 `DecisionTreeClassifier` 来构建集成模型，Scikit-Learn 提供了更方便的 `RandomForestClassifier` 类来直接实现随机森林。
+
+- **随机森林的实现**：
+  - 以下代码展示了如何使用 `RandomForestClassifier` 训练一个包含 500 棵决策树的随机森林模型，每棵树最多有 16 个叶节点：
+
+   ```python
+   from sklearn.ensemble import RandomForestClassifier
+
+   rnd_clf = RandomForestClassifier(n_estimators=500, max_leaf_nodes=16,
+                                    n_jobs=-1, random_state=42)
+   rnd_clf.fit(X_train, y_train)
+   y_pred_rf = rnd_clf.predict(X_test)
+   ```
+
+- **随机森林与 Bagging 的关系**：
+  - `RandomForestClassifier` 拥有 `DecisionTreeClassifier` 的所有超参数（用于控制树的生长方式），同时也拥有 `BaggingClassifier` 的所有超参数（用于控制集成的方式）。
+  - 随机森林算法在生成树时引入了额外的随机性：它不会总是选择分裂节点时最优的特征，而是在一个随机选择的特征子集上进行选择。默认情况下，它在总特征数 `n` 中随机选择特征。这样可以增加树的多样性，降低方差，同时稍微增加偏差，从而提升整体模型的性能。
+
+- **等效的 BaggingClassifier 实现**：
+  - 下面的 `BaggingClassifier` 配置与上面的 `RandomForestClassifier` 是等效的：
+
+   ```python
+   bag_clf = BaggingClassifier(
+       DecisionTreeClassifier(max_features="sqrt", max_leaf_nodes=16),
+       n_estimators=500, n_jobs=-1, random_state=42
+   )
+   ```
+
+   这里的 `max_features="sqrt"` 代表随机森林的特征随机选择策略。
+
+{.marker-round}
+
+### 极端随机树
+
+#### 问题 7: 什么是 Extra-Trees（极端随机树）？
+
+**解答**：
+
+- **Extra-Trees 的概念**：
+  - 在随机森林中，每个节点只会在一个随机特征子集上选择最优的分裂特征。可以通过为每个特征选择随机阈值，而不是像常规决策树那样搜索最佳分裂阈值，来使树的生成更加随机。为此，只需要在创建 `DecisionTreeClassifier` 时将 `splitter` 参数设置为 `"random"`。
+  - 由这种**极端随机树（Extra-Trees）**组成的森林称为**Extra-Trees 集成模型**。这种方法进一步增加了随机性，通常以更高的偏差换取更低的方差。
+
+- **Extra-Trees 与随机森林的区别**：
+  - 与随机森林相比，Extra-Trees 在训练时更加快速，因为在每个节点不需要搜索最佳的分裂阈值。搜索最佳阈值是生成决策树中最耗时的部分之一。
+  - Extra-Trees 的 API 与 `RandomForestClassifier` 几乎相同，不同的是 `ExtraTreesClassifier` 的 `bootstrap` 参数默认设置为 `False`。
+
+- **Extra-Trees 的实现**：
+  - 你可以使用 Scikit-Learn 的 `ExtraTreesClassifier` 来创建 Extra-Trees 分类器，示例如下：
+
+   ```python
+   from sklearn.ensemble import ExtraTreesClassifier
+
+   ext_clf = ExtraTreesClassifier(n_estimators=500, max_leaf_nodes=16, random_state=42)
+   ext_clf.fit(X_train, y_train)
+   y_pred_ext = ext_clf.predict(X_test)
+   ```
+
+- **选择 RandomForest 还是 Extra-Trees**：
+  - 难以预先判断 `RandomForestClassifier` 和 `ExtraTreesClassifier` 哪一个会表现得更好。通常情况下，最好的方法是使用交叉验证来对比这两种模型，并选择效果更好的。
+
+{.marker-round}
+
+### 使用RF评估特征重要性
+
+#### 问题 8: 如何使用随机森林评估特征重要性？
+
+**解答**：
+
+- **特征重要性的概念**：
+  - 随机森林的一个重要优势是它能够轻松衡量每个特征的重要性。Scikit-Learn 会通过观察使用某个特征的树节点在所有树中平均减少的纯度（impurity）来度量该特征的重要性。更精确地说，它是一个加权平均值，其中每个节点的权重等于与该节点关联的训练样本的数量。
+
+- **自动计算特征重要性**：
+  - Scikit-Learn 会自动为每个特征计算这个分数，并将所有特征的重要性总和缩放为 1。可以通过 `feature_importances_` 属性访问这个结果。
+  - 下面的代码展示了如何使用 `RandomForestClassifier` 对 Iris 数据集进行训练并输出每个特征的重要性：
+
+   ```python
+   from sklearn.datasets import load_iris
+   from sklearn.ensemble import RandomForestClassifier
+
+   # 加载 Iris 数据集
+   iris = load_iris(as_frame=True)
+
+   # 训练随机森林模型
+   rnd_clf = RandomForestClassifier(n_estimators=500, random_state=42)
+   rnd_clf.fit(iris.data, iris.target)
+
+   # 输出特征重要性
+   for score, name in zip(rnd_clf.feature_importances_, iris.data.columns):
+       print(round(score, 2), name)
+   ```
+
+   输出的特征重要性如下：
+
+   ```text
+   0.11 sepal length (cm)
+   0.02 sepal width (cm)
+   0.44 petal length (cm)
+   0.42 petal width (cm)
+   ```
+
+   从结果中可以看出，花瓣长度（44%）和宽度（42%）是最重要的特征，而花萼长度（11%）和宽度（2%）的重要性相对较低。
+
+- **特征重要性在 MNIST 数据集上的应用**：
+  - 如果你在 MNIST 数据集上训练随机森林，并绘制每个像素的重要性，你会得到类似 **Figure 7-6** 的图像。![Figure7-6MNIST像素重要性(根据随机森林分类器)](../assets/attachment/hands_on_machine_learning/Figure7-6MNIST像素重要性(根据随机森林分类器).png)红色区域表示重要性较高的像素，而黄色和黑色区域则表示不重要的像素。
+
+{.marker-round}
+
+### AdaBoost
+
+#### 问题 9: 什么是 AdaBoost？它如何工作？
+
+**解答**：
+
+- **AdaBoost 的概念**：
+  - AdaBoost 是一种通过加权的方式改进每个预测器的顺序学习算法。具体来说，每个新预测器会重点关注前一个模型表现不好的训练实例（即被错误分类的实例），从而使模型在这些“难点”上逐渐变得更好。
+  - AdaBoost 的工作方式如下：首先，训练一个基础分类器（例如决策树），并用它对训练集进行预测。然后，算法会增加那些被错误分类的实例的权重，并训练第二个分类器，重点关注这些权重更高的实例。该过程不断重复，直到训练出一系列预测器（如 **Figure 7-7** 所示）。![Figure7-7利用实例权重更新进行AdaBoost顺序训练](../assets/attachment/hands_on_machine_learning/Figure7-7利用实例权重更新进行AdaBoost顺序训练.png)
+
+- **AdaBoost 的学习过程**：
+  - AdaBoost 的学习是顺序进行的，后一个预测器基于前一个预测器的错误分类结果进行学习。最终，模型通过对这些预测器进行加权投票来做出分类决定。
+  - ![Figure7-8连续预测因子的决策边界](../assets/attachment/hands_on_machine_learning/Figure7-8连续预测因子的决策边界.png)**Figure 7-8** 展示了在 Moons 数据集上五个连续预测器的决策边界，左图使用学习率为 `KaTeX:1`，右图使用学习率为 `KaTeX:0.5`。
+
+- **AdaBoost 的具体算法**：
+
+  - 初始时，每个训练实例的权重 `KaTeX:w^{(i)}` 被设置为相等。然后，基于以下步骤进行学习：
+
+  1. **计算加权错误率**：
+
+   ```KaTeX
+   r_j = \frac{\sum_{i=1}^{m} w^{(i)} \cdot \mathbb{1} \left( y^{(i)} \neq \hat{y}_j^{(i)} \right)}{\sum_{i=1}^{m} w^{(i)}}
+   ```
+
+   这里， `KaTeX:\hat{y}_j^{(i)}` 是第 `KaTeX:j` 个预测器对第 `KaTeX:i` 个样本的预测结果， `KaTeX:w^{(i)}` 是该样本的权重。
+
+  2. **计算预测器的权重**：
+
+   ```KaTeX
+   \alpha_j = \eta \cdot \log \left( \frac{1 - r_j}{r_j} \right)
+   ```
+
+   其中， `KaTeX:\eta` 是学习率超参数（默认值为 `KaTeX:1`）。预测器越准确，权重 `KaTeX:\alpha_j` 越大。
+
+  3. **更新实例权重**：
+
+   ```KaTeX
+   w^{(i)} \leftarrow w^{(i)} \cdot \exp \left( \alpha_j \cdot \mathbb{1} \left( y^{(i)} \neq \hat{y}_j^{(i)} \right) \right)
+   ```
+
+   错误分类的实例权重会被放大，正确分类的实例权重保持不变。
+
+  4. **重复步骤**，直到达到指定的预测器数量或模型的性能足够好。
+
+- **AdaBoost 的预测过程**：
+
+  - AdaBoost 的最终预测是基于所有预测器的加权投票，计算方式如下：
+
+   ```KaTeX
+   \hat{y}(x) = \arg \max_k \sum_{j=1}^{N} \alpha_j \cdot \mathbb{1} \left( \hat{y}_j(x) = k \right)
+   ```
+
+   这里， `KaTeX:N` 是预测器的数量，`KaTeX:\alpha_j` 是第 `KaTeX:j` 个预测器的权重。
+
+- **实现 AdaBoost 的代码示例**：
+  - 使用 Scikit-Learn 中的 `AdaBoostClassifier` 实现 AdaBoost，示例如下：
+
+   ```python
+   from sklearn.ensemble import AdaBoostClassifier
+   from sklearn.tree import DecisionTreeClassifier
+
+   ada_clf = AdaBoostClassifier(
+       DecisionTreeClassifier(max_depth=1), n_estimators=30,
+       learning_rate=0.5, random_state=42
+   )
+   ada_clf.fit(X_train, y_train)
+   ```
+
+- **注意**：
+  - 如果 AdaBoost 集成模型在训练集上表现过拟合，可以尝试减少预测器的数量或者对基础分类器进行更强的正则化。
+
+{.marker-round}
+
+### Gradient Boosting
+
+
+#### 问题10. 什么是 Gradient Boosting，它如何工作？
+
+**Gradient Boosting** 是一种提升（boosting）算法，与 **AdaBoost** 类似，但其主要区别在于：Gradient Boosting 不是在每次迭代中调整样本权重，而是通过拟合残差（residual errors）来改进模型的预测能力。其工作方式是逐步增加预测器，并让每个新模型修正前一个模型的误差。
+
+#### 问题11. 如何使用 Gradient Boosting 进行回归分析？
+
+我们可以使用决策树作为基预测器来进行回归。这个过程被称为 **Gradient Tree Boosting** 或 **Gradient Boosted Regression Trees (GBRT)**。
+
+首先，生成一个带噪声的二次曲线数据集，并使用第一个 `DecisionTreeRegressor` 进行拟合：
+
+```python
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor
+
+np.random.seed(42)
+X = np.random.rand(100, 1) - 0.5
+y = 3 * X[:, 0]**2 + 0.05 * np.random.randn(100)  # y = 3x² + Gaussian noise
+
+tree_reg1 = DecisionTreeRegressor(max_depth=2, random_state=42)
+tree_reg1.fit(X, y)
+```
+
+#### 问题12. 如何拟合 Gradient Boosting 的后续树？
+
+**Step 1**: 使用第一个预测器的残差，拟合第二个 `DecisionTreeRegressor`：
+
+```python
+y2 = y - tree_reg1.predict(X)
+tree_reg2 = DecisionTreeRegressor(max_depth=2, random_state=43)
+tree_reg2.fit(X, y2)
+```
+
+**Step 2**: 使用第二个预测器的残差，拟合第三个 `DecisionTreeRegressor`：
+
+```python
+y3 = y2 - tree_reg2.predict(X)
+tree_reg3 = DecisionTreeRegressor(max_depth=2, random_state=44)
+tree_reg3.fit(X, y3)
+```
+
+#### 问题13. 如何结合多个树的预测结果？
+
+在 GBRT 中，最终的预测是所有树预测值的累加和。我们可以通过对新数据点进行预测，来累加各个树的预测值：
+
+```python
+X_new = np.array([[-0.4], [0.0], [0.5]])
+sum(tree.predict(X_new) for tree in (tree_reg1, tree_reg2, tree_reg3))
+```
+
+#### 问题14. 如何可视化每棵树的预测和集成预测的效果？
+
+![Figure7-9梯度提升预测器正常训练与根据前一个预测器的残差进行训练](../assets/attachment/hands_on_machine_learning/Figure7-9梯度提升预测器正常训练与根据前一个预测器的残差进行训练.png)**Figure 7-9** 展示了每棵树在训练集上的预测效果，以及集成后的预测效果：
+- 左图展示了训练集和每棵单树的预测。
+- 右图展示了集成模型的预测，它是所有树预测值的累加。
+
+随着树的增加，模型的预测逐渐改善。
+
+
+#### 问题15. 如何使用 `GradientBoostingRegressor` 简化训练过程？
+
+Scikit-Learn 提供了 `GradientBoostingRegressor` 类，可以更简便地训练 GBRT 模型。我们可以通过设置超参数（如 `max_depth` 和 `n_estimators`）来控制树的数量和每棵树的复杂度。
+
+以下代码与之前手动训练的模型等效：
+
+```python
+from sklearn.ensemble import GradientBoostingRegressor
+
+gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=3, learning_rate=1.0, random_state=42)
+gbrt.fit(X, y)
+```
+
+#### 问题16. 学习率和树的数量如何影响模型表现？
+
+- `learning_rate` 参数控制每棵树对最终预测的贡献值。如果将其设置得较低（如 `0.05`），需要更多的树来达到相同的效果。
+- **图解**：![Figure7-10不同学习率和树数量下的模型效果](../assets/attachment/hands_on_machine_learning/Figure7-10不同学习率和树数量下的模型效果.png) **Figure 7-10** 展示了不同学习率和树数量下的模型效果：
+  - 左图：`learning_rate=1.0, n_estimators=3`，模型在训练集上表现不足。
+  - 右图：`learning_rate=0.05, n_estimators=92`，模型在训练集上表现良好。
+
+
+#### 问题17. 如何通过早停法确定最佳树的数量？
+
+可以通过 `n_iter_no_change` 参数实现 **早停法（early stopping）**。如果模型在最后 10 棵树上没有显著进展，它将自动停止训练。
+
+以下代码演示了如何使用 `GradientBoostingRegressor` 实现早停：
+
+```python
+gbrt_best = GradientBoostingRegressor(
+    max_depth=2, learning_rate=0.05, n_estimators=500,
+    n_iter_no_change=10, random_state=42
+)
+gbrt_best.fit(X, y)
+```
+
+模型自动选择了 92 棵树：
+```python
+gbrt_best.n_estimators_
+# 输出：92
+```
+
+#### 问题18. `n_iter_no_change` 如何工作？
+
+当设置 `n_iter_no_change` 时，`fit()` 方法会自动将训练集分割为一个较小的训练集和一个验证集。验证集的大小由 `validation_fraction` 控制，默认情况下为 10%。此外，`tol` 参数决定了验证集表现改进的最小值，默认值为 0.0001。
+
+#### 问题19. 什么是 **stochastic gradient boosting（随机梯度提升）**？
+
+`GradientBoostingRegressor` 还支持一个 `subsample` 超参数，用于指定每棵树使用的训练实例比例。若将 `subsample=0.25`，则每棵树只使用 25% 的训练实例，且这些实例是随机选择的。  
+这种技术被称为 **stochastic gradient boosting**，它在一定程度上增加了模型的偏差（bias），但减少了方差（variance），并且加速了训练过程。
+
+{.marker-none}
+
+### Histogram-Based Gradient Boosting
+
+#### 问题20. 什么是基于直方图的梯度提升（Histogram-Based Gradient Boosting, HGB）？
+
+**Histogram-Based Gradient Boosting (HGB)** 是 Scikit-Learn 提供的一种优化的梯度提升算法，专门针对大型数据集。HGB 通过将输入特征分箱（binning），用整数替换特征值来简化训练过程。  
+关键点：
+- **分箱数量**由 `KaTeX:max_bins` 超参数控制，默认为 255，最大不超过 255。
+- 分箱减少了需要评估的阈值数量，提升了训练速度。
+- 分箱的计算复杂度为 `KaTeX:O(b \times m \times \log(m))` ，其中  `KaTeX:b`  是分箱数， `KaTeX:m`  是训练实例数。
+
+尽管分箱可能导致精度下降，但它起到了正则化的作用，可以帮助减少过拟合或欠拟合。
+
+#### 问题21. HGB 有哪些特点和优势？
+
+Scikit-Learn 提供了两个 HGB 的实现：
+- `HistGradientBoostingRegressor`
+- `HistGradientBoostingClassifier`
+
+与 `GradientBoostingRegressor` 和 `GradientBoostingClassifier` 相比，HGB 的主要区别包括：
+- **自动早停**：如果样本数量超过 10,000，自动激活早停。
+- **不支持子采样**（subsampling）。
+- **n_estimators 被重命名为 max_iter**。
+- 只有少数决策树超参数可以调整：`max_leaf_nodes`、`min_samples_leaf` 和 `max_depth`。
+
+HGB 的另外两个特点是：支持 **类别特征** 和 **缺失值**。
 
 
 
+#### 问题22. 如何在 HGB 中处理类别特征？
 
+对于类别特征，特征值必须被编码为从 0 到 `max_bins` 之间的整数。可以使用 `OrdinalEncoder` 来实现这一转换。下面是如何为加州住房数据集（**Chapter 2** 中介绍的）构建完整流水线并进行训练的示例：
+
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.compose import make_column_transformer
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.preprocessing import OrdinalEncoder
+
+hgb_reg = make_pipeline(
+    make_column_transformer((OrdinalEncoder(), ["ocean_proximity"]),
+                            remainder="passthrough"),
+    HistGradientBoostingRegressor(categorical_features=[0], random_state=42)
+)
+
+hgb_reg.fit(housing, housing_labels)
+```
+
+#### 问题23. 这一流水线的优点是什么？
+
+- 无需 **imputer**（填补缺失值的工具）、**scaler**（标准化工具）或 **one-hot encoder**，因此极为方便。
+- 类别特征的列索引必须通过 `categorical_features` 参数指定，使用列索引或布尔数组。
+
+在没有任何超参数调整的情况下，模型的均方根误差（RMSE）大约为 47,600。
+
+
+
+#### 问题24. 有哪些其他梯度提升算法的实现？
+
+有几种其他优化的梯度提升实现可用，尤其在 Python 机器学习生态系统中，这些库包括：
+- **XGBoost**
+- **CatBoost**
+- **LightGBM**
+
+这些库的 API 与 Scikit-Learn 非常相似，并提供了许多额外的功能，如 GPU 加速。它们都专门为梯度提升优化，值得进一步探索。
+
+此外，**TensorFlow Random Forests** 库也提供了多种随机森林算法的优化实现，包括普通的随机森林、extra-trees、GBRT 等。
+
+{.marker-none}
+
+### Stacking Generalization
+
+#### 25. 什么是 Stacking（堆叠）？
+
+**Stacking**（堆叠泛化，stacked generalization）是一种集成方法，与简单的投票集成不同，Stacking 通过训练一个模型（称为 **blender** 或 **meta-learner**）来整合所有基预测器的预测结果。
+
+**图解**：![Figure7-11一个Stacking模型如何在一个新实例上做出回归任务的预测](../assets/attachment/hands_on_machine_learning/Figure7-11一个Stacking模型如何在一个新实例上做出回归任务的预测.png) **Figure 7-11** 说明了一个 Stacking 模型如何在一个新实例上做出回归任务的预测。底层的三个预测器输出了不同的预测值（如 3.1、2.7、2.9），最终的 blender 使用这些预测值作为输入，做出最终的预测 3.0。
+
+
+
+#### 26. 如何训练 blender（混合器）模型？
+
+为了训练 blender，你需要首先生成一个训练集，称为 **blending training set**。我们可以对集成中的每个预测器使用 `cross_val_predict()` 来生成每个训练实例的**交叉验证预测**。
+
+**图解**：![Figure7-12如何训练blender示意图](../assets/attachment/hands_on_machine_learning/Figure7-12如何训练blender示意图.png) **Figure 7-12** 展示了如何训练 blender：
+- 通过对每个基预测器进行交叉验证生成交叉验证预测，这些预测作为 blender 的输入。
+- Blending 训练集将包含每个预测器的一个输入特征。
+- 一旦 blender 被训练好，基预测器会在完整训练集上再次训练。
+
+```python
+# 示例代码 - 训练blender
+from sklearn.model_selection import cross_val_predict
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+
+# 假设我们有多个基预测器
+base_model1 = RandomForestRegressor(random_state=42)
+base_model2 = RandomForestRegressor(random_state=43)
+base_model3 = RandomForestRegressor(random_state=44)
+
+# 用cross_val_predict生成预测器的预测，作为blender的输入
+pred1 = cross_val_predict(base_model1, X_train, y_train, cv=5)
+pred2 = cross_val_predict(base_model2, X_train, y_train, cv=5)
+pred3 = cross_val_predict(base_model3, X_train, y_train, cv=5)
+
+# 将预测作为blender的训练数据
+blending_X_train = np.column_stack((pred1, pred2, pred3))
+blender = LinearRegression()
+blender.fit(blending_X_train, y_train)
+```
+
+
+#### 27. 如何实现多层堆叠模型？
+
+你可以训练多个不同的 blender 模型（例如，一个使用线性回归，另一个使用随机森林回归），然后在它们之上添加另一个 blender，形成一个多层的堆叠模型。
+
+**图解**：![Figure7-13一个多层堆叠的例子](../assets/attachment/hands_on_machine_learning/Figure7-13一个多层堆叠的例子.png)**Figure 7-13** 展示了一个多层堆叠的例子。在第二层上，有多个 blender 组合不同的基预测器的预测，然后在第三层上有一个 blender 整合前一层的所有预测并输出最终的预测。
+
+
+
+#### 28. Scikit-Learn 中如何实现 Stacking？
+
+Scikit-Learn 提供了两个类来实现堆叠集成：
+- **StackingClassifier**
+- **StackingRegressor**
+
+以下是一个使用 `StackingClassifier` 的例子：
+
+```python
+from sklearn.ensemble import StackingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+
+stacking_clf = StackingClassifier(
+    estimators=[
+        ('lr', LogisticRegression(random_state=42)),
+        ('rf', RandomForestClassifier(random_state=42)),
+        ('svc', SVC(probability=True, random_state=42))
+    ],
+    final_estimator=RandomForestClassifier(random_state=43),
+    cv=5  # cross-validation 的折数
+)
+
+stacking_clf.fit(X_train, y_train)
+```
+
+#### 29. 在 Stacking 中，如何处理预测器输出？
+
+对于每个预测器，`StackingClassifier` 会调用 `predict_proba()` 方法，如果可用的话。如果不可用，它将回退到 `decision_function()` 或 `predict()`。如果没有提供 `final_estimator`，默认情况下，`StackingClassifier` 会使用 `LogisticRegression`，而 `StackingRegressor` 会使用 `RidgeCV`。
+
+
+
+#### 30. Stacking 的实际效果如何？
+
+在测试集上评估堆叠模型时，你会发现它的准确率可以达到 92.8%，略微高于使用软投票的投票分类器（92%）。虽然性能有所提升，但 Stacking 增加了训练时间和系统复杂性。
+
+**总结**：
+- 集成方法（如随机森林、AdaBoost、GBRT）功能强大且易于使用。
+- 它们特别适合处理异构表格数据。
+- 像投票分类器和堆叠分类器这样的集成方法，能进一步提升系统性能。
+
+{.marker-round}
+
+### exercise {.col-span-3}
+
+| **ID** | **Question** | **中文翻译** |
+|--------|--------------|--------------|
+| 1      | If you have trained five different models on the exact same training data, and they all achieve 95% precision, is there any chance that you can combine these models to get better results? If so, how? If not, why? | 如果你在完全相同的训练数据上训练了五个不同的模型，并且它们都达到了95%的精度，是否有可能将这些模型组合在一起以获得更好的结果？如果可以，怎么做？如果不行，为什么？ |
+| 2      | What is the difference between hard and soft voting classifiers? | 硬投票分类器和软投票分类器之间有什么区别？ |
+| 3      | Is it possible to speed up training of a bagging ensemble by distributing it across multiple servers? What about pasting ensembles, boosting ensembles, random forests, or stacking ensembles? | 是否可以通过分布在多个服务器上来加速袋装集成的训练？粘贴集成、提升集成、随机森林或堆叠集成呢？ |
+| 4      | What is the benefit of out-of-bag evaluation? | 包外评估有什么好处？ |
+| 5      | What makes extra-trees ensembles more random than regular random forests? How can this extra randomness help? Are extra-trees classifiers slower or faster than regular random forests? | 为什么额外随机树集成比普通随机森林更随机？这种额外的随机性如何帮助？额外随机树分类器比普通随机森林更慢还是更快？ |
+| 6      | If your AdaBoost ensemble underfits the training data, which hyperparameters should you tweak, and how? | 如果你的 AdaBoost 集成在训练数据上欠拟合，你应该调整哪些超参数，如何调整？ |
+| 7      | If your gradient boosting ensemble overfits the training set, should you increase or decrease the learning rate? | 如果你的梯度提升集成在训练集上过拟合，你应该增加还是减少学习率？ |
+| 8      | Load the MNIST dataset (introduced in Chapter 3), and split it into a training set, a validation set, and a test set (e.g., use 50,000 instances for training, 10,000 for validation, and 10,000 for testing). Then train various classifiers, such as a random forest classifier, an extra-trees classifier, and an SVM classifier. Next, try to combine them into an ensemble that outperforms each individual classifier on the validation set, using soft or hard voting. Once you have found one, try it on the test set. How much better does it perform compared to the individual classifiers? | 加载 MNIST 数据集（第 3 章介绍），并将其拆分为训练集、验证集和测试集（例如，使用 50,000 个实例进行训练，10,000 个用于验证，10,000 个用于测试）。然后训练各种分类器，例如随机森林分类器、额外树分类器和 SVM 分类器。接下来，尝试将它们组合成一个集成，使用软投票或硬投票在验证集上表现优于每个单个分类器。当你找到一个时，在测试集上尝试它。与单个分类器相比，它的表现如何？ |
+| 9      | Run the individual classifiers from the previous exercise to make predictions on the validation set, and create a new training set with the resulting predictions: each training instance is a vector containing the set of predictions from all your classifiers for an image, and the target is the image’s class. Train a classifier on this new training set. Congratulations—you have just trained a blender, and together with the classifiers it forms a stacking ensemble! Now evaluate the ensemble on the test set. For each image in the test set, make predictions with all your classifiers, then feed the predictions to the blender to get the ensemble’s predictions. How does it compare to the voting classifier you trained earlier? Now try again using a StackingClassifier instead. Do you get better performance? If so, why? | 运行上一个练习中的单个分类器在验证集上进行预测，并使用生成的预测创建一个新的训练集：每个训练实例是一个包含所有分类器对图像预测值的向量，目标是图像的类别。使用这个新训练集训练分类器。恭喜——你刚刚训练了一个混合器，并与这些分类器一起组成了一个堆叠集成！现在在测试集上评估这个集成。对于测试集中的每个图像，使用所有分类器进行预测，然后将预测传递给混合器以获得集成的预测结果。与之前训练的投票分类器相比，它的表现如何？现在尝试使用 StackingClassifier 再试一次。你是否获得了更好的性能？如果是，为什么？ |
+
+
+{.show-header .left-text}
 
 
 
