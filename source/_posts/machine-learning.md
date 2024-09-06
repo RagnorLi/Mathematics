@@ -6393,6 +6393,1555 @@ stacking_clf.fit(X_train, y_train)
 
 {.show-header .left-text}
 
+## Dimensionality Reduction
+
+### 维度灾难
+
+#### 问题1：什么是维度灾难（Curse of Dimensionality）？
+
+**维度灾难** 是指在高维空间中，许多直觉上容易理解的现象在高维时会表现出不同的行为。例如，在二维单位正方形（1x1的正方形）中，随机选择一个点，它距离边界小于0.001的概率只有大约0.4%。然而，在一个10,000维的单位超立方体中，这个概率大于99.999999%，即大多数点都会非常接近边界。
+
+**图解**： ![Figure8-1维度的可视化](../assets/attachment/hands_on_machine_learning/Figure8-1维度的可视化.png)**Figure 8-1** 显示了从 0 维到 4 维的超立方体，其中：
+- 0D 是一个点，
+- 1D 是一个线段，
+- 2D 是一个正方形，
+- 3D 是一个立方体，
+- 4D 是一个超正方体。
+
+
+#### 问题2：为什么高维空间中点之间的距离非常大？
+
+在高维空间中，随机选取的两点之间的平均距离远大于低维空间。例如：
+- 在二维单位正方形中，任意两点之间的平均距离约为 0.52。
+- 在三维单位立方体中，这个距离约为 0.66。
+- 但是，在一个 1,000,000 维的单位超立方体中，任意两点之间的平均距离高达 408.25！
+
+这表明，尽管两点都在同一个单位超立方体中，但它们之间的距离仍然会非常大。
+
+
+#### 问题3：高维空间中数据稀疏性的影响是什么？
+
+随着维度的增加，训练实例之间的距离变得非常大，导致大多数训练实例彼此之间非常遥远。这意味着：
+1. 新实例可能会远离任何一个训练实例，使得基于训练集的预测不再可靠。
+2. 高维训练集越大，训练实例彼此之间的密度就越低，从而增加过拟合的风险。
+
+
+#### 问题4：解决维度灾难的理论解决方案是什么？
+
+理论上，解决维度灾难的一种方法是增加训练集的规模，以获得足够密度的训练实例。然而，在实际中，训练实例的数量随着维度的增加呈指数增长。  
+例如，具有 100 个特征（例如 MNIST 问题中的特征数量要少得多）的数据集，所有特征的取值范围从 0 到 1。为了保证训练实例之间的平均距离小于 0.1，你需要的训练实例数量甚至比可观测宇宙中的原子数量还多！因此，实际上这是不可行的。
+
+{.marker-none}
+
+### 投影
+
+#### 问题1：什么是投影（Projection）？
+
+在实际问题中，训练实例并不是均匀分布在所有维度中的。许多特征几乎是常量，而另一些特征高度相关。因此，所有训练实例实际上位于一个较低维度的子空间中。也就是说，高维空间中的数据实际上只占据了一个较低维的区域。
+
+**图解**：![Figure8-2一个3D的数据集分布接近于一个2D空间](../assets/attachment/hands_on_machine_learning/Figure8-2一个3D的数据集分布接近于一个2D空间.png)**Figure 8-2** 展示了一个 3 维数据集（红色和蓝色的小球），该数据集接近于一个 2 维子空间（灰色平面）。
+
+
+#### 问题2：如何将高维数据集投影到低维空间？
+
+通过将每个训练实例垂直投影到低维子空间上，可以得到降维后的数据集。  
+**图解**：![Figure8-3把3D数据集投影到2D平面上看分布](../assets/attachment/hands_on_machine_learning/Figure8-3把3D数据集投影到2D平面上看分布.png)**Figure 8-3** 所示，将 3D 数据集投影到 2D 子空间后，得到的 2D 数据集的特征用新坐标系 `KaTeX:z_1` 和 `KaTeX:z_2` 表示。
+
+这些坐标代表投影到平面上的点的坐标。
+
+{.marker-none}
+
+### 流形学习
+
+#### 问题1：什么是流形学习（Manifold Learning）？
+
+流形学习是一种维度降低的技术，当数据位于高维空间中的某个扭曲的低维子空间时，单纯通过投影不能有效降低维度。  
+![Figure8-4著名的SwissRoll数据集](../assets/attachment/hands_on_machine_learning/Figure8-4著名的SwissRoll数据集.png)例如，**Figure 8-4** 中展示了著名的 **Swiss Roll** 数据集，这个数据集虽然存在于 3 维空间，但其实际形状是一个卷曲的二维流形。
+
+
+#### 问题2：为什么简单的投影方法不适合 Swiss Roll 数据集？
+
+简单的投影（例如丢弃 `KaTeX:x_3` 维度）会将 Swiss Roll 的不同层压在一起，使得数据层次之间的结构信息丢失。![Figure8-5SwissRoll数据集投影到平面vs展开](../assets/attachment/hands_on_machine_learning/Figure8-5SwissRoll数据集投影到平面vs展开.png)**Figure 8-5** 左侧展示了将 Swiss Roll 数据集投影到平面后的样子，而右侧展示了将其展开后的二维数据集。
+
+
+
+#### 问题3：什么是流形假设（Manifold Assumption）？
+
+**流形假设** 认为大多数真实世界的高维数据集实际上位于低维流形上。流形假设是流形学习的基础，旨在找到数据所在的低维流形并将其展开，以便进行更简单的处理。
+
+例如，在 **MNIST** 数据集中，尽管每个手写数字图像的维度较高，但它们实际上位于一个低维的流形中，因为手写数字图像共享许多结构上的相似性。
+
+
+#### 问题4：流形学习如何简化分类任务？
+
+假设任务可以在流形的低维空间中完成，这将使任务变得更简单，例如分类或回归。当 Swiss Roll 数据集展开后，决策边界变得更加线性化。  
+**图解**：![Figure8-6SwissRoll数据集在未展开和展开之后的决策边界情况](../assets/attachment/hands_on_machine_learning/Figure8-6SwissRoll数据集在未展开和展开之后的决策边界情况.png) **Figure 8-6** 展示了 Swiss Roll 数据集在未展开和展开之后的决策边界情况：
+- 左侧图展示了在 3D 空间中的复杂决策边界。
+- 右侧图展示了在 2D 展开的流形中的简单直线决策边界。
+
+
+#### 问题5：流形假设是否总是成立？
+
+流形假设并不总是适用。例如，**Figure 8-6** 的底部展示了一个边界位于  `KaTeX:x_1 = 5`  的决策边界，这在 3D 空间中是一条简单的垂直平面。但在展开后的流形中，这条边界变成了由四条独立线段组成的复杂形状。因此，维度降低并不总是简化问题。
+
+
+#### 总结：
+
+- 降维通常可以加快训练过程，但是否能得到更好的结果取决于数据集。
+- 流形学习基于流形假设，这一假设认为数据位于高维空间中的低维流形上。
+
+{.marker-none}
+
+### PCA-保持方差
+
+
+#### 问题1：如何选择正确的超平面进行投影以保持方差？
+
+在将训练集投影到低维超平面之前，首先需要选择正确的超平面。![Figure8-7选择数据投影的子空间](../assets/attachment/hands_on_machine_learning/Figure8-7选择数据投影的子空间.png)例如，**Figure 8-7** 中展示了一个简单的二维数据集以及三条不同的轴（即 1D 超平面）。  
+图右侧展示了投影到这些轴上的结果：
+- 投影到实线上（top）的轴保持了最大方差。
+- 投影到虚线上（middle）的轴保持了中等方差。
+- 投影到点线上（bottom）的轴保持了最小方差。
+
+
+
+#### 问题2：为什么要选择保持最大方差的轴？
+
+选择保持最大方差的轴通常是合理的，因为它很可能丢失的信息最少。另一种解释是，保持最大方差的轴也是最小化原始数据集和其在该轴上的投影之间的均方距离的轴。
+
+这就是主成分分析（**PCA**）的基本思想。
+
+{.marker-none}
+
+### PCA-主成分
+
+#### 问题1：什么是主成分（Principal Components, PCs）？
+
+**主成分** 是数据集中方差最大的方向，PCA（主成分分析）通过识别这些方向来降低数据维度。在 **Figure 8-7** 中，实线表示最大方差的方向，即第一主成分 \( C_1 \)。第二个轴（虚线）是与第一个轴正交的方向，表示第二主成分 \( C_2 \)，它是剩余方差最大的方向。
+
+对于更高维度的数据集，PCA 还会找到第三个轴，正交于前两个轴，依此类推，直到找到与数据维度数相同的轴。
+
+
+#### 问题2：如何理解 PCA 的第 \( i \) 个主成分？
+
+第 \( i \) 个轴被称为数据的第 \( i \) 个主成分（Principal Component, PC）。  
+例如：
+- 在 **Figure 8-7** 中，第一个主成分 \( C_1 \) 对应于方差最大的方向。
+- 第二个主成分 \( C_2 \) 与第一个主成分正交，代表剩余数据中最大方差的方向。
+
+投影后，在 **Figure 8-3** 中，第一主成分对应于 \( z_1 \) 轴，第二主成分对应于 \( z_2 \) 轴。
+
+
+#### 问题3：如何找到训练集的主成分？
+
+幸运的是，我们可以使用矩阵分解技术 **SVD（奇异值分解）** 来求出训练集的主成分。SVD 将训练集矩阵 \( X \) 分解为三个矩阵 \( U \Sigma V^T \)，其中 \( V \) 包含定义所有主成分的单位向量。
+
+**公式**：主成分矩阵可以表示为：
+
+```KaTeX
+V = \begin{bmatrix} c_1 & c_2 & \cdots & c_n \end{bmatrix}
+```
+
+
+
+#### 问题4：如何使用 Python 找到主成分？
+
+可以使用 NumPy 中的 `svd()` 函数来计算主成分，以下代码展示了如何获得 3D 数据集的前两个主成分：
+
+```python
+import numpy as np
+
+X = [...]  # 创建一个小型 3D 数据集
+X_centered = X - X.mean(axis=0)
+
+U, s, Vt = np.linalg.svd(X_centered)
+c1 = Vt[0]  # 第一个主成分
+c2 = Vt[1]  # 第二个主成分
+```
+
+
+#### 注意：
+
+PCA 假设数据集围绕原点居中。Scikit-Learn 的 PCA 类会自动处理数据居中问题，但如果自己实现 PCA 或使用其他库，则需要手动居中数据。
+
+{.marker-none}
+
+### PCA-降维到d维
+
+
+#### 问题1：如何将数据集降维到 d 维？
+
+一旦识别出所有的主成分，就可以通过将数据投影到由前 d 个主成分定义的超平面上来减少数据集的维度。选择这个超平面可以保证投影尽可能多地保留数据集的方差。
+
+![Figure8-2一个3D的数据集分布接近于一个2D空间](../assets/attachment/hands_on_machine_learning/Figure8-2一个3D的数据集分布接近于一个2D空间.png)例如，在 **Figure 8-2** 中，3D 数据集被投影到由前两个主成分定义的 2D 平面上，这样可以保留数据集中较大部分的方差。结果，2D 投影看起来与原始的 3D 数据集非常相似。
+
+
+#### 问题2：如何通过矩阵乘法实现降维？
+
+要将训练集投影到超平面并获得一个降维的数据集  `KaTeX:X_{d-proj}` （维度为 d），我们需要对训练集矩阵  `KaTeX:X`  与矩阵  `KaTeX:W_d`  进行矩阵乘法运算， `KaTeX:W_d`  是包含前 `KaTeX:d` 个主成分的列矩阵。
+
+**公式**：投影训练集到 d 维空间可以表示为：
+
+```KaTeX
+X_{d-proj} = X \cdot W_d
+```
+
+
+#### 问题3：如何使用 Python 代码将数据集投影到二维平面？
+
+以下代码展示了如何将训练集投影到由前两个主成分定义的平面上：
+
+```python
+W2 = Vt[:2].T  # 选择前两个主成分
+X2D = X_centered @ W2  # 将训练集投影到二维平面
+```
+
+{.marker-none}
+
+### PCA-使用sklearn
+
+#### 问题1：如何使用 Scikit-Learn 实现 PCA？
+
+Scikit-Learn 提供了一个基于 SVD 的 PCA 类来实现主成分分析（PCA），它会自动处理数据的居中操作。
+
+以下代码展示了如何使用 Scikit-Learn 将数据集的维度降低到二维：
+
+```python
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=2)
+X2D = pca.fit_transform(X)  # 将数据集降维到二维
+```
+
+---
+
+#### 问题2：PCA 拟合后，如何获取主成分矩阵？
+
+在使用 PCA 类拟合数据集之后，`components_` 属性包含了 `KaTeX:W_d`  的转置，其中每一行对应于前 d 个主成分。
+
+{.marker-none}
+
+### PCA-解释方差比
+
+
+#### 问题1：什么是解释方差比（Explained Variance Ratio）？
+
+解释方差比是每个主成分的一个重要信息，它可以通过 `explained_variance_ratio_` 变量获得。这个比率表示数据集中方差的多少由各主成分解释。
+
+例如，以下是 3D 数据集中前两个主成分的解释方差比：
+
+```KaTeX
+\text{pca.explained\_variance\_ratio\_} = \left[ 0.7578477, 0.15186921 \right]
+```
+
+
+#### 问题2：如何解读解释方差比？
+
+从输出可以看出，大约 `KaTeX: 76\%` 的数据方差位于第一个主成分上，而约 `KaTeX: 15\%` 的数据方差位于第二个主成分上。这意味着仅剩约 `KaTeX: 9\%` 的方差在第三个主成分上，因此可以合理地假设第三个主成分携带的信息较少。
+
+{.marker-none}
+
+### PCA-选择正确的维数
+
+#### 问题1：如何选择适当的降维维数？
+
+与其随意选择降维后的维数，不如选择能够解释数据集中较大方差比例的维数。例如，通常选择解释 95% 方差的维数。以下代码加载并拆分了 MNIST 数据集，并执行 PCA，以确定保留 95% 方差所需的最小维数：
+
+```python
+from sklearn.datasets import fetch_openml
+import numpy as np
+from sklearn.decomposition import PCA
+
+mnist = fetch_openml('mnist_784', as_frame=False)
+X_train, y_train = mnist.data[:60_000], mnist.target[:60_000]
+X_test, y_test = mnist.data[60_000:], mnist.target[60_000:]
+
+pca = PCA()
+pca.fit(X_train)
+cumsum = np.cumsum(pca.explained_variance_ratio_)
+d = np.argmax(cumsum >= 0.95) + 1  # d等于154
+```
+
+这段代码计算了 `KaTeX: d`，即保留 95% 方差所需的主成分数。
+
+
+
+#### 问题2：如何直接通过 Scikit-Learn 的 PCA 类设定方差比来降维？
+
+你可以将 `n_components` 设置为介于 0 和 1 之间的小数，表示希望保留的方差比例。例如，以下代码将数据降维到保留 95% 方差的维数：
+
+```python
+pca = PCA(n_components=0.95)
+X_reduced = pca.fit_transform(X_train)
+```
+
+实际保留的主成分数量在训练过程中确定，并存储在 `n_components_` 属性中：
+
+```KaTeX
+\text{pca.n\_components\_} = 154
+```
+
+
+#### 问题3：如何通过绘制解释方差与维数的关系来选择维数？
+
+![Figure8-8解释方差与维数的关系示意图](../assets/attachment/hands_on_machine_learning/Figure8-8解释方差与维数的关系示意图.png)另一种选择是绘制解释方差与维数的函数图（如 **Figure 8-8** 所示）。曲线中的“肘部”点显示了解释方差增长显著减慢的地方。在该例中，减少维数到 100 左右不会损失太多解释方差。
+
+```KaTeX
+\text{Figure 8-8: Explained variance as a function of the number of dimensions}
+```
+
+
+#### 问题4：如何将 PCA 与超参数调整结合使用？
+
+如果你将降维作为分类等任务的预处理步骤，则可以将维数作为超参数，与其他超参数一起调优。以下代码展示了如何通过 PCA 降维并使用随机森林进行分类：
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.pipeline import make_pipeline
+
+clf = make_pipeline(PCA(random_state=42), RandomForestClassifier(random_state=42))
+param_distrib = {
+    "pca__n_components": np.arange(10, 80),
+    "randomforestclassifier__n_estimators": np.arange(50, 500)
+}
+
+rnd_search = RandomizedSearchCV(clf, param_distrib, n_iter=10, cv=3, random_state=42)
+rnd_search.fit(X_train[:1000], y_train[:1000])
+```
+
+最优的超参数如下：
+
+```python
+>>> print(rnd_search.best_params_)
+{'randomforestclassifier__n_estimators': 465, 'pca__n_components': 23}
+```
+
+{.marker-none}
+
+### PCA-用于压缩
+
+#### 问题1：如何使用 PCA 来进行数据压缩？
+
+在降维之后，训练集占用的空间大大减少。例如，当对 MNIST 数据集应用 PCA 并保留 95% 的方差后，原本有 `KaTeX: 784` 个特征的数据集被减少到 `KaTeX: 154` 个特征。这样，数据集的大小减少到原始大小的 20% 以下，而只损失了 5% 的方差。
+
+#### 问题2：如何使用逆变换将压缩数据恢复到原始维度？
+
+通过应用 PCA 投影的逆变换，可以将压缩后的数据集恢复到原始维度。虽然不会完全恢复到原始数据（因为投影过程中丢失了部分信息，如保留了 95% 方差，因此丢失了 5%），但恢复后的数据会非常接近原始数据。
+
+**逆变换的公式：**
+
+```KaTeX
+X_{\text{recovered}} = X_{d-\text{proj}} \cdot W_d^T
+```
+
+在代码中，可以使用 `inverse_transform()` 方法将降维后的 MNIST 数据集恢复到 784 维：
+
+```python
+X_recovered = pca.inverse_transform(X_reduced)
+```
+
+**图解**：![Figure8-9MNIST数据集压缩与解压后的数据对比](../assets/attachment/hands_on_machine_learning/Figure8-9MNIST数据集压缩与解压后的数据对比.png)**Figure 8-9** 显示了从原始训练集中的一些数字（左图）和经过压缩与解压后的对应数字（右图）。可以看到图像质量有轻微的损失，但数字大体上保持完好。
+
+{.marker-none}
+
+### 随机化PCA
+
+#### 问题1：什么是随机化 PCA（Randomized PCA）？
+
+当 `svd_solver` 超参数设置为 `"randomized"` 时，Scikit-Learn 使用一种称为 **随机化 PCA** 的随机算法，它能够快速找到前 `d` 个主成分的近似值。其计算复杂度为：
+
+```KaTeX
+O(m \cdot d^2) + O(d^3)
+```
+
+而完整的 SVD 方法的计算复杂度为：
+
+```KaTeX
+O(m \cdot n^2) + O(n^3)
+```
+
+因此，当 `KaTeX: d` 远小于 `KaTeX: n` 时，随机化 PCA 要比完整 SVD 快得多。
+
+例如，以下代码展示了如何使用随机化 PCA：
+
+```python
+rnd_pca = PCA(n_components=154, svd_solver="randomized", random_state=42)
+X_reduced = rnd_pca.fit_transform(X_train)
+```
+
+
+#### 问题2：默认情况下 Scikit-Learn 是如何选择 `svd_solver` 的？
+
+默认情况下，`svd_solver` 超参数的值为 `"auto"`，Scikit-Learn 会自动选择算法：
+- 如果 `KaTeX: \max(m, n) > 500` 且 `KaTeX: n_{\text{components}}` 是 `KaTeX: \min(m, n)` 的整数部分的 80% 以内，则使用随机化 PCA。
+- 否则，Scikit-Learn 会使用完整 SVD。
+
+因此，即使你移除了 `svd_solver="randomized"` 参数，Scikit-Learn 仍然可能选择随机化 PCA 来加速计算。
+
+如果你希望 Scikit-Learn 使用完整的 SVD 来获得更精确的结果，可以将 `svd_solver` 设置为 `"full"`。
+
+{.marker-none}
+
+### 增量PCA
+
+#### 问题1：什么是增量 PCA（Incremental PCA）？
+
+传统 PCA 需要整个训练集加载到内存中才能运行，而 **增量 PCA（IPCA）** 允许你将训练集分成小批量数据，然后一次处理一个批次。这对于大型训练集或应用在线 PCA（随着新数据到达时进行训练）非常有用。
+
+例如，以下代码将 MNIST 数据集拆分为 100 个小批次，并使用 Scikit-Learn 的 `IncrementalPCA` 类来将维度减少到 154：
+
+```python
+from sklearn.decomposition import IncrementalPCA
+import numpy as np
+
+n_batches = 100
+inc_pca = IncrementalPCA(n_components=154)
+for X_batch in np.array_split(X_train, n_batches):
+    inc_pca.partial_fit(X_batch)
+
+X_reduced = inc_pca.transform(X_train)
+```
+
+注意，这里每个批次调用的是 `partial_fit()` 方法，而不是 `fit()` 方法。
+
+
+#### 问题2：如何使用 NumPy 的内存映射（memmap）类来减少内存占用？
+
+NumPy 的 `memmap` 类允许你像操作内存中的数组一样操作存储在磁盘上的二进制文件，只在需要时加载数据到内存中。这非常适合大数据集。以下代码展示了如何将 MNIST 数据集保存为内存映射文件并加载它进行降维：
+
+```python
+filename = "my_mnist.mmap"
+X_mmap = np.memmap(filename, dtype="float32", mode='write', shape=X_train.shape)
+X_mmap[:] = X_train  # 将数据逐块保存
+
+X_mmap.flush()  # 确保数据写入磁盘
+```
+
+然后可以将 `memmap` 文件像常规 NumPy 数组一样加载并用于 `IncrementalPCA`：
+
+```python
+X_mmap = np.memmap(filename, dtype="float32", mode='readonly').reshape(-1, 784)
+batch_size = X_mmap.shape[0] // n_batches
+inc_pca = IncrementalPCA(n_components=154, batch_size=batch_size)
+inc_pca.fit(X_mmap)
+```
+
+
+#### 问题3：在什么情况下 PCA 可能过于缓慢？
+
+对于非常高维的数据集，PCA 可能会过于缓慢。即使使用随机化 PCA，计算复杂度仍为：
+
+```KaTeX
+O(m \cdot d^2) + O(d^3)
+```
+
+因此，目标维数 `KaTeX: d` 不能太大。对于拥有成千上万特征（如图像）的数据集，训练速度可能非常慢。在这种情况下，可以考虑使用 **随机投影** 来替代 PCA。
+
+{.marker-none}
+
+### 随机投影
+
+#### 问题1：什么是随机投影？
+
+**随机投影** 是一种将数据投影到低维空间的算法，它使用随机线性投影。尽管听起来不太直观，但实际上这种随机投影能够很好地保持数据的距离特性。Johnson 和 Lindenstrauss 的引理证明了这一点：在随机投影之后，相似的实例仍然会保持相似，而差异很大的实例会继续保持较大差异。
+
+
+#### 问题2：如何确定降维后的最小维度 `KaTeX: d`？
+
+Johnson 和 Lindenstrauss 提出了一个计算公式，可以确定在给定误差 `KaTeX: \varepsilon` 下，距离不会变化超过指定阈值的最小维数 `KaTeX: d`。公式为：
+
+```KaTeX
+d \geq \frac{4 \log(m)}{\varepsilon^2 - \frac{1}{3}\varepsilon^3}
+```
+
+其中 `KaTeX: m` 是实例数量，`KaTeX: \varepsilon` 是误差。例如，假设你有 `KaTeX: m = 5000` 个实例，`KaTeX: n = 20000` 个特征，并且你希望实例之间的平方距离变化不超过 `KaTeX: 10\%`，则投影维数为 `KaTeX: d \geq 7300`。
+
+Scikit-Learn 提供了 `johnson_lindenstrauss_min_dim()` 函数来实现此计算：
+
+```python
+from sklearn.random_projection import johnson_lindenstrauss_min_dim
+m, eps = 5000, 0.1
+d = johnson_lindenstrauss_min_dim(m, eps=eps)
+print(d)  # 输出 7300
+```
+
+
+
+#### 问题3：如何实现随机投影？
+
+我们可以通过生成一个随机矩阵 `KaTeX: P` 来进行随机投影，`KaTeX: P` 的形状为 `[d, n]`，其中每个元素从方差为 `KaTeX: 1/d` 的高斯分布中随机采样：
+
+```python
+import numpy as np
+np.random.seed(42)
+P = np.random.randn(d, n) / np.sqrt(d)
+
+# 生成假数据集
+X = np.random.randn(m, n)
+X_reduced = X @ P.T
+```
+
+这就是随机投影的全部内容！简单且高效，无需训练，仅需生成随机矩阵的形状。Scikit-Learn 提供了 `GaussianRandomProjection` 类来实现这一操作：
+
+```python
+from sklearn.random_projection import GaussianRandomProjection
+gaussian_rnd_proj = GaussianRandomProjection(eps=eps, random_state=42)
+X_reduced = gaussian_rnd_proj.fit_transform(X)
+```
+
+
+
+#### 问题4：什么是稀疏随机投影？
+
+Scikit-Learn 还提供了另一种称为 **稀疏随机投影（SparseRandomProjection）** 的变换器，它生成相同形状的随机矩阵，但其中的随机矩阵是稀疏的。这大大减少了内存占用，并加快了计算速度。稀疏矩阵的非零项比例由 `density` 参数控制，默认为 `KaTeX: 1/n`。
+
+例如，在 `KaTeX: n = 20000` 的情况下，每个随机矩阵单元有约 1/141 的概率为非零项。
+
+
+
+#### 问题5：如何执行随机投影的逆变换？
+
+要执行逆变换，你需要计算随机矩阵的伪逆矩阵 `KaTeX: P^{-1}`，然后将降维数据乘以该伪逆矩阵的转置：
+
+```python
+from numpy.linalg import pinv
+components_pinv = pinv(gaussian_rnd_proj.components_)
+X_recovered = X_reduced @ components_pinv.T
+```
+
+需要注意，计算伪逆矩阵的计算复杂度为：
+
+```KaTeX
+O(dn^2) \text{ 如果 } d < n, \text{ 否则 } O(nd^2)
+```
+
+这意味着如果矩阵非常大，计算伪逆可能非常耗时。
+
+{.marker-one}
+
+### LLE局部线性嵌入
+
+#### 问题1：什么是局部线性嵌入（LLE）？
+
+局部线性嵌入（LLE）是一种**非线性降维技术**（NLDR），它属于流形学习技术，不依赖于投影（如 PCA 或随机投影）。LLE 通过首先测量每个训练实例与其最近邻的线性关系，然后寻找保留这些局部关系的低维表示。
+
+
+#### 问题2：如何使用 LLE 展开瑞士卷数据集？
+
+以下代码生成瑞士卷数据集并使用 Scikit-Learn 的 `LocallyLinearEmbedding` 类将其展开：
+
+```python
+from sklearn.datasets import make_swiss_roll
+from sklearn.manifold import LocallyLinearEmbedding
+
+X_swiss, t = make_swiss_roll(n_samples=1000, noise=0.2, random_state=42)
+lle = LocallyLinearEmbedding(n_components=2, n_neighbors=10, random_state=42)
+X_unrolled = lle.fit_transform(X_swiss)
+```
+
+![Figure8-10使用LLE展开SwissRoll数据集](../assets/attachment/hands_on_machine_learning/Figure8-10使用LLE展开SwissRoll数据集.png)如 **Figure 8-10** 所示，瑞士卷完全展开，实例之间的距离在局部范围内保持良好。然而在更大尺度上，距离没有完全保留：展开后的瑞士卷应为矩形，而这里是拉伸和扭曲的带状结构。尽管如此，LLE 在建模流形方面做得相当好。
+
+
+
+#### 问题3：LLE 的第一个步骤是什么？
+
+LLE 的第一个步骤是为每个训练实例 `KaTeX: x^{(i)}` 找到其 `KaTeX: k` 个最近邻，然后尝试将 `KaTeX: x^{(i)}` 作为这些邻居的线性函数进行重构。具体来说，它试图找到权重 `KaTeX: w_{i,j}`，使得 `KaTeX: x^{(i)}` 与其线性组合的平方距离尽可能小。公式如下：
+
+```KaTeX
+W^{\wedge} = \arg \min_W \sum_{i=1}^m \left( x^{(i)} - \sum_{j=1}^m w_{i,j} x^{(j)} \right)^2
+```
+
+其中 `KaTeX: w_{i,j} = 0` 如果 `KaTeX: x^{(j)}` 不是 `KaTeX: x^{(i)}` 的最近邻，且权重需要满足以下两个约束条件：
+
+1. 对于每个实例，权重的和为 1：
+   ```KaTeX
+   \sum_{j=1}^{m} w_{i,j} = 1 \quad \text{for all } i
+   ```
+
+2. 如果 `KaTeX: x^{(j)}` 不是 `KaTeX: x^{(i)}` 的最近邻，则 `KaTeX: w_{i,j} = 0`。
+
+
+
+#### 问题4：LLE 的第二个步骤是什么？
+
+第二个步骤是将训练实例映射到 `KaTeX: d` 维空间（`KaTeX: d < n`），同时尽可能多地保留这些局部关系。具体来说，假设我们有一个表示实例在 `KaTeX: d` 维空间中图像的矩阵 `KaTeX: Z`，我们希望平方距离最小化：
+
+```KaTeX
+Z^{\wedge} = \arg \min_Z \sum_{i=1}^{m} \left( z^{(i)} - \sum_{j=1}^{m} w_{i,j} z^{(j)} \right)^2
+```
+
+
+
+#### 问题5：LLE 的计算复杂度是什么？
+
+Scikit-Learn 的 LLE 实现具有以下计算复杂度：
+
+- `KaTeX: O(m \cdot \log(m) \cdot \log(k))`：寻找最近邻
+- `KaTeX: O(m \cdot k^3)`：优化权重
+- `KaTeX: O(d \cdot m^2)`：构建低维表示
+
+其中 `KaTeX: m` 是实例数量，`KaTeX: k` 是最近邻的数量，`KaTeX: d` 是降维后的维度。
+
+{.marker-none}
+
+### 其他降维技术
+
+| 降维技术         | 描述                                                                                  | 优势                                                                                   | 适用场景                                          |
+|------------------|---------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------|
+| **MDS**          | 多维尺度分析，减少维度时尽量保留实例之间的距离                                         | 对高维数据效果好                                                                       | 高维数据降维，不适用于低维数据                   |
+| **Isomap**       | 通过连接最近邻节点创建图，保留测地距离                                                  | 保留实例间的测地距离，适合保留局部结构                                                 | 需要保留全局和局部距离的场景                     |
+| **t-SNE**        | t-分布随机邻域嵌入，保持相似实例接近，不相似实例分开                                      | 非常适合高维数据的可视化，特别是用于展示数据中的簇                                      | 高维数据的聚类和可视化，MNIST等数据集            |
+| **LDA**          | 线性判别分析，寻找最能区分类的轴并投影数据                                               | 在降维的同时区分类别，将不同类别分得尽量远                                            | 分类任务中的降维，LDA 单独使用或作为预处理步骤   |
+
+{.show-header .left-text}
+
+
+#### 不同降维技术在瑞士卷数据集上的效果如何？
+
+![Figure8-11使用不同的降维技术把SwissRoll数据集降维到2D](../assets/attachment/hands_on_machine_learning/Figure8-11使用不同的降维技术把SwissRoll数据集降维到2D.png)在 **Figure 8-11** 中展示了 MDS、Isomap 和 t-SNE 在瑞士卷数据集上的效果：
+
+- **MDS**：在展开瑞士卷的同时保留了其全局曲率。
+- **Isomap**：完全去除了全局结构，保留了局部关系。
+- **t-SNE**：展平瑞士卷并保留了一些曲率，但放大了簇，使得瑞士卷的形状被撕裂。
+
+这些不同技术的效果是否好，取决于后续任务的需求。
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                     | 中文翻译                                                                                       |
+|-----|--------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| 1   | What are the main motivations for reducing a dataset’s dimensionality? What are the main drawbacks?           | 降低数据集维度的主要动机是什么？主要缺点是什么？                                                   |
+| 2   | What is the curse of dimensionality?                                                                          | 什么是维度诅咒？                                                                                 |
+| 3   | Once a dataset’s dimensionality has been reduced, is it possible to reverse the operation? If so, how? If not, why? | 当数据集的维度被降低后，是否可以逆转该操作？如果可以，怎么做？如果不能，为什么？                       |
+| 4   | Can PCA be used to reduce the dimensionality of a highly nonlinear dataset?                                    | PCA 能否用于减少高度非线性数据集的维度？                                                            |
+| 5   | Suppose you perform PCA on a 1,000-dimensional dataset, setting the explained variance ratio to 95%. How many dimensions will the resulting dataset have? | 假设你对一个1000维数据集执行PCA，并将可解释方差比设置为95%。结果数据集会有多少维度？                       |
+| 6   | In what cases would you use regular PCA, incremental PCA, randomized PCA, or random projection?               | 在什么情况下你会使用常规PCA、增量PCA、随机PCA或随机投影？                                            |
+| 7   | How can you evaluate the performance of a dimensionality reduction algorithm on your dataset?                 | 如何评估降维算法在你的数据集上的表现？                                                                |
+| 8   | Does it make any sense to chain two different dimensionality reduction algorithms?                            | 链接两个不同的降维算法是否有意义？                                                                  |
+| 9   | Load the MNIST dataset (introduced in Chapter 3) and split it into a training set and a test set (take the first 60,000 instances for training, and the remaining 10,000 for testing). Train a random forest classifier on the dataset and time how long it takes, then evaluate the resulting model on the test set. Next, use PCA to reduce the dataset’s dimensionality, with an explained variance ratio of 95%. Train a new random forest classifier on the reduced dataset and see how long it takes. Was training much faster? Next, evaluate the classifier on the test set. How does it compare to the previous classifier? Try again with an SGDClassifier. How much does PCA help now? | 加载MNIST数据集（在第3章介绍）并将其拆分为训练集和测试集（取前60,000个实例用于训练，其余10,000个用于测试）。在数据集上训练一个随机森林分类器，并记录所需时间，然后在测试集上评估结果模型。接下来，使用PCA将数据集的维度降低，可解释方差比设为95%。在降低维度的数据集上训练新的随机森林分类器，并查看所需时间。训练是否快了很多？接下来，在测试集上评估分类器。它与先前的分类器相比如何？再用SGDClassifier尝试一次。PCA现在有多大帮助？ |
+| 10  | Use t-SNE to reduce the first 5,000 images of the MNIST dataset down to 2 dimensions and plot the result using Matplotlib. You can use a scatterplot using 10 different colors to represent each image’s target class. Alternatively, you can replace each dot in the scatterplot with the corresponding instance’s class (a digit from 0 to 9), or even plot scaled-down versions of the digit images themselves (if you plot all digits the visualization will be too cluttered, so you should either draw a random sample or plot an instance only if no other instance has already been plotted at a close distance). You should get a nice visualization with well-separated clusters of digits. Try using other dimensionality reduction algorithms, such as PCA, LLE, or MDS, and compare the resulting visualizations. | 使用t-SNE将MNIST数据集的前5000张图片降维到二维，并使用Matplotlib绘制结果。可以使用10种不同的颜色在散点图中表示每个图像的目标类。或者，可以用对应实例的类别（0到9之间的数字）替换散点图中的每个点，甚至可以绘制缩小版的数字图像（如果绘制所有数字，视觉效果会太过混乱，因此你应该绘制一个随机样本，或仅在没有其他实例已在相近距离处绘制时绘制一个实例）。你应该能得到一个分离良好的数字簇的可视化。尝试使用其他降维算法，例如PCA、LLE或MDS，并比较结果可视化效果。 |
+
+
+{.show-header .left-text}
+
+## Unsupervised Learning Techniques
+
+### 无监督学习技术
+
+#### 问题1：什么是无监督学习，它与监督学习有什么区别？
+
+**解答**：
+无监督学习的目标是在没有标签数据 `KaTeX:y` 的情况下，发现数据中的潜在模式和结构。与此相对，监督学习是基于已标记的数据来学习输入特征 `KaTeX:X` 与输出 `KaTeX:y` 之间的关系。
+
+正如 Yann LeCun 所言：
+> “如果智能是一块蛋糕，无监督学习是蛋糕，监督学习是蛋糕上的糖霜，而强化学习是糖霜上的樱桃。”
+
+无监督学习在处理大量未标记的数据时有巨大潜力，尤其是在数据没有明确标签或手动标记数据成本高的情况下。
+
+#### 问题2：无监督学习有哪些典型的应用场景？
+
+**解答**：
+无监督学习的常见应用场景包括：
+
+1. **聚类（Clustering）**：将相似的数据实例分为同一组（簇）。这用于数据分析、客户细分、推荐系统、搜索引擎、图像分割等。
+2. **异常检测（Anomaly detection）**：学习“正常”数据模式，然后检测异常数据。这在欺诈检测、制造缺陷检测、时间序列数据中的趋势发现等领域有广泛应用。
+3. **密度估计（Density estimation）**：估计生成数据的概率密度函数 `KaTeX:p(x)`，特别用于检测低密度区域中的异常数据点。它还用于数据分析和可视化。
+
+#### 问题3：无监督学习与密度估计有什么关系？
+
+**解答**：
+**密度估计** 是无监督学习的一个重要任务，目标是估计生成数据的概率密度函数 `KaTeX:p(x)`。通过这种方法，可以检测低密度区域中的异常值，这对于异常检测尤其有用。密度估计常用于可视化和数据分析。
+
+```KaTeX
+p(x) = \frac{1}{n} \sum_{i=1}^{n} K(x, x_i)
+```
+其中 `KaTeX:K` 是核函数，表示数据点的分布。
+
+#### 问题4：聚类任务的目标是什么？
+
+**解答**：
+聚类任务的目标是将相似的实例分成同一组，称为簇（clusters）。在无监督学习中，聚类是一项非常常用的技术，尤其适合以下应用：
+
+- 数据分析
+- 客户细分
+- 推荐系统
+- 搜索引擎
+- 图像分割
+- 维度降低
+- 半监督学习
+
+#### 问题5：异常检测（Anomaly detection）与聚类有何不同？
+
+**解答**：
+异常检测与聚类的区别在于，异常检测的目标是识别数据集中与正常数据不同的异常数据点。正常数据称为 **inliers**，而异常数据称为 **outliers**。异常检测在以下领域中尤为重要：
+
+- 欺诈检测
+- 制造过程中的缺陷产品检测
+- 时间序列中的新趋势识别
+- 在模型训练前从数据集中移除异常值，以提升模型性能
+
+#### 问题6：在无监督学习中，密度估计的主要作用是什么？
+
+**解答**：
+密度估计的任务是估计生成数据的概率密度函数 `KaTeX:PDF`。该方法对异常检测特别有用，因为位于低密度区域的数据点更有可能是异常值。此外，密度估计还用于数据可视化和分析。
+
+
+{.marker-round}
+
+### 聚类算法k-means和DBSCAN
+
+#### 问题1：什么是聚类（Clustering）？它的应用场景有哪些？
+
+**解答**：
+聚类是将相似的实例分组为 **簇（clusters）** 的任务，目的是找出数据中相似实例的自然分布，而无需使用预定义的标签。与分类不同，聚类是一种无监督学习任务，因为在执行聚类时没有事先标注好的标签。
+
+应用场景包括：
+- **客户细分**：根据客户的购买行为或活动将其分为不同群体，以便更好地了解客户并进行定制营销。
+- **数据分析**：在分析新数据集时，聚类有助于先将数据分组，进而分别分析每个簇。
+- **降维**：通过聚类可以生成更少维度的特征表示，从而简化后续的数据处理。
+- **特征工程**：将簇的亲和性作为额外的特征加入模型，可以提升模型性能（例如使用 `KaTeX:k`-means 算法）。
+- **异常检测**：低亲和度的实例可能是异常点，如识别网站用户中的异常行为。
+
+#### 问题2：如何理解图 **Figure 9-1**？
+
+**解答**：
+![Figure9-1左侧的分类vs右侧的聚类对于Iris数据](../assets/attachment/hands_on_machine_learning/Figure9-1左侧的分类vs右侧的聚类对于Iris数据.png)**Figure 9-1** 展示了左侧的分类任务与右侧的聚类任务对 **Iris 数据集** 的处理差异。
+- **左图**：有标签分类任务，使用不同的标记代表不同的物种。常用的分类算法如逻辑回归、支持向量机（SVM）、随机森林等能很好地处理此类标记数据。
+- **右图**：无标签数据。此时无法使用分类算法，需要通过聚类算法找到自然的簇。可以直观地看到，聚类算法能检测到左下角的簇，但右上角的簇实际上由两个子簇组成，而这些子簇不是通过目测轻易分辨的。
+
+#### 问题3：`KaTeX:k`-means 和 DBSCAN 是什么类型的聚类算法？
+
+**解答**：
+- **`KaTeX:k`-means**：它是一种基于 **质心（centroid）** 的聚类算法，寻找数据集中聚集在质心附近的实例。它适用于簇形状为球形且簇内实例分布较为均匀的数据。
+- **DBSCAN**：基于密度的聚类算法，适合处理任意形状的簇。它能够识别出密度较高区域中的簇，并能很好地处理噪声数据点。
+
+#### 问题4：聚类在降维任务中有何作用？
+
+**解答**：
+聚类后，可以通过计算每个实例与各簇的亲和度 `KaTeX:\text{affinity}` 来减少特征维度。新的特征向量 `KaTeX:x` 可以用其对所有簇的亲和度表示。如果数据有 `KaTeX:k` 个簇，新的向量是 `KaTeX:k` 维的，通常比原始特征维度更低，但仍保留足够的聚类信息用于后续处理。
+
+#### 问题5：如何使用聚类算法进行异常检测？
+
+**解答**：
+聚类算法可以通过检测与所有簇亲和度较低的实例来识别异常点。例如，若用户行为数据被聚类为几个簇，亲和度较低的用户可能表现出异常行为，如请求数异常大，可能是恶意攻击的迹象。
+
+#### 问题6：`KaTeX:k`-means 如何在特征工程中使用？
+
+**解答**：
+在特征工程中，聚类的亲和度可以作为额外特征，加入到模型中提升性能。例如，使用 `KaTeX:k`-means 对加州住房数据集进行聚类后，将地理簇的亲和度作为额外的特征，有助于提升回归模型的预测性能。
+
+{.marker-none}
+
+### k-means
+
+#### 问题1：什么是 `k-means` 算法？
+
+**解答**：
+`k-means` 是一种简单的聚类算法，目标是将数据点分成 `k` 个簇，并通过最小化数据点到各自簇质心的距离来优化聚类效果。每个簇由一个质心表示，质心是簇中所有点的均值。
+
+算法的主要步骤是：
+1. 随机选择 `k` 个质心。
+2. 将每个数据点分配给最近的质心。
+3. 更新质心为每个簇中所有点的均值。
+4. 重复步骤 2 和 3，直到质心不再移动或达到最大迭代次数。
+
+![Figure9-2一个为分类的数据集分布在5堆](../assets/attachment/hands_on_machine_learning/Figure9-2一个为分类的数据集分布在5堆.png)**Figure 9-2** 展示了无标签数据集的聚类效果，该数据集中有五个明显的簇，`k-means` 能够很好地将这些簇识别出来。
+
+```python
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+
+X, y = make_blobs(n_samples=300, centers=5, random_state=42)
+k = 5
+kmeans = KMeans(n_clusters=k, random_state=42)
+y_pred = kmeans.fit_predict(X)
+```
+
+
+
+#### 问题2：`k-means` 算法如何初始化质心？为什么质心初始化很重要？
+
+**解答**：
+`k-means` 算法的结果依赖于质心的初始位置。如果初始化不佳，可能会导致局部最优解或次优解。为了改善这一问题，`k-means++` 算法通过选择距离较远的点作为初始质心，减少了次优解的可能性。
+
+Scikit-learn 中的 `KMeans` 默认使用 `k-means++` 初始化方法。此外，还可以通过设置 `n_init` 参数来增加随机初始化的次数，以避免局部最优。
+
+```python
+kmeans = KMeans(n_clusters=5, init='k-means++', n_init=10, random_state=42)
+kmeans.fit(X)
+```
+
+![Figure9-4Kmeans算法](../assets/attachment/hands_on_machine_learning/Figure9-4Kmeans算法.png)**Figure 9-4** 展示了 `k-means` 的工作流程：从随机初始化质心开始，经过几次迭代，算法最终收敛于稳定的质心。
+
+
+
+#### 问题3：`k-means` 如何选择最优的簇数 `k`？
+
+**解答**：
+选择最佳的簇数 `k` 通常是一个关键问题。`k-means` 算法不会自动确定 `k`，因此需要评估不同的 `k` 值来找到最佳选择。
+
+1. **肘部法（Elbow method）**：通过绘制簇数与惯性（Inertia）的关系图，当 `k` 增加时，惯性会逐渐下降，当下降幅度减小时，肘部点就是理想的 `k` 值。![Figure9-8惯性与聚类数量k的函数关系图](../assets/attachment/hands_on_machine_learning/Figure9-8惯性与聚类数量k的函数关系图.png)如 **Figure 9-8** 所示，肘部在 `k=4` 时出现，表示该点可能是最佳的簇数选择。
+
+2. **轮廓系数（Silhouette score）**：轮廓系数衡量了每个点与其所属簇内点的紧密度和与最近簇点的分离度，值越高表示聚类效果越好。![Figure9-9利用剪影得分选择集群数量k](../assets/attachment/hands_on_machine_learning/Figure9-9利用剪影得分选择集群数量k.png)**Figure 9-9** 展示了不同 `k` 值下的轮廓系数，可以看到 `k=4` 和 `k=5` 时聚类效果较好。
+
+```python
+from sklearn.metrics import silhouette_score
+
+sil_score = silhouette_score(X, kmeans.labels_)
+print(f"Silhouette score for k=5: {sil_score}")
+```
+
+
+
+#### 问题4：如何通过 `Mini-Batch k-means` 加速聚类过程？
+
+**解答**：
+`Mini-Batch k-means` 是 `k-means` 的一种变体，它使用小批量数据更新质心，显著加速了算法的运行，尤其适合大规模数据集。它能够处理无法一次性加载到内存中的数据。
+
+![Figure9-6小批量k-means的惯性比k-means更大但速度更快随着k的增加](../assets/attachment/hands_on_machine_learning/Figure9-6小批量k-means的惯性比k-means更大但速度更快随着k的增加.png)在 **Figure 9-6** 中，展示了 `Mini-Batch k-means` 与标准 `k-means` 在训练时间和惯性上的比较。尽管 `Mini-Batch k-means` 的惯性略高，但它大大加快了训练速度。
+
+```python
+from sklearn.cluster import MiniBatchKMeans
+
+minibatch_kmeans = MiniBatchKMeans(n_clusters=5, random_state=42)
+minibatch_kmeans.fit(X)
+```
+
+
+
+#### 问题5：`k-means` 算法是硬聚类，如何实现软聚类？
+
+**解答**：
+`k-means` 是一种硬聚类算法，即每个点只能属于一个簇。然而，有时更有用的是软聚类，即一个点可以属于多个簇，通过计算点到每个质心的距离来表示相似度。
+
+在 Scikit-learn 中，可以通过 `transform()` 方法计算每个实例到各质心的距离，从而实现软聚类。这些距离可以作为相似度得分，用于进一步的分析。
+
+```python
+distances = kmeans.transform(X_new)
+print(distances)
+```
+
+这些距离可以帮助我们了解每个点与每个簇的相似程度。
+
+
+
+#### 问题6：`k-means++` 是如何改进质心初始化的？
+
+**解答**：
+`k-means++` 是对 `k-means` 算法的一个重要改进，它通过确保初始质心彼此之间尽可能远离来提高初始化效果，减少了局部最优解的可能性。  
+其主要步骤如下：
+1. 随机选择第一个质心。
+2. 对每个点，计算其与已选质心的最短距离，按距离选择下一个质心，保证新质心远离已选择的质心。
+3. 重复该过程直到选择了 `k` 个质心。
+
+![Figure9-5unlucky的中心点初始化导致次优解](../assets/attachment/hands_on_machine_learning/Figure9-5unlucky的中心点初始化导致次优解.png)**Figure 9-5** 展示了不同初始化导致的次优解情况。
+
+
+
+#### 问题7：如何通过 Silhouette 图进一步分析聚类质量？
+
+**解答**：
+`Silhouette Diagram` 是另一种可视化聚类质量的方法，它将每个点的轮廓系数按簇分组排序。宽度表示簇中点的数量，轮廓系数越大，簇的紧密度和分离度越好。
+
+![Figure9-10分析不同k值的轮廓图](../assets/attachment/hands_on_machine_learning/Figure9-10分析不同k值的轮廓图.png)**Figure 9-10** 展示了不同 `k` 值下的 Silhouette Diagram。可以看到，`k=4` 时，某些簇的轮廓系数较大，`k=5` 时，簇的大小更均匀，这表明 `k=5` 是更好的选择。
+
+
+
+#### 问题8：如何计算 `k-means` 模型的惯性？
+
+**解答**：
+惯性是衡量聚类紧密度的一个指标，计算数据点到其质心的总平方距离。较低的惯性值表示更紧密的簇。惯性虽然有助于衡量聚类质量，但不能作为选择最佳 `k` 的唯一指标，因为 `k` 越大，惯性总是会降低。
+
+```python
+print(f"Inertia for k=5: {kmeans.inertia_}")
+```
+
+惯性随簇数增加而下降，![Figure9-8惯性与聚类数量k的函数关系图](../assets/attachment/hands_on_machine_learning/Figure9-8惯性与聚类数量k的函数关系图.png)如 **Figure 9-8** 所示，肘部点可以帮助我们找到合理的 `k` 值。
+
+
+{.marker-none}
+
+### k-means的局限性
+
+#### 问题1：`k-means` 的局限性有哪些？
+
+**解答**：  
+尽管 `k-means` 算法具有快速、可扩展等优势，但它也有一定的局限性，特别是在以下几种情况下表现不佳：
+
+1. **簇的形状和大小不同**：`k-means` 假设簇是球形的，且簇大小相似。然而，当簇的形状是非球形、尺寸不同或密度不同，`k-means` 往往无法正确地识别簇。
+
+2. **不同密度的簇**：`k-means` 无法处理密度差异较大的簇，因为它将距离作为唯一的划分标准。
+
+3. **对簇的数量有要求**：需要事先指定簇的数量 `k`，如果 `k` 选择不当，可能会导致糟糕的聚类效果。
+
+4. **局部最优解**：`k-means` 的结果依赖于初始质心的位置，因此需要多次运行以避免局部最优解。
+
+![Figure9-11处理不同尺寸和密度的椭圆形簇时的表现](../assets/attachment/hands_on_machine_learning/Figure9-11处理不同尺寸和密度的椭圆形簇时的表现.png)**Figure 9-11** 展示了 `k-means` 处理不同尺寸和密度的椭圆形簇时的表现。在该示例中，`k-means` 无法很好地将数据划分为正确的簇。左图中间簇的一部分被错误地分配给右侧的簇，而右图中则进一步恶化，分割非常糟糕。
+
+在这类椭圆形簇的情况下，使用 **高斯混合模型（Gaussian Mixture Models, GMM）** 通常能得到更好的结果。
+
+#### 提示：运行 `k-means` 前要对特征进行标准化
+
+在运行 `k-means` 之前，应对特征进行标准化（参见 **Chapter 2**）。如果特征未经过标准化处理，伸展或有不同尺度的簇可能导致 `k-means` 聚类性能下降。虽然标准化不能保证所有簇都是球形的，但通常能提高 `k-means` 的表现。
+
+{.marker-none}
+
+### k-means进行图像分割
+
+#### 问题1：什么是图像分割（Image Segmentation）？
+
+**解答**：  
+图像分割的任务是将图像划分为多个片段（segments）。常见的图像分割形式包括：
+
+1. **颜色分割（Color segmentation）**：根据像素颜色的相似性进行分割。此方法常用于卫星图像分析，来测量例如森林覆盖率等。
+2. **语义分割（Semantic segmentation）**：根据像素所属的对象类型（例如行人）进行分割，所有属于同一类对象的像素被分配到同一个片段。
+3. **实例分割（Instance segmentation）**：将属于同一物体的所有像素划分为同一个片段，每个实例（如多个行人）有不同的片段。
+
+在语义或实例分割中，通常使用复杂的卷积神经网络架构（见 **Chapter 14**）。然而，本章节使用 **k-means** 聚类算法来实现更简单的颜色分割任务。
+
+
+
+#### 问题2：如何使用 `k-means` 算法实现颜色分割？
+
+**解答**：  
+在颜色分割任务中，`k-means` 通过将图像的像素划分为几个颜色簇来简化图像的颜色表示。首先，我们将图像加载为 3D 数组（对应宽度、高度和 RGB 颜色通道）。然后，我们将该数组展平为一个长列表，其中每个像素的颜色表示为一个 RGB 值。最后，使用 `k-means` 将像素分配到不同的颜色簇。
+
+```python
+import numpy as np
+from sklearn.cluster import KMeans
+from PIL import Image
+
+# 加载图像
+image = np.array(Image.open('ladybug.png'))
+
+# 重塑图像数据
+X = image.reshape(-1, 3)
+
+# 使用 k-means 聚类，聚类数量为 8
+kmeans = KMeans(n_clusters=8, random_state=42).fit(X)
+
+# 获取聚类结果并重塑为原始图像形状
+segmented_img = kmeans.cluster_centers_[kmeans.labels_]
+segmented_img = segmented_img.reshape(image.shape)
+```
+
+这段代码将图像的像素划分为 8 个颜色簇，最终输出的图像是一个简化的版本，每个像素被替换为其所属簇的颜色中心值。
+
+
+#### 问题3：`k-means` 在颜色分割中如何影响图像质量？
+
+**解答**：  
+使用不同数量的颜色簇会影响分割结果。当簇数较少时，图像中的某些细节会被模糊掉。![Figure9-12使用不同颜色簇数的k-means进行图像分割](../assets/attachment/hands_on_machine_learning/Figure9-12使用不同颜色簇数的k-means进行图像分割.png)例如，在 **Figure 9-12** 中展示了使用 `k=2` 到 `k=10` 的不同簇数的分割效果：
+- **k=10**：图像保持了更多细节，例如七星瓢虫的红色仍然可见。
+- **k=2**：图像颜色被极度简化，只剩下两个颜色簇，导致细节丢失严重。
+
+图中的七星瓢虫相对于图像的其他部分较小，且颜色不够鲜艳，因此即使使用较多的簇（如 `k=8`），`k-means` 也无法为它单独分配一个簇，而是将其颜色合并到背景中。
+
+{.marker-none}
+
+### 使用聚类进行半监督学习
+
+#### 问题1：什么是半监督学习？`k-means` 如何用于半监督学习？
+
+**解答**：
+半监督学习是在有大量未标记数据和少量标记数据的情况下进行学习的一种方法。在这种情况下，聚类算法可以帮助我们更好地利用未标记数据。首先，我们可以使用聚类将未标记数据划分为不同的簇，然后手动对每个簇的代表性数据点进行标记，并将其作为训练集进行模型训练。
+
+书中使用了类似 MNIST 的手写数字数据集，其中包含 1797 个 8x8 的灰度图像，表示数字 0 到 9。在这个例子中，假设只有 50 个实例有标签，其余的实例都是未标记的。首先，我们在这 50 个有标签的数据上训练一个逻辑回归模型，得到基准性能。
+
+```python
+from sklearn.datasets import load_digits
+from sklearn.linear_model import LogisticRegression
+
+# 加载数据集
+X_digits, y_digits = load_digits(return_X_y=True)
+X_train, y_train = X_digits[:1400], y_digits[:1400]
+X_test, y_test = X_digits[1400:], y_digits[1400:]
+
+# 训练逻辑回归模型
+n_labeled = 50
+log_reg = LogisticRegression(max_iter=10000)
+log_reg.fit(X_train[:n_labeled], y_train[:n_labeled])
+
+# 测试模型性能
+log_reg.score(X_test, y_test)
+```
+
+初始模型准确率为 **74.8%**，这是我们在仅使用 50 个标记实例训练下的基准性能。
+
+
+
+#### 问题2：如何利用 `k-means` 改进模型性能？
+
+**解答**：
+![Figure9-13五十幅有代表性的数字图像-每组一副.](../assets/attachment/hands_on_machine_learning/Figure9-13五十幅有代表性的数字图像-每组一副.png)为了改进模型性能，我们可以将训练集划分为 50 个簇（即 `k=50`），并在每个簇中选择离质心最近的实例作为该簇的代表性实例。接下来，我们手动标记这些代表性实例，并再次训练逻辑回归模型。
+
+```python
+from sklearn.cluster import KMeans
+
+# 使用 k-means 聚类将数据划分为 50 个簇
+k = 50
+kmeans = KMeans(n_clusters=k, random_state=42)
+X_digits_dist = kmeans.fit_transform(X_train)
+
+# 找到每个簇中离质心最近的实例
+representative_digit_idx = np.argmin(X_digits_dist, axis=0)
+X_representative_digits = X_train[representative_digit_idx]
+
+# 手动标记代表性实例
+y_representative_digits = np.array([...])  # 手动标记的数字
+```
+
+在标记了这 50 个代表性实例后，重新训练模型，模型准确率提升至 **84.9%**。这是一个显著的提升，因为每个簇的代表性实例比随机选择的实例更具代表性。
+
+
+
+#### 问题3：什么是标签传播（Label Propagation），如何进一步提升性能？
+
+**解答**：
+标签传播是一种将标记实例的标签传播到同簇其他未标记实例的方法。我们将每个簇的标签分配给该簇中所有的实例，这样我们就能用更多的标记数据来训练模型。
+
+```python
+y_train_propagated = np.empty(len(X_train), dtype=np.int64)
+for i in range(k):
+    y_train_propagated[kmeans.labels_ == i] = y_representative_digits[i]
+
+# 使用传播的标签重新训练模型
+log_reg = LogisticRegression(max_iter=10000)
+log_reg.fit(X_train, y_train_propagated)
+log_reg.score(X_test, y_test)
+```
+
+通过这种方式，模型准确率进一步提升到 **89.4%**。通过这种方法，我们有效利用了未标记数据，并减少了手动标记的工作量。
+
+
+
+#### 问题4：如何处理异常数据点？
+
+**解答**：
+为了进一步提高模型的性能，我们可以忽略那些离簇质心最远的 1% 的实例，这些点可能是异常点，去除这些点可以提高模型的稳健性。通过计算每个实例到其簇质心的距离，并删除离质心最远的 1% 的点。
+
+```python
+percentile_closest = 99
+X_cluster_dist = X_digits_dist[np.arange(len(X_train)), kmeans.labels_]
+for i in range(k):
+    in_cluster = (kmeans.labels_ == i)
+    cutoff_distance = np.percentile(X_cluster_dist[in_cluster], percentile_closest)
+    X_cluster_dist[in_cluster & (X_cluster_dist > cutoff_distance)] = -1
+
+partially_propagated = (X_cluster_dist != -1)
+y_train_partially_propagated = y_train_propagated[partially_propagated]
+
+# 使用部分传播的标签重新训练模型
+log_reg.fit(X_train[partially_propagated], y_train_partially_propagated)
+log_reg.score(X_test, y_test)
+```
+
+通过这一策略，模型准确率进一步提升到 **90.9%**。
+
+
+
+#### 提示：如何自动化标签传播？
+
+Scikit-learn 提供了两种自动化的标签传播方法，分别是 **LabelSpreading** 和 **LabelPropagation**。这两种方法通过计算实例之间的相似度矩阵，将标记标签传播给相似的未标记实例。
+
+此外，Scikit-learn 还提供了 **SelfTrainingClassifier**，它可以基于已有的标签和未标记数据迭代地进行训练和标签传播。这些技术虽然不能完全代替手动标记，但有助于提升模型性能。
+
+
+
+#### 问题5：如何使用主动学习（Active Learning）进一步提升模型性能？
+
+**解答**：
+在主动学习中，模型通过与人类专家互动，有选择地获取少量实例的标签来提升模型性能。以下是主动学习的工作流程：
+1. 训练模型并用它预测未标记数据。
+2. 选择模型不确定的实例（即预测概率最低的实例）请求专家标记。
+3. 反复进行此过程，直到性能提升不再值得标记代价。
+
+这种方法能最大化标记工作的效率，减少专家的工作量，同时提升模型性能。
+
+### DBSCAN算法
+
+#### 问题1：什么是 DBSCAN 算法？
+
+**解答**：
+DBSCAN（基于密度的噪声应用空间聚类，Density-Based Spatial Clustering of Applications with Noise）是一种基于密度的聚类算法，它将密度高的区域识别为簇，并将密度低的点视为异常点或噪声。它通过对样本的邻域进行密度评估，将靠近的密集点聚为簇。
+
+**DBSCAN 的工作原理**：
+- 对于每个实例，算法计算在指定距离范围（`ε`）内有多少个实例。
+- 如果某个实例在其 `ε` 邻域内至少包含 `min_samples` 个实例，则该实例被认为是 **核心点（core instance）**，属于密集区域。
+- 邻域中的所有实例与核心点被分配到同一个簇，形成一个序列的核心点。
+- 任何未成为核心点且不在任何核心点邻域内的实例被视为 **异常点（anomaly）**。
+
+DBSCAN 非常适合处理形状不规则的簇，特别是当簇被低密度区域分隔时。Scikit-learn 中的 `DBSCAN` 实现非常易于使用：
+
+```python
+from sklearn.cluster import DBSCAN
+from sklearn.datasets import make_moons
+
+# 生成包含噪声的双月形数据集
+X, y = make_moons(n_samples=1000, noise=0.05)
+
+# 使用 DBSCAN 进行聚类
+dbscan = DBSCAN(eps=0.05, min_samples=5)
+dbscan.fit(X)
+```
+
+
+
+#### 问题2：DBSCAN 如何识别异常点和核心点？
+
+**解答**：
+在 DBSCAN 中，所有实例都会被分配一个标签，如果某个实例的标签为 `-1`，则表示它是被算法视为噪声的异常点。核心点的索引存储在 `core_sample_indices_` 属性中，核心点的坐标存储在 `components_` 属性中。
+
+```python
+# 获取核心点的索引
+core_sample_indices = dbscan.core_sample_indices_
+
+# 获取核心点的坐标
+core_samples = dbscan.components_
+```
+
+![Figure9-14使用两种不同邻域半径进行DBSCAN聚类](../assets/attachment/hands_on_machine_learning/Figure9-14使用两种不同邻域半径进行DBSCAN聚类.png)如 **Figure 9-14** 中所示，左图展示了使用 `eps=0.05` 和 `min_samples=5` 时的聚类结果，识别出了多个簇和异常点。右图则通过增大 `eps` 参数（`eps=0.2`），成功减少了异常点，并获得了更好的聚类效果。
+
+
+
+#### 问题3：DBSCAN 为什么没有 `predict()` 方法？如何对新实例进行预测？
+
+**解答**：
+DBSCAN 没有 `predict()` 方法，因为它的聚类结果是基于密度的区域，没有预定义的簇模型，因此无法直接对新实例进行预测。不过，DBSCAN 提供了 `fit_predict()` 方法，它可以在数据集中进行拟合时直接返回簇标签。
+
+在需要预测新数据的情况下，通常使用另一种分类器（例如 `KNeighborsClassifier`）来预测新实例的簇标签。以下是使用 `KNeighborsClassifier` 进行预测的示例代码：
+
+```python
+from sklearn.neighbors import KNeighborsClassifier
+
+# 仅使用核心点进行训练
+knn = KNeighborsClassifier(n_neighbors=50)
+knn.fit(dbscan.components_, dbscan.labels_[dbscan.core_sample_indices_])
+
+# 预测新实例的簇
+X_new = np.array([[-0.5, 0], [0, 0.5], [1, -0.1], [2, 1]])
+y_new = knn.predict(X_new)
+```
+
+![Figure9-15两组之间的决策边界](../assets/attachment/hands_on_machine_learning/Figure9-15两组之间的决策边界.png)如 **Figure 9-15** 所示，四个新实例被分配到对应的簇中。通过使用 `KNeighborsClassifier`，我们可以估算新实例所属的簇并为其分配标签。
+
+
+#### 问题4：DBSCAN 有哪些优缺点？
+
+**优点**：
+1. DBSCAN 可以识别任意形状的簇，特别适合非球形簇。
+2. 它对噪声和离群点有很好的鲁棒性，能有效处理密度较低的区域。
+3. 它只需要两个超参数：`eps`（邻域距离）和 `min_samples`（簇内最少样本数）。
+
+**缺点**：
+1. 如果簇之间的密度差异较大，DBSCAN 表现不佳，难以正确划分簇。
+2. 其计算复杂度为 `KaTeX:O(m^2 * n)`，对于大型数据集扩展性较差。
+
+因此，在需要处理大规模数据时，DBSCAN 并不总是最优选择，可能需要借助其他算法如 **Hierarchical DBSCAN**（HDBSCAN）。
+
+{.marker-none}
+
+### 其他聚类算法 {.col-span-2}
+
+| ID  | 问题   | 解答   |
+| --- | ------ | ------ |
+| 1   | 什么是凝聚层次聚类（Agglomerative Clustering）？  | 凝聚层次聚类是一种自底向上的层次聚类方法，首先将每个实例作为一个簇，逐步将最接近的簇合并，直到所有实例最终汇集成一个簇。其结果是一个层次结构，形成一个二叉树（称为 **聚类树**）。该方法能够捕捉到各种形状的簇结构，并生成一个灵活的信息丰富的聚类树。在不同的层次上，可以选择不同的簇数量，且可以与任何配对距离一起使用。尽管凝聚层次聚类可以扩展到大型数据集，如果没有提供 **连接性矩阵（connectivity matrix）**，它对大型数据集的表现可能不佳。|
+| 2   | 什么是 BIRCH 聚类？  | BIRCH（平衡迭代减少与聚类，Balanced Iterative Reducing and Clustering using Hierarchies）是一种为处理大型数据集而设计的层次聚类算法。与批量 `k-means` 相比，BIRCH 更加高效，尤其是当特征数量较少（例如少于 20）时。BIRCH 在训练期间构建了一棵树结构，树中仅存储足够的信息，以便快速为每个新实例分配簇，而不需要存储所有实例。这使得它能够在处理大规模数据集时有效地使用内存。|
+| 3   | 什么是均值漂移聚类（Mean-Shift Clustering）？  | 均值漂移聚类通过为每个实例放置一个圆（定义为 **带宽（bandwidth）**），然后计算圆内所有实例的均值。接下来，它将圆向均值移动，并重复该过程，直到所有圆都聚集到一个局部密度最大的位置。均值漂移的优点在于它不需要预定义簇的数量，可以自动识别任意形状的簇。然而，与 DBSCAN 不同，均值漂移在密度变化较大的簇中往往会将簇切割成多个部分。此外，均值漂移的计算复杂度较高，因此不适合处理大型数据集。|
+| 4   | 什么是亲和传播（Affinity Propagation）？  | 亲和传播是一种通过实例之间的消息交换来进行聚类的算法，每个实例最终会选择另一个实例（或自身）作为 **代表实例（exemplar）**。所有选择相同代表实例的实例被划分为同一簇。亲和传播不需要预定义簇的数量，而是在训练过程中自动确定。然而，亲和传播的计算复杂度较高（`O(m^2)`），因此不适合处理大型数据集。|
+| 5   | 什么是谱聚类（Spectral Clustering）？  | 谱聚类首先计算实例之间的相似矩阵，然后对其进行低维嵌入（例如通过特征向量分解），从而在低维空间中执行聚类（通常使用 `k-means`）。谱聚类能够捕捉复杂的簇结构，也常用于图切割（例如，识别社交网络中的朋友群体）。尽管谱聚类能处理复杂的簇结构，但在处理大规模数据时效果不佳，尤其是当簇的大小差异较大时。|
+
+{.show-header .left-text}
+
+### 高斯混合模型
+
+#### 1. 什么是高斯混合模型（Gaussian Mixture Model，GMM）？
+
+**高斯混合模型** (GMM) 是一种概率模型，它假设每个实例是从几个不同的高斯分布中生成的。这些分布的参数是未知的。所有从一个高斯分布生成的实例组成一个簇，该簇通常呈现椭圆形状。每个簇可以有不同的椭圆形状、大小、密度和方向，![Figure9-11处理不同尺寸和密度的椭圆形簇时的表现](../assets/attachment/hands_on_machine_learning/Figure9-11处理不同尺寸和密度的椭圆形簇时的表现.png)如 **Figure 9-11** 所示。尽管我们可以观察到某个实例，但无法知道该实例来自哪个高斯分布，或者这些分布的参数是什么。
+
+
+
+#### 2. GMM 的生成过程是怎样的？
+
+GMM 假设数据集 `KaTeX:X` 是通过以下的概率过程生成的：
+
+- 对于每个实例，首先从 `KaTeX:k` 个簇中随机选取一个簇。选择第 `KaTeX:j` 个簇的概率是该簇的权重 `KaTeX:\phi^{(j)}`。实例选择的簇的索引记为 `KaTeX:z^{(i)}`。
+- 如果第 `KaTeX:i` 个实例被分配到第 `KaTeX:j` 个簇（即 `KaTeX:z^{(i)} = j`），那么该实例的值 `KaTeX:x^{(i)}` 是从均值为 `KaTeX:\mu^{(j)}`、协方差矩阵为 `KaTeX:\Sigma^{(j)}` 的高斯分布中随机采样得到的。
+
+公式如下：
+```KaTeX
+x^{(i)} \sim \mathcal{N}(\mu^{(j)}, \Sigma^{(j)})
+```
+
+
+
+#### 3. 如何使用 Scikit-Learn 训练 GMM？
+
+使用 Scikit-Learn 的 `KaTeX:GaussianMixture` 类，可以很容易地估计簇的权重 `KaTeX:\phi`、均值 `KaTeX:\mu` 和协方差矩阵 `KaTeX:\Sigma`：
+
+```python
+from sklearn.mixture import GaussianMixture
+
+gm = GaussianMixture(n_components=3, n_init=10)
+gm.fit(X)
+```
+
+
+
+#### 4. 如何查看 GMM 模型的参数？
+
+模型估计的参数包括簇的权重、均值和协方差矩阵：
+
+```python
+>>> gm.weights_
+array([0.39025715, 0.40007391, 0.20966893])
+
+>>> gm.means_
+array([[ 0.05131611,  0.07521837],
+       [-1.40763156,  1.42708225],
+       [ 3.39893794,  1.05928897]])
+
+>>> gm.covariances_
+array([[[ 0.68799922,  0.79606357],
+        [ 0.79606357,  1.21236106]],
+
+       [[ 0.63479409,  0.72970799],
+        [ 0.72970799,  1.1610351 ]],
+
+       [[ 1.14833585, -0.03256179],
+        [-0.03256179,  0.95490931]]])
+```
+
+该结果显示了三个簇的权重 `KaTeX:\phi`、均值 `KaTeX:\mu` 和协方差矩阵 `KaTeX:\Sigma`。
+
+
+
+#### 5. GMM 的训练过程使用了什么算法？
+
+GMM 的训练使用了 **期望最大化** (EM) 算法，该算法与 k-means 算法有许多相似之处。首先，它随机初始化簇的参数 `KaTeX:\mu` 和 `KaTeX:\Sigma`，然后重复以下两步直到收敛：
+1. **期望步骤（E-step）**：根据当前簇的参数，估计每个实例属于每个簇的概率，即计算 **责任度**（responsibilities）。
+2. **最大化步骤（M-step）**：更新簇的参数 `KaTeX:\mu` 和 `KaTeX:\Sigma`，使得这些参数最大化实例属于相应簇的概率。
+
+不同于 k-means，EM 使用 **软聚类** 分配，这意味着实例可以部分属于多个簇。对于每个实例，EM 估计其属于每个簇的概率，这些概率称为 **责任度**。
+
+
+
+#### 6. 如何检查模型是否收敛？
+
+可以通过检查 `KaTeX:converged_` 属性和 `KaTeX:n_iter_` 属性来查看模型是否收敛以及收敛所需的迭代次数：
+
+```python
+>>> gm.converged_
+True
+>>> gm.n_iter_
+4
+```
+
+
+
+#### 7. 如何使用 GMM 进行聚类？
+
+可以通过 `KaTeX:predict()` 方法进行硬聚类，通过 `KaTeX:predict_proba()` 方法进行软聚类：
+
+```python
+>>> gm.predict(X)
+array([0, 0, 1, ..., 2, 2, 2])
+
+>>> gm.predict_proba(X).round(3)
+array([[0.977, 0.   , 0.023],
+       [0.983, 0.   , 0.016],
+       [0.   , 1.   , 0.   ],
+       ...,
+       [0.   , 0.001, 0.999],
+       [0.   , 0.001, 0.999]])
+```
+
+
+
+#### 8. 如何生成新实例？
+
+GMM 是 **生成模型**，这意味着你可以使用模型生成新的实例。生成的实例按簇索引排序：
+
+```python
+>>> X_new, y_new = gm.sample(6)
+>>> X_new
+array([[-0.86944074, -0.32767626],
+       [ 0.29836051,  0.28297011],
+       [-2.80419273, -0.09047309],
+       [ 3.98203732,  1.49951491],
+       [ 3.81677148,  0.53095244],
+       [ 2.84104923, -0.73858639]])
+
+>>> y_new
+array([0, 0, 1, 2, 2, 2])
+```
+
+
+
+#### 9. 如何估计模型的密度？
+
+可以使用 `KaTeX:score_samples()` 方法计算给定位置的 **概率密度函数**（PDF）的对数值：
+
+```python
+>>> gm.score_samples(X).round(2)
+array([-2.61, -3.57, -3.33, ..., -3.51, -4.4 , -3.81])
+```
+
+然后取指数可以得到实例位置的 PDF 值。![Figure9-16经过训练的高斯混合模型的簇均值和判定边界和密度等值线模型](../assets/attachment/hands_on_machine_learning/Figure9-16经过训练的高斯混合模型的簇均值和判定边界和密度等值线模型.png)**Figure 9-16** 显示了模型的簇均值 `KaTeX:\mu`、决策边界和密度等高线图。
+
+
+
+#### 10. 如何限制 GMM 的协方差矩阵类型？
+
+可以通过设置 `KaTeX:covariance_type` 超参数来限制协方差矩阵的形状：
+- `"spherical"`：所有簇必须是球形。
+- `"diag"`：簇可以是任何椭圆形状，但轴必须平行于坐标轴。
+- `"tied"`：所有簇共享相同的椭圆形状、大小和方向。
+- `"full"`（默认）：每个簇都有自己的椭圆形状、大小和方向。
+
+![Figure9-17绑定聚类(左)和球形聚类(右)的高斯混合物](../assets/attachment/hands_on_machine_learning/Figure9-17绑定聚类(左)和球形聚类(右)的高斯混合物.png)**Figure 9-17** 显示了协方差类型设置为 `"tied"` 和 `"spherical"` 时的解决方案。
+
+---
+
+#### 11. 如何设置协方差类型来避免参数过多？
+
+为了减少算法学习的参数数量，你可以通过 **covariance_type** 设置为 `"spherical"`, `"diag"` 或 `"tied"` 来限制 GMM 的协方差矩阵类型。默认情况下，**covariance_type** 设置为 `"full"`，即簇的形状和大小没有任何限制。
+
+### 使用高斯混合模型进行异常检测
+
+#### 问题 1：如何使用高斯混合模型进行异常检测？
+
+高斯混合模型（Gaussian Mixture Model, GMM）用于异常检测的原理是：位于低密度区域的实例可以视为异常。为了实现这个目标，需要定义密度阈值，使得某些实例（如2%的实例）被标记为异常。使用此模型时，常见的步骤是：
+
+1. 估计每个样本的密度。
+2. 选择一个密度的阈值，例如第2百分位的密度。
+3. 将密度低于此阈值的样本标记为异常。
+
+#### 示例代码：
+```python
+densities = gm.score_samples(X)
+density_threshold = np.percentile(densities, 2)
+anomalies = X[densities < density_threshold]
+```
+
+#### ↓图解
+![Figure9-18使用高斯混合模型检测异常点](../assets/attachment/hands_on_machine_learning/Figure9-18使用高斯混合模型检测异常点.png)**Figure 9-18**展示了异常检测的结果，异常点被用星号标记出来。该图显示了在二维空间中的数据分布，使用高斯混合模型拟合后，我们可以观察到两个主要的高斯分布。在这些分布之外的低密度区域中，红色星号标记的点代表了被识别为异常的数据。
+
+
+
+#### 问题 2：如何选择高斯混合模型中的簇数？
+
+和k-means算法类似，高斯混合模型也要求你指定簇的数量。为了选择合适的簇数，可以使用如AIC（Akaike信息准则）或BIC（贝叶斯信息准则）来衡量模型的质量。通过最小化AIC或BIC，可以找到最合适的簇数。
+
+#### 示例代码：
+```python
+from sklearn.mixture import GaussianMixture
+gm = GaussianMixture(n_components=k)
+gm.fit(X)
+
+bic = gm.bic(X)
+aic = gm.aic(X)
+```
+
+在模型拟合时，可以尝试不同的 `k` 值，然后比较BIC或AIC的值，选择值最小的模型。
+
+
+
+#### 小贴士
+高斯混合模型会尝试拟合所有数据，包括异常值。如果异常值太多，可能会影响模型对“正常”数据的判断。因此，如果出现这种情况，可以通过清理数据后重新拟合模型，或者使用鲁棒协方差估计方法来减少异常值对模型的影响，例如使用 `EllipticEnvelope` 类。
+
+
+{.marker-none}
+
+### 选择合适的簇数
+
+#### 问题 1：如何为高斯混合模型选择合适的簇数？
+
+与 k-means 不同，惯用的指标如**惯性**（inertia）或**轮廓系数**（silhouette score）无法在高斯混合模型中可靠地确定簇数，尤其当簇具有不同大小或形状时。为了选择合适的簇数，可以使用**贝叶斯信息准则**（Bayesian Information Criterion, BIC）或**赤池信息准则**（Akaike Information Criterion, AIC）。
+
+这些准则通过最小化理论信息准则来找到最优模型。公式如下：
+
+```KaTeX
+\text{BIC} = \log(m) \cdot p - 2 \cdot \log(\hat{L})
+```
+
+```KaTeX
+\text{AIC} = 2 \cdot p - 2 \cdot \log(\hat{L})
+```
+
+其中，
+- `KaTeX:m` 是实例数
+- `KaTeX:p` 是模型的参数个数
+- `KaTeX:\hat{L}` 是模型**似然函数**（likelihood function）的最大化值
+
+
+
+#### 图解
+
+![Figure9-20不同簇数k下的BIC和AIC的变化情况](../assets/attachment/hands_on_machine_learning/Figure9-20不同簇数k下的BIC和AIC的变化情况.png)**Figure 9-20** 显示了不同簇数 `KaTeX:k` 的情况下，BIC 和 AIC 的变化情况。根据图中显示，当 `KaTeX:k=3` 时，BIC 和 AIC 都达到了最小值，因此这是最可能的最佳簇数选择。
+
+
+
+#### 问题 2：什么是似然函数（likelihood function）？
+
+**似然函数**与**概率**不同，虽然它们在日常语言中可能被混用，但在统计中有着不同的含义。
+
+- **概率**：给定某个参数 `KaTeX:\theta`，表示某个结果 `KaTeX:x` 的可能性。
+- **似然**：给定某个结果 `KaTeX:x`，表示该结果由特定参数 `KaTeX:\theta` 生成的可能性。
+
+#### 图解
+
+![Figure9-19一维高斯分布的模型以及它的衍生函数](../assets/attachment/hands_on_machine_learning/Figure9-19一维高斯分布的模型以及它的衍生函数.png)**Figure 9-19** 展示了1维高斯分布的模型以及它的衍生函数：
+
+- 左上图：模型的参数函数 `KaTeX:f(x; \theta)`，作为 `KaTeX:x` 和 `KaTeX:\theta` 的函数。
+- 右上图：似然函数 `KaTeX:L(\theta \mid x = 2.5)`。
+- 左下图：在固定参数 `KaTeX:\theta = 1.3` 时生成的概率密度函数（PDF）。
+- 右下图：对数似然函数。
+
+从图中可以看出，**PDF** 是关于 `KaTeX:x` 的函数，而**似然函数**是关于 `KaTeX:\theta` 的函数。
+
+
+
+#### 问题 3：如何通过最大似然估计（Maximum Likelihood Estimation, MLE）来估计模型的参数？
+
+给定数据集 `KaTeX:X`，通常的任务是估计模型参数的最优值。这可以通过**最大化似然函数**来实现。例如，若观察到的单个实例 `KaTeX:x = 2.5`，则最大似然估计为 `KaTeX:\hat{\theta} = 1.5`。
+
+最大似然估计公式为：
+
+```KaTeX
+\hat{\theta} = \underset{\theta}{\operatorname{argmax}} \ L(\theta \mid x)
+```
+
+#### 图解
+
+**Figure 9-19** 右上角的图显示了 `KaTeX:x=2.5` 时，似然函数 `KaTeX:L(\theta \mid x = 2.5)`。我们通过最大化该函数找到参数 `KaTeX:\theta` 的估计值。
+
+---
+
+#### 问题 4：如何通过BIC和AIC计算模型的拟合度？
+
+当估计了最优参数 `KaTeX:\hat{\theta}` 后，可以计算 BIC 和 AIC 来评估模型的拟合度。BIC 和 AIC 的公式如前所述，它们可以帮助我们确定模型的复杂性与数据拟合之间的平衡。
+
+代码示例：
+```python
+gm.bic(X)
+gm.aic(X)
+```
+
+输出结果：
+```text
+BIC: 8189.747000497186
+AIC: 8102.521720382148
+```
+
+{.marker-none}
+
+#### 问题 1：如何使用贝叶斯高斯混合模型自动选择簇数？
+
+贝叶斯高斯混合模型（**Bayesian Gaussian Mixture Model, BGM**）可以自动选择合适的簇数。与手动搜索不同，BGM 能够为不必要的簇分配接近于零的权重。因此，只需要将 `KaTeX:n\_components` 设置为一个合理的较大值，算法会自动去除不必要的簇。
+
+#### 示例代码：
+```python
+from sklearn.mixture import BayesianGaussianMixture
+bgm = BayesianGaussianMixture(n_components=10, n_init=10, random_state=42)
+bgm.fit(X)
+bgm.weights_.round(2)
+```
+
+输出结果：
+```text
+array([0.4, 0.21, 0.4, 0. , 0. , 0. , 0. , 0. , 0. , 0. ])
+```
+
+在这个例子中，算法自动检测到只需要三个簇，结果与**Figure 9-16** 中的结果几乎一致。
+
+
+
+#### 问题 2：贝叶斯高斯混合模型是否适合非椭圆形簇？
+
+虽然高斯混合模型在处理椭圆形簇时表现良好，但当簇具有非常不同的形状时，效果会显著下降。为了说明这一点，可以将贝叶斯高斯混合模型应用于“Moons”数据集，它包含两个非椭圆形的簇。
+
+#### 图解
+
+![Figure9-21将高斯混合拟合到非椭圆聚类中](../assets/attachment/hands_on_machine_learning/Figure9-21将高斯混合拟合到非椭圆聚类中.png)**Figure 9-21** 显示了贝叶斯高斯混合模型拟合“Moons”数据集的结果：
+
+- 左图：原始“Moons”数据集，显示了两个非椭圆形簇。
+- 右图：使用高斯混合模型拟合的结果。由于高斯混合模型倾向于寻找椭圆形簇，模型找到了八个簇，而不是期望的两个簇。密度估计虽然不是很差，但无法正确分离两个弯曲的“月亮”形状。
+
+通过这一结果可以看出，高斯混合模型在处理复杂形状时表现不佳。
+
+{.marker-none}
+
+###  其他用于异常检测和新颖性检测的算法 {.col-span-3}
+
+#### 问题 1：Scikit-Learn 提供了哪些用于异常检测和新颖性检测的其他算法？
+
+| **算法**                         | **用途**                                              | **描述**                                                                                                                                                                                                            |
+|-----------------------------------|-------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Fast-MCD** (minimum covariance determinant) | 异常检测、数据清理                                   | 通过 EllipticEnvelope 类实现。假设数据集的正常实例是由单一高斯分布生成的，而异常点不属于该分布。该算法估计椭圆包络并忽略异常值，从而更好地识别异常点。                                                                                     |
+| **Isolation Forest**              | 异常检测，特别是高维数据集                             | 构建随机森林，在每个节点随机选择一个特征和一个阈值。逐渐将数据集分割，直到所有实例相互隔离。异常点往往更快被隔离（通过较少的分割步骤）。                                                                                                    |
+| **Local Outlier Factor (LOF)**    | 异常检测                                              | 通过比较一个实例的密度与其邻居的密度来识别异常。通常，异常点比其 k 近邻更加孤立。                                                                                                                                    |
+| **One-Class SVM**                 | 新颖性检测                                              | 适用于单类别数据集。通过将实例映射到高维空间并与原点分离，找到包围正常实例的区域，任何落在该区域外的实例被视为异常。                                                                                               |
+| **PCA 和其他降维技术**            | 异常检测                                              | 比较正常实例和异常实例的重构误差，通常异常实例的重构误差较大。这是一种简单且高效的异常检测方法。                                                                                                                       |
+
+{.show-header .left-text}
+
+
+#### 问题 2：如何使用 Fast-MCD 进行异常检测？
+
+Fast-MCD（最小协方差决定因子）是通过 `EllipticEnvelope` 类实现的，特别适用于**异常检测**和数据清理。它假设正常的实例由单一高斯分布生成，而异常点不属于这个分布。该算法会估计椭圆包络并忽略大部分可能的异常点，从而更好地识别正常数据。
+
+
+
+#### 问题 3：Isolation Forest 如何在高维数据集中进行异常检测？
+
+Isolation Forest 是一种高效的**异常检测**算法，特别适用于高维数据集。该算法通过随机构建决策树，将数据集逐步分割，直到所有实例被隔离。通常，异常点在平均分割步骤中会更早被隔离出来，因此可以通过隔离步骤的数量来识别异常点。
+
+
+#### 问题 4：如何通过 LOF 算法检测异常？
+
+**LOF**（局部异常因子）算法通过将一个实例的密度与其邻居的密度进行比较来识别异常点。如果一个实例比其 `KaTeX:k` 最近邻更孤立，它很可能是异常点。
+
+
+
+#### 问题 5：如何通过 One-Class SVM 进行新颖性检测？
+
+One-Class SVM 更适合**新颖性检测**，特别是当只有单一类别数据时。该算法通过将数据映射到高维空间并与原点分离，找到包围正常实例的小区域。如果一个新实例不在该区域内，则被视为异常。适用于高维数据集，但不适合处理非常大的数据集。
+
+
+
+#### 问题 6：如何使用 PCA 进行异常检测？
+
+通过降维技术如 **PCA**，可以将正常实例和异常实例的重构误差进行对比。通常情况下，异常实例的重构误差会更大，因此可以通过此差异来检测异常。这个方法既简单又高效，适合用于许多应用场景。
+
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                       | 中文翻译                                                                                              |
+|-----|------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 1   | How would you define clustering? Can you name a few clustering algorithms?                       | 你如何定义聚类？你能列举几个聚类算法吗？                                                                |
+| 2   | What are some of the main applications of clustering algorithms?                                 | 聚类算法的主要应用有哪些？                                                                               |
+| 3   | Describe two techniques to select the right number of clusters when using k-means.               | 描述在使用 k-means 时选择正确簇数的两种技术。                                                            |
+| 4   | What is label propagation? Why would you implement it, and how?                                  | 什么是标签传播？为什么以及如何实现它？                                                                  |
+| 5   | Can you name two clustering algorithms that can scale to large datasets? And two that look for regions of high density? | 你能列举两个可以扩展到大数据集的聚类算法吗？以及两个寻找高密度区域的算法？                                   |
+| 6   | Can you think of a use case where active learning would be useful? How would you implement it?   | 你能想到一个主动学习有用的用例吗？你会如何实现它？                                                        |
+| 7   | What is the difference between anomaly detection and novelty detection?                           | 异常检测与新颖性检测有什么区别？                                                                         |
+| 8   | What is a Gaussian mixture? What tasks can you use it for?                                       | 什么是高斯混合模型？你可以用它做哪些任务？                                                               |
+| 9   | Can you name two techniques to find the right number of clusters when using a Gaussian mixture model? | 当使用高斯混合模型时，你能列举两种确定正确簇数的技术吗？                                                   |
+| 10  | The classic Olivetti faces dataset contains 400 grayscale 64 × 64–pixel images of faces. Each image is flattened to a 1D vector of size 4,096. Forty different people were photographed (10 times each), and the usual task is to train a model that can predict which person is represented in each picture. Load the dataset using the sklearn.datasets.fetch_olivetti_faces() function, then split it into a training set, a validation set, and a test set (note that the dataset is already scaled between 0 and 1). Since the dataset is quite small, you will probably want to use stratified sampling to ensure that there are the same number of images per person in each set. Next, cluster the images using k-means, and ensure that you have a good number of clusters (using one of the techniques discussed in this chapter). Visualize the clusters: do you see similar faces in each cluster? | 经典的 Olivetti 人脸数据集包含 400 张 64 × 64 像素的灰度人脸图像。每张图像被展平为大小为 4,096 的 1D 向量。40 名不同的人被拍摄了（每人 10 次），通常的任务是训练一个模型来预测每张图片中的人物。使用 `sklearn.datasets.fetch_olivetti_faces()` 函数加载数据集，然后将其划分为训练集、验证集和测试集（注意，数据集已经缩放到 0 和 1 之间）。由于数据集较小，您可能需要使用分层采样来确保每个人在每个集合中的图像数量相同。接下来，使用 k-means 对图像进行聚类，并确保有一个合适的簇数（使用本章讨论的技术之一）。可视化这些簇：您是否在每个簇中看到了相似的人脸？ |
+| 11  | Continuing with the Olivetti faces dataset, train a classifier to predict which person is represented in each picture, and evaluate it on the validation set. Next, use k-means as a dimensionality reduction tool, and train a classifier on the reduced set. Search for the number of clusters that allows the classifier to get the best performance: what performance can you reach? What if you append the features from the reduced set to the original features (again, searching for the best number of clusters)? | 继续使用 Olivetti 人脸数据集，训练一个分类器来预测每张图片代表哪个人，并在验证集上进行评估。接下来，使用 k-means 作为降维工具，并在简化后的数据集上训练分类器。寻找使分类器获得最佳性能的簇数：你能达到什么性能？如果将简化特征集中的特征附加到原始特征集上（再次搜索最佳簇数），会有什么结果？ |
+| 12  | Train a Gaussian mixture model on the Olivetti faces dataset. To speed up the algorithm, you should probably reduce the dataset’s dimensionality (e.g., use PCA, preserving 99% of the variance). Use the model to generate some new faces (using the sample() method), and visualize them (if you used PCA, you will need to use its inverse_transform() method). Try to modify some images (e.g., rotate, flip, darken) and see if the model can detect the anomalies (i.e., compare the output of the score_samples() method for normal images and for anomalies). | 在 Olivetti 人脸数据集上训练一个高斯混合模型。为了加快算法速度，您可能应该减少数据集的维数（例如，使用 PCA，保留 99% 的方差）。使用模型生成一些新的人脸（使用 sample() 方法），并将它们可视化（如果使用了 PCA，您需要使用 inverse_transform() 方法）。尝试修改一些图像（例如旋转、翻转、变暗），看看模型是否能检测到异常（即，比较正常图像和异常图像的 score_samples() 方法的输出）。 |
+| 13  | Some dimensionality reduction techniques can also be used for anomaly detection. For example, take the Olivetti faces dataset and reduce it with PCA, preserving 99% of the variance. Then compute the reconstruction error for each image. Next, take some of the modified images you built in the previous exercise and look at their reconstruction error: notice how much larger it is. If you plot a reconstructed image, you will see why: it tries to reconstruct a normal face. | 一些降维技术也可以用于异常检测。例如，采用 Olivetti 人脸数据集，并使用 PCA 将其降低，保留 99% 的方差。然后计算每个图像的重构误差。接下来，取一些您在前一练习中构建的修改过的图像，并查看它们的重构误差：注意它大了多少。如果你绘制一个重构的图像，你会明白原因：它试图重构一张正常的人脸。 |
+
+
+{.show-header .left-text}
+
+
 
 
 
