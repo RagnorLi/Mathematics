@@ -9461,15 +9461,522 @@ TensorBoard 提供了一个非常便捷的功能，可以让你通过 TensorBoar
 
 {marker-none}
 
+### 微调神经网络中的超参数
+
+#### 问题 1：神经网络的超参数如何优化？
+
+**解答**：
+
+神经网络的灵活性使其拥有众多超参数需要调整。即使是一个简单的多层感知机（MLP），你也可以调整以下超参数：
+- 层数 (`n_hidden`)
+- 每层神经元的数量 (`n_neurons`)
+- 激活函数的类型
+- 权重初始化策略
+- 优化器类型
+- 学习率 (`learning_rate`)
+- 批次大小等
+
+如何知道哪种超参数组合最适合任务呢？
+
+#### 代码：使用 Keras Tuner 来优化超参数
+
+你可以使用 **Keras Tuner** 这一库，它提供了多种调优策略，支持自定义并且与 **TensorBoard** 有很好的集成。以下是使用 Keras Tuner 调优 Fashion MNIST 图像分类的超参数代码。
+
+```python
+import keras_tuner as kt
+
+def build_model(hp):
+    n_hidden = hp.Int("n_hidden", min_value=0, max_value=8, default=2)
+    n_neurons = hp.Int("n_neurons", min_value=16, max_value=256)
+    learning_rate = hp.Float("learning_rate", min_value=1e-4, max_value=1e-2, sampling="log")
+    optimizer = hp.Choice("optimizer", values=["sgd", "adam"])
+
+    if optimizer == "sgd":
+        optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate)
+    else:
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Flatten())
+    for _ in range(n_hidden):
+        model.add(tf.keras.layers.Dense(n_neurons, activation="relu"))
+    model.add(tf.keras.layers.Dense(10, activation="softmax"))
+    model.compile(loss="sparse_categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+    return model
+```
 
 
 
+#### 问题 2：如何利用 Keras Tuner 进行随机搜索优化神经网络的超参数？
+
+**解答**：
+
+你可以使用 **kt.RandomSearch** 对神经网络超参数进行随机搜索。以下是如何调用 tuner 的 `search()` 方法的示例：
+
+#### 代码：进行随机搜索的实现
+
+```python
+random_search_tuner = kt.RandomSearch(
+    build_model, 
+    objective="val_accuracy", 
+    max_trials=5, 
+    overwrite=True, 
+    directory="my_fashion_mnist", 
+    project_name="my_rnd_search", 
+    seed=42
+)
+
+random_search_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid))
+```
+
+这个过程会为不同的超参数组合训练模型，并选择验证精度最高的模型。
+
+#### 图：在运行完搜索后，可以使用以下命令查看最佳模型：
+
+```python
+top3_models = random_search_tuner.get_best_models(num_models=3)
+best_model = top3_models[0]
+
+# 查看最佳超参数值
+top3_params = random_search_tuner.get_best_hyperparameters(num_trials=3)
+best_params = top3_params[0].values
+```
+
+结果显示：
+```
+{'n_hidden': 5, 'n_neurons': 70, 'learning_rate': 0.00041268008232824807, 'optimizer': 'adam'}
+```
 
 
 
+#### 问题 3：什么是 HalvingRandomSearchCV？
+
+**解答**：
+
+`kt.Hyperband` 调优器实现了类似 HalvingRandomSearchCV 的过程，它首先训练许多不同的模型（只训练少量 epoch），然后根据表现逐渐淘汰表现较差的模型。每次迭代后，表现较好的模型会继续训练，直到只剩下最优模型。
+
+```python
+hyperband_tuner = kt.Hyperband(
+    MyClassificationHyperModel(), 
+    objective="val_accuracy", 
+    seed=42, 
+    max_epochs=10, 
+    factor=3, 
+    hyperband_iterations=2, 
+    overwrite=True, 
+    directory="my_fashion_mnist", 
+    project_name="hyperband"
+)
+
+hyperband_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid))
+```
+
+#### 代码解析：
+在 `Hyperband` 调优器中，最大 epoch 数控制模型训练的最大步数，factor 决定淘汰的比例（即 1/factor 比例的模型继续训练）。这个过程会重复多次，直到剩下一个模型。
+
+---
+
+#### 问题 4：如何通过 TensorBoard 监控超参数搜索过程？
+
+**解答**：
+
+你可以使用 **TensorBoard** 回调来监控超参数搜索过程。通过以下代码设置回调：
+
+```python
+root_logdir = Path(hyperband_tuner.project_dir) / "tensorboard"
+tensorboard_cb = tf.keras.callbacks.TensorBoard(root_logdir)
+early_stopping_cb = tf.keras.callbacks.EarlyStopping(patience=2)
+
+hyperband_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid), callbacks=[early_stopping_cb, tensorboard_cb])
+```
+
+使用 **TensorBoard**，你可以在 **HPARAMS** 标签中查看每次尝试的超参数组合及其对应的指标，帮助理解每个超参数对模型性能的影响。
+
+你说得对，我们还没有完全完成这个主题的提取。根据提供的图片，整个“**Fine-Tuning Neural Network Hyperparameters**”部分仍然有一些关键的内容需要提取和总结。我们将继续提炼后续的内容，以问题驱动的方式，并解析剩下的代码和方法。
 
 
 
+#### 问题 5：如何通过 Keras Tuner 实现贝叶斯优化（Bayesian Optimization）？
+
+**解答**：
+
+贝叶斯优化是另一种高级的超参数优化策略，Keras Tuner 也支持这种方法。贝叶斯优化通过拟合一个高斯过程（Gaussian Process）来逐渐学习超参数空间中最有前途的区域，并逐步缩小搜索范围，从而提高模型性能。
+
+#### 代码：通过贝叶斯优化调优超参数
+
+```python
+bayesian_opt_tuner = kt.BayesianOptimization(
+    MyClassificationHyperModel(), 
+    objective="val_accuracy", 
+    seed=42, 
+    max_trials=10, 
+    alpha=1e-4, 
+    beta=2.6, 
+    overwrite=True, 
+    directory="my_fashion_mnist", 
+    project_name="bayesian_opt"
+)
+
+bayesian_opt_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid))
+```
+
+**参数解析**：
+- `alpha` 表示期望在试验中的噪声水平，默认值为 `10^{-4}`。
+- `beta` 决定算法的探索程度，默认值为 2.6。增大这个值可以让算法更多地探索未知的超参数空间，而减小它则让算法更多地利用已经发现的良好区域。
+
+贝叶斯优化通过拟合一个高斯过程来估计性能最优的超参数组合。
+
+
+
+#### 问题 6：如何控制训练过程中的 EarlyStopping 和 TensorBoard 回调？
+
+**解答**：
+
+`EarlyStopping` 回调用于在验证性能没有提升时自动停止训练，以避免过拟合。`TensorBoard` 回调用于可视化超参数搜索过程和模型训练指标。使用这些回调有助于更好地监控模型的性能。
+
+#### 代码：设置 EarlyStopping 和 TensorBoard 回调
+
+```python
+root_logdir = Path(hyperband_tuner.project_dir) / "tensorboard"
+tensorboard_cb = tf.keras.callbacks.TensorBoard(root_logdir)
+early_stopping_cb = tf.keras.callbacks.EarlyStopping(patience=2)
+
+hyperband_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid), callbacks=[early_stopping_cb, tensorboard_cb])
+```
+
+- **EarlyStopping**：`patience=2` 表示如果模型在连续 2 个 epoch 中验证性能没有提升，训练将会自动停止。
+- **TensorBoard**：日志文件存储在 `root_logdir` 目录下，供 TensorBoard 可视化使用。
+
+通过使用这些回调，可以更高效地监控超参数调优过程和训练进度。
+
+
+
+#### 问题 7：如何根据超参数调优的结果继续微调模型？
+
+**解答**：
+
+在获得最优的超参数组合后，可以使用这些最佳参数对整个训练集进行训练，并在测试集上进行评估，确保模型性能达到最佳。
+
+#### 代码：使用最佳模型继续训练
+
+```python
+best_model.fit(X_train_full, y_train_full, epochs=10)
+test_loss, test_accuracy = best_model.evaluate(X_test, y_test)
+```
+
+这段代码使用先前调优获得的最佳模型对完整的训练集进行训练，并评估测试集的性能，最后可以将模型部署到生产环境中。
+
+
+
+#### 问题 8：如何优化数据预处理的超参数？
+
+**解答**：
+
+有时除了优化模型本身，还可以通过优化数据预处理的超参数来提升模型性能。例如，可以通过调节是否标准化数据或调整批次大小等数据预处理步骤。
+
+在 Keras Tuner 中，除了模型结构的超参数，还可以通过 `HyperModel` 子类化来调整数据预处理步骤。
+
+#### 代码：通过子类化 `kt.HyperModel` 来调优数据预处理
+
+```python
+class MyClassificationHyperModel(kt.HyperModel):
+    def build(self, hp):
+        return build_model(hp)
+    
+    def fit(self, hp, model, X, y, **kwargs):
+        if hp.Boolean("normalize"):
+            norm_layer = tf.keras.layers.Normalization()
+            X = norm_layer(X)
+        return model.fit(X, y, **kwargs)
+```
+
+在这个例子中，`normalize` 是一个超参数，用于控制是否对输入数据进行标准化。
+
+##### 代码：运行 Hyperband 调优器
+
+```python
+hyperband_tuner = kt.Hyperband(
+    MyClassificationHyperModel(), 
+    objective="val_accuracy", 
+    seed=42, 
+    max_epochs=10, 
+    factor=3, 
+    hyperband_iterations=2, 
+    overwrite=True, 
+    directory="my_fashion_mnist", 
+    project_name="hyperband"
+)
+```
+
+通过这种方式，既可以调优模型的结构超参数，也可以调优数据预处理的超参数。
+
+
+
+#### 问题 9：如何利用 TensorBoard 分析超参数调优过程？
+
+**解答**：
+
+在超参数调优过程中，**TensorBoard** 是一个非常有用的工具，它能够帮助你实时查看模型的表现和超参数的影响。使用 `TensorBoard` 可以直观地查看超参数的效果。
+
+1. **查看 HPARAMS 标签**：这个标签包含了尝试过的所有超参数组合以及相应的性能指标。你可以通过点击这些超参数组合来查看对应的学习曲线。
+2. **分析超参数间的相互作用**：通过使用平行坐标视图或散点图，你可以深入分析各超参数对模型性能的影响，帮助你理解超参数之间的关系。
+
+#### 代码：运行 TensorBoard 回调
+
+```python
+tensorboard_cb = tf.keras.callbacks.TensorBoard(root_logdir)
+
+hyperband_tuner.search(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid), callbacks=[tensorboard_cb])
+```
+
+通过 TensorBoard，你可以在 HPARAMS 标签中查看所有的超参数组合及其对应的验证集精度，并在图表中分析超参数对模型性能的影响。
+
+
+
+#### 问题 10：如何通过进化算法优化神经网络超参数？
+
+**解答**：
+
+除了随机搜索、贝叶斯优化等方法，还可以使用进化算法（Evolutionary Algorithms）来优化神经网络超参数。进化算法通过选择、变异和交叉等操作不断改进超参数组合，使模型性能逐步提高。
+
+例如，Google 的 AutoML 服务和 Uber 的 Deep Neuroevolution 都使用了进化算法来优化神经网络的超参数和架构。
+
+Keras Tuner 还支持进化算法，你可以参考类似的实现，并结合进化算法来优化模型超参数。
+
+
+{.marker-none}
+
+### 神经网络中的隐藏层数量
+
+#### 问题 1：为什么深层网络比浅层网络更高效？
+
+**解答**：
+
+深层神经网络在处理复杂问题时，通常比浅层网络具有更高的**参数效率**。深层网络可以使用更少的神经元来处理复杂函数，并且在相同的训练数据下能够达到更好的性能。
+
+- 一个单隐藏层的多层感知机（MLP）通过增加神经元数量可以拟合复杂函数。
+- 但是深层网络可以通过更少的神经元来表示复杂函数，从而提高效率。
+
+#### 类比说明：
+
+假设你需要在绘图软件中画一片森林，但不允许复制粘贴，那么你需要每棵树一笔一笔地画，效率非常低。如果允许你复制粘贴树的部分结构，效率会显著提高。这个过程类似于深层网络逐步构建复杂结构的过程：
+
+- **低层隐藏层**：学习低级结构（例如线条的方向和形状）。
+- **中间层隐藏层**：组合低级结构，形成中级结构（例如方形、圆形）。
+- **高层隐藏层**：将中级结构组合成高级结构（例如人脸）。
+
+这种逐层构建的特性使深层网络在处理复杂问题时更高效。
+
+
+
+#### 问题 2：深层神经网络如何加快收敛速度并增强泛化能力？
+
+**解答**：
+
+深层神经网络不仅能够更快地收敛到一个较好的解，还能够提升泛化能力。它们可以自动识别并利用数据的层次化结构。例如，已经训练过的网络可以识别人脸的特征，之后可以轻松微调来识别类似的结构（例如发型），这就是**迁移学习**（transfer learning）。
+
+当训练一个新任务（如发型识别）时，低级特征（例如线条、边缘）的学习可以复用，而只需要学习高级特征。这样可以加速训练并减少所需的数据量。
+
+
+
+#### 问题 3：使用多少隐藏层合适？
+
+**解答**：
+
+根据经验，对于许多问题，使用一层或两层隐藏层的神经网络就能很好地解决问题。例如：
+- **一层隐藏层**：在 MNIST 数据集上能达到超过 97% 的准确率，只需几百个神经元。
+- **两层隐藏层**：在 MNIST 数据集上能达到超过 98% 的准确率，且训练时间与一层模型相似。
+
+对于更复杂的问题，可以逐渐增加隐藏层数量，直到模型开始出现过拟合为止。非常复杂的任务，如大型图像分类或语音识别，通常需要**数十层**甚至上百层的神经网络来实现良好效果。训练这些深度模型需要大量的数据。
+
+对于这些复杂任务，常常通过使用预训练网络来避免从零开始训练，使用迁移学习的策略可以加速训练过程并减少所需的数据量。
+
+
+
+#### 问题 4：如何防止过拟合？
+
+**解答**：
+
+随着隐藏层数量的增加，模型可能会在训练数据上表现很好，但在验证集或测试集上出现过拟合现象。为防止过拟合，可以采取以下措施：
+
+- **增加训练数据**：更多的训练数据通常能够有效防止过拟合。
+- **使用正则化**：例如 L2 正则化或 Dropout 技术能够减缓过拟合的出现。
+- **控制模型复杂度**：减少隐藏层的数量或者减少每层的神经元数量，使得模型更加简洁，能够有效减少过拟合风险。
+
+对于特别复杂的任务，使用**迁移学习**来利用预训练的模型是一种常见的策略。预训练的模型已经学习了有用的特征，在新任务上进行微调只需少量数据即可获得良好效果。
+
+
+
+#### 总结
+
+- 深层网络在处理复杂问题时更高效，因为它们能够逐层构建复杂结构，具有更高的**参数效率**。
+- 深层神经网络能够加速收敛，并且提高泛化能力，特别是在使用**迁移学习**时。
+- 对于简单的任务，一到两层隐藏层可能已经足够，但对于更复杂的任务，需要逐步增加隐藏层的数量，直到开始出现过拟合现象。
+- **过拟合**可以通过增加数据、正则化技术、控制模型复杂度以及迁移学习等手段来缓解。
+
+{.marker-round}
+
+### 隐藏层中神经元数量的选择对网络性能的影响
+
+#### 问题 1：输入层和输出层的神经元数量如何确定？
+
+**解答**：
+
+输入层和输出层的神经元数量是由任务的输入和输出类型决定的。例如：
+- **MNIST 数据集**的任务有 28 × 28 = 784 个输入（像素），以及 10 个输出（类别），因此输入层需要 784 个神经元，输出层需要 10 个神经元。
+
+
+
+#### 问题 2：如何选择隐藏层中的神经元数量？
+
+**解答**：
+
+隐藏层中的神经元数量不如输入层和输出层那样明确规定，存在一些经验法则：
+
+- **传统金字塔结构**：过去常常使用金字塔结构，随着层次的增加，隐藏层的神经元数量逐层递减。例如，MNIST 数据集的一个典型网络可能有 3 层隐藏层，分别为 300、200 和 100 个神经元。这种结构的假设是低级特征可以组合成更少的高级特征。
+
+- **均匀的神经元数量**：但是，这种逐层递减的结构在近年来已经被放弃。研究表明，在大多数情况下，隐藏层中使用相同数量的神经元效果会更好，而且也只需要调整一个超参数，而不是每层都要调节神经元数量。
+
+- **变通方法**：在某些情况下，第一个隐藏层的神经元数量可以比其他层稍大。这有助于网络更好地提取输入数据的复杂特征。
+
+{.marker-round}
+
+#### 问题 3：如何避免隐藏层中的“瓶颈”问题？
+
+**解答**：
+
+为了避免网络中的“**瓶颈层**”，需要确保每一层中有足够的神经元以保持信息传递。如果某一层神经元过少，可能会导致信息丢失，从而影响模型的性能。
+
+- 比如，一个只有两个神经元的隐藏层只能输出二维数据。如果输入的是三维数据，那么部分信息将永远丢失，无论网络多么强大，也无法恢复丢失的信息。
+
+
+
+#### 问题 4：如何增加隐藏层的神经元数量并避免过拟合？
+
+**解答**：
+
+可以通过逐步增加隐藏层的神经元数量，直到网络开始过拟合为止。这是通过实验逐步调整神经元数量的常见方法。另一种方法是构建一个稍大的网络，稍微多加几层和神经元，然后使用**早停法**（early stopping）或其他正则化技术来防止过拟合。
+
+#### “**Stretch Pants**” 方案：
+
+Vincent Vanhoucke（Google 的科学家）提出了一种**“伸缩裤”方案**，建议在神经元数量上留有余量。与其精准调整到每层的最佳神经元数目，不如像穿稍大一号的裤子那样，构建一个稍大的网络。训练过程中，模型会自动找到合适的大小，避免出现瓶颈问题，同时可以通过正则化避免过拟合。
+
+
+
+#### 问题 5：增加神经元数量的策略是什么？
+
+**解答**：
+
+正如增加隐藏层数量一样，增加每个隐藏层中的神经元数量也应该逐步进行，直到网络性能开始下降（即出现过拟合）。通常情况下，如果神经元数量过多，网络会记住训练数据，导致模型的泛化能力下降。可以采取以下策略来平衡：
+
+- **早停法**：如果发现模型在验证集上的性能不再提升，停止训练。
+- **正则化**：通过 L2 正则化或 Dropout 防止网络过度拟合。
+
+无论神经元的数量如何，避免某一层的神经元数量过少以防止信息丢失是至关重要的。
+
+
+
+#### 总结
+
+- **输入层和输出层**的神经元数量是由输入数据和任务的输出需求决定的（例如 MNIST 数据集需要 784 个输入神经元和 10 个输出神经元）。
+- **隐藏层**中的神经元数量可以通过实验逐步增加，直到模型过拟合。过去常用的金字塔结构已被均匀分布神经元数量的做法取代。
+- 为了防止瓶颈层的出现，每一层应该有足够的神经元，避免信息在传递过程中丢失。
+- 通过 **“Stretch Pants”** 方案，可以构建一个稍大的网络，然后通过早停法或正则化等技术防止过拟合。
+
+{.marker-round}
+
+### 学习率、批次大小和其他超参数的选择策略
+
+#### 问题 1：如何选择合适的学习率？
+
+**解答**：
+
+学习率可能是神经网络中最重要的超参数。通常，最优学习率大约是最大学习率的一半（即大于此学习率时训练将会发散）。我们可以通过以下步骤找到合适的学习率：
+
+1. **逐步递增学习率**：首先，使用非常低的学习率（例如 `KaTeX:10^{-5}`），然后逐渐将其增加到较大的值（例如 10）。具体可以按如下公式递增：
+   ```KaTeX
+   \text{learning rate} = 10^{(x/500)} \quad \text{其中} \, x \, \text{是迭代次数}
+   ```
+   这样可以从 \(10^{-5}\) 逐步递增至 10，在 500 次迭代中完成。
+
+2. **绘制损失随学习率的变化图**：通过观察学习率的变化对损失的影响，可以发现当学习率过大时，损失会开始上升。通常最优学习率比损失开始上升的学习率要小 10 倍左右。
+
+#### 提示：
+我们将在 **Chapter 11** 更深入探讨学习率优化的技巧。
+
+
+
+#### 问题 2：如何选择合适的优化器？
+
+**解答**：
+
+选择比普通的 mini-batch 梯度下降（SGD）更优的优化器也非常重要。不同的优化器对学习率和收敛速度有不同的影响。
+
+
+
+#### 问题 3：如何确定批次大小（Batch Size）？
+
+**解答**：
+
+批次大小对模型的性能和训练时间有显著的影响。使用较大的批次大小（能适应 GPU 内存的最大批次）通常会使训练更快，因为硬件加速器（如 GPU）可以更高效地处理它们。
+
+- **大批次大小的利与弊**：
+  - **优点**：使用较大的批次大小可以增加硬件利用率。
+  - **缺点**：较大的批次大小可能导致训练不稳定，尤其是在训练开始时，并且模型可能无法像小批次大小那样泛化得好。
+
+- **最佳批次大小的选择**：
+  - **较小的批次大小**：例如 2 到 32 之间的批次大小，在许多情况下表现更好，并且需要较少的训练时间。这一建议来源于 2018 年的研究【21】。
+  - **较大的批次大小**：研究【22】【23】表明，通过采用渐进增大学习率等技巧（例如学习率热启动），可以成功使用较大的批次大小（如 8192）而不损失泛化能力。
+
+
+
+#### 问题 4：如何选择激活函数？
+
+**解答**：
+
+在大多数情况下，ReLU 是隐藏层的默认激活函数，适合大多数任务。然而，输出层的激活函数取决于具体的任务：
+- 分类任务通常使用 **softmax** 或 **sigmoid** 作为输出层激活函数。
+- 回归任务可能使用 **线性激活函数**。
+
+
+
+#### 问题 5：训练迭代次数是否需要调整？
+
+**解答**：
+
+大多数情况下，训练的迭代次数并不需要手动调整。通常，我们使用 **early stopping** 来确定训练何时停止，而不必过度关心具体的迭代次数。
+
+#### 提示：
+最优的学习率取决于其他超参数，尤其是批次大小。因此，如果你修改了其他超参数，也应该调整学习率。
+
+
+
+#### 总结
+
+- **学习率** 是最关键的超参数之一。通过逐步增加学习率并绘制损失曲线，可以找到最优学习率。通常，最优学习率是损失开始上升时学习率的 1/10。
+- **批次大小** 的选择取决于硬件的限制和任务的需要。较大的批次大小可以加快训练，但可能导致训练不稳定或泛化性能下降；较小的批次大小往往表现得更稳定。
+- **优化器** 和 **激活函数** 的选择同样重要。
+- **训练迭代次数** 通常通过 **early stopping** 来动态确定，而不是提前设定固定的次数。
+
+{.marker-round}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                   | 中文翻译                                                                                   |
+|-----|-----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| 1   | a. The patterns learned by a neural net. What patterns do the neurons in each layer learn as you train the default network?<br> b. Activation functions. Replace the tanh activation function with ReLU. How does it affect the network’s performance?<br> c. The risk of local minima. Modify the network to one hidden layer with three neurons. Does the network get stuck in a local minimum?<br> d. What happens when neural nets are too small? Remove one neuron to keep just two in a hidden layer. How does it affect the network?<br> e. What happens when neural nets are large enough? Set the number of neurons to eight. Does the network avoid getting stuck in a local minimum?<br> f. The risk of vanishing gradients. Change the network to four hidden layers with eight neurons each. How does it affect training time and performance?<br> g. Take an hour to play with parameters in TensorFlow Playground to gain an intuitive understanding of neural networks.         | a. 神经网络学习的模式。在训练默认网络时，每层的神经元学习了哪些模式？<br> b. 激活函数。将 tanh 激活函数替换为 ReLU。这对网络性能有什么影响？<br> c. 局部极小值的风险。将网络修改为一个隐藏层并包含三个神经元。网络是否会陷入局部极小值？<br> d. 神经网络太小时会发生什么？从隐藏层中移除一个神经元，仅保留两个。这对网络有何影响？<br> e. 神经网络足够大时会发生什么？将神经元数量设置为 8。网络是否避免陷入局部极小值？<br> f. 梯度消失的风险。将网络改为四个隐藏层，每层有八个神经元。这对训练时间和性能有何影响？<br> g. 花一个小时在 TensorFlow Playground 中调整参数，直观地理解神经网络的工作原理。                    |
+| 2   | Draw an ANN using artificial neurons that computes A⊕B (where ⊕ represents XOR operation).                                   | 使用人工神经元绘制一个 ANN 来计算 A⊕B（其中 ⊕ 表示 XOR 运算）。                              |
+| 3   | Why is it generally preferable to use a logistic regression classifier rather than a perceptron? How can you tweak a perceptron to make it equivalent to a logistic regression classifier? | 为什么通常更倾向于使用逻辑回归分类器而不是感知器？如何调整感知器使其等同于逻辑回归分类器？      |
+| 4   | Why was the sigmoid activation function a key ingredient in training the first MLPs?                                        | 为什么 sigmoid 激活函数在训练第一个 MLP 时是关键成分？                                        |
+| 5   | Name three popular activation functions. Can you draw them?                                                                 | 列出三种常见的激活函数。你能画出它们吗？                                                     |
+| 6   | a. What is the shape of the input matrix X in a given MLP with 10 inputs, 50 hidden neurons, and 3 output neurons?<br> b. What are the shapes of the hidden layer’s weight matrix Wh and bias vector bh?<br> c. What are the shapes of the output layer’s weight matrix Wo and bias vector bo?<br> d. What is the shape of the network’s output matrix Y?<br> e. Write the equation that computes the network’s output Y as a function of X, Wh, bh, Wo, and bo. | a. 在具有 10 个输入、50 个隐藏神经元和 3 个输出神经元的 MLP 中，输入矩阵 X 的形状是什么？<br> b. 隐藏层的权重矩阵 Wh 和偏置向量 bh 的形状是什么？<br> c. 输出层的权重矩阵 Wo 和偏置向量 bo 的形状是什么？<br> d. 网络的输出矩阵 Y 的形状是什么？<br> e. 写出计算网络输出 Y 的公式，作为 X、Wh、bh、Wo 和 bo 的函数。 |
+| 7   | How many neurons do you need in the output layer to classify spam or ham? What activation function should be used?          | 要将邮件分类为垃圾邮件或非垃圾邮件，输出层需要多少个神经元？应使用什么激活函数？               |
+| 8   | What is backpropagation and how does it work? What is the difference between backpropagation and reverse-mode autodiff?      | 什么是反向传播？它是如何工作的？反向传播与反向自动微分有什么区别？                            |
+| 9   | List all the hyperparameters you can tweak in an MLP. How could you adjust them to avoid overfitting?                      | 列出可以在 MLP 中调整的所有超参数。你可以如何调整这些超参数以避免过拟合？                      |
+| 10  | Train a deep MLP on the MNIST dataset and manually tune the hyperparameters to achieve over 98% accuracy.                  | 在 MNIST 数据集上训练深度 MLP，并手动调整超参数以实现超过 98% 的准确率。                         |
+
+
+{.show-header .left-text}
 
 
 
