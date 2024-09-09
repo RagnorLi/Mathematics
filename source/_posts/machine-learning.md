@@ -13947,16 +13947,16 @@ parsed_content = tf.RaggedTensor.from_sparse(parsed_feature_lists["content"])
 在神经网络中准备数据通常需要对数值特征进行归一化、对类别特征和文本进行编码、裁剪和调整图像大小等。Keras 提供了多种选择来完成这些预处理任务：
 
 - **提前预处理**：
-    - 在准备训练数据文件时可以提前完成预处理。这可以通过 NumPy、Pandas 或 Scikit-Learn 等工具来实现。
-    - 需要确保生产环境中的模型使用与训练时相同的预处理步骤，以确保生产模型接收到的数据与训练时保持一致。
+  - 在准备训练数据文件时可以提前完成预处理。这可以通过 NumPy、Pandas 或 Scikit-Learn 等工具来实现。
+  - 需要确保生产环境中的模型使用与训练时相同的预处理步骤，以确保生产模型接收到的数据与训练时保持一致。
 
 - **实时预处理**：
-    - 可以在数据加载时使用 `tf.data` 实现实时预处理。通过将预处理函数应用于数据集的每个元素，可以在训练时动态处理数据。
-    - 此方法也要求在生产环境中应用相同的预处理步骤。
+  - 可以在数据加载时使用 `tf.data` 实现实时预处理。通过将预处理函数应用于数据集的每个元素，可以在训练时动态处理数据。
+  - 此方法也要求在生产环境中应用相同的预处理步骤。
 
 - **模型内部预处理层**：
-    - 最后一种方法是将预处理层直接包含在模型中，使其在训练期间对输入数据进行实时预处理，并在生产中使用相同的预处理层。
-    - 本章其余部分将专注于这种方法。
+  - 最后一种方法是将预处理层直接包含在模型中，使其在训练期间对输入数据进行实时预处理，并在生产中使用相同的预处理层。
+  - 本章其余部分将专注于这种方法。
 
 {.marker-round}
 
@@ -14112,7 +14112,7 @@ class MyNormalization(tf.keras.layers.Layer):
   
   print(age_categories)
   ```
-  
+
   **输出**：
 
   ```
@@ -14731,7 +14731,1924 @@ test_loss, test_accuracy = model.evaluate(test_set)
 
 {.show-header .left-text}
 
+## Deep Computer Vision Using Convolutional Neural Networks
 
+### CNN在计算机视觉中的应用
+
+#### 问题1: 什么是卷积神经网络 (Convolutional Neural Networks, CNNs)？
+
+卷积神经网络 (CNNs) 是一种专为处理图像数据而设计的神经网络架构，最早起源于对大脑视觉皮层的研究。CNNs 在过去几十年中一直用于计算机视觉任务，如图像分类、物体检测和语义分割。
+
+#### 关键点：
+- **视觉感知的特点**：当我们识别一张图片中的物体时，感知是无意识进行的，通常依赖于我们的大脑中视觉皮层的分层结构。这类似于 CNN 的工作方式，通过多层卷积提取图像中的高阶特征。
+- **CNN 的兴起**：得益于近十年计算能力的提升、大规模的训练数据集、以及深度学习技术的发展，CNN 在图像处理任务上取得了超级人类的表现。
+- **CNN 的应用场景**：除了图像处理，CNN 也被广泛应用于语音识别、自然语言处理等任务。
+
+
+#### 问题2: CNN 在计算机视觉中的应用有哪些？
+
+CNN 的成功不仅限于简单的图像分类任务，它还可以应用于更复杂的计算机视觉任务，如：
+
+- **物体检测 (Object Detection)**：
+    - CNN 能够识别图像中的多个物体，并为每个物体生成边界框。
+    - 常见的 CNN 架构如 YOLO、Faster R-CNN 等用于此任务。
+
+- **语义分割 (Semantic Segmentation)**：
+    - CNN 用于将图像中的每个像素分类到其所属的对象类别。语义分割是自动驾驶等任务中的核心技术之一。
+
+{.marker-round}
+
+### Visual Cortex视觉皮层架构
+
+#### 问题1: 视觉皮层的结构是如何工作的？
+
+在 20 世纪 50 年代，David H. Hubel 和 Torsten Wiesel 通过研究猫和猴子的视觉皮层，揭示了视觉皮层中神经元的工作方式。这些研究表明，视觉皮层中的许多神经元具有局部感受野 (local receptive field)，它们只对位于视觉场中某个有限区域内的视觉刺激做出反应。
+
+#### 图解:
+- ![Figure14-1视觉皮层神经元的局部感受野](../assets/attachment/hands_on_machine_learning/Figure14-1视觉皮层神经元的局部感受野.png)图名: **Figure 14-1. Biological neurons in the visual cortex**
+
+图中展示了视觉皮层神经元的局部感受野。每个神经元仅对视觉场的特定区域做出反应，这些区域称为感受野（图中虚线圆圈表示）。随着视觉信号通过连续的大脑模块向上传递，神经元对更复杂的模式做出反应，覆盖更大的感受野。
+
+#### 关键点:
+- 不同的神经元可能对不同的图像特征做出反应：例如，一些神经元仅对水平线做出反应，而另一些则对不同方向的线条做出反应。
+- 高层神经元基于低层神经元的输出做出更复杂的响应。神经元之间的局部连接使得视觉系统能够处理复杂的模式。
+
+
+
+#### 问题2: 视觉皮层的研究对 CNNs 的发展有何启示？
+
+Hubel 和 Wiesel 对视觉皮层的研究启发了**神经认知机 (neocognitron)** 的发展，这是 1980 年引入的一种神经网络结构，逐渐演变为我们现在所称的卷积神经网络 (CNNs)。
+
+一个重要的里程碑是 Yann LeCun 等人在 1998 年发表的一篇论文中提出了 **LeNet-5** 架构，该架构被广泛用于银行识别支票上的手写数字。
+
+
+
+#### 问题3: 为什么不直接使用全连接神经网络进行图像识别？
+
+全连接层虽然适用于处理小尺寸图像（如 MNIST），但当处理大图像时会导致参数过多。举例来说：
+- 对于 `100×100` 像素的图像，第一层神经元有 `10,000` 个像素输入。如果第一层有 `1,000` 个神经元，那么将需要 `10,000,000` 个连接。这样的全连接架构无法高效处理大尺寸图像。
+
+#### 解决方案：
+卷积神经网络通过**局部连接 (partially connected layers)** 和**权重共享 (weight sharing)** 解决了这一问题，使得它能够更有效地处理图像数据。
+
+{.marker-none}
+
+### 卷积层
+
+#### 问题1: 什么是卷积层 (Convolutional Layer)？
+
+卷积层是卷积神经网络 (CNN) 中最重要的构建块之一。在卷积层中，第一层的神经元并不连接到输入图像的每个像素，而是仅连接到其**感受野 (receptive field)** 内的像素。这种局部连接的机制使得 CNN 能够专注于低层次的特征，如边缘、线条等，然后在高层中将这些低层特征组合为更高层的复杂特征。
+
+#### 图解:
+- ![Figure14-2卷积层的层次结构](../assets/attachment/hands_on_machine_learning/Figure14-2卷积层的层次结构.png)图名: **Figure 14-2. CNN layers with rectangular local receptive fields**
+  该图展示了卷积层的层次结构，说明第一卷积层中的神经元只连接到输入图像中的局部区域，第二卷积层中的神经元仅连接到第一卷积层中的局部区域。
+
+
+
+#### 问题2: 如何通过零填充 (Zero Padding) 保持卷积层的输出大小？
+
+为了保持卷积层的输出与输入大小相同，常常在输入边缘添加零填充。假设一个位于行 `i`、列 `j` 的神经元，其感受野大小为 `f_h × f_w`（高度和宽度分别为 `f_h` 和 `f_w`），则该神经元连接到前一层中从行 `i` 到 `i + f_h - 1`、列 `j` 到 `j + f_w - 1` 的像素。
+
+#### 图解:
+- ![Figure14-3零填充](../assets/attachment/hands_on_machine_learning/Figure14-3零填充.png)图名: **Figure 14-3. Connections between layers and zero padding**
+  图中显示了零填充的概念，通过在输入层边缘添加零，使得卷积层的输出保持与输入的高度和宽度相同。
+
+#### 公式:
+```KaTeX
+\text{Zero padding ensures the output height and width remain the same: } i \to i + f_h - 1, j \to j + f_w - 1
+```
+
+
+
+#### 问题3: 如何通过步幅 (Stride) 减少卷积层的计算复杂度？
+
+步幅 (Stride) 是指从一个感受野到下一个感受野的水平或垂直移动距离。通过增加步幅值，可以显著减少卷积层的输出大小，从而减少模型的计算复杂度。例如，在一个 `5×7` 的输入层上应用 `3×3` 的感受野并使用步幅 `2`，可以将输出层的尺寸缩小到 `3×4`。
+
+#### 图解:
+- ![Figure14-4使用步幅为2来减少输出层的维度](../assets/attachment/hands_on_machine_learning/Figure14-4使用步幅为2来减少输出层的维度.png)图名: **Figure 14-4. Reducing dimensionality using a stride of 2**
+  图中展示了通过使用步幅为 `2` 来减少输出层的维度的概念。
+
+#### 公式:
+```KaTeX
+\text{Stride connections for neuron in layer: } i \times s_h \to i \times s_h + f_h - 1, j \times s_w \to j \times s_w + f_w - 1
+```
+其中 `KaTeX:s_h` 和 `KaTeX:s_w` 分别是垂直和水平步幅。
+
+{.marker-none}
+
+### 滤波器
+
+#### 问题1: 什么是卷积层中的滤波器 (Filters)？
+
+卷积层中的**滤波器 (filters)**，也称为**卷积核 (convolution kernels)**，是神经元权重的表示，通常以与感受野大小相同的小图像形式出现。每个卷积层使用不同的滤波器来检测不同类型的特征，如边缘、线条等。
+
+#### 关键点:
+- 滤波器通过对输入图像的每个感受野执行卷积操作，提取出特定的图像特征。
+- 例如，图中的第一个滤波器是一个 `7×7` 的矩阵，中心列填充 `1s`，其余部分为 `0s`。这个滤波器会专注于检测垂直线条。
+- 第二个滤波器则检测水平线条。
+
+#### 图解:
+  - ![Figure14-5应用了垂直&水平线条滤波器后的特征图](../assets/attachment/hands_on_machine_learning/Figure14-5应用了垂直&水平线条滤波器后的特征图.png)图名: **Figure 14-5. Applying two different filters to get two feature maps**
+  - 左边是应用了垂直线条滤波器后的特征图，垂直白线被增强，其他部分被模糊化。
+  - 右边是应用了水平线条滤波器后的特征图，水平白线被增强，其他部分被模糊化。
+
+
+
+#### 问题2: 特征图 (Feature Map) 是如何生成的？
+
+当神经元层使用相同的滤波器对输入图像进行卷积时，输出的是**特征图 (feature map)**。特征图突出显示了激活特定滤波器的区域，例如，图像中的边缘或线条。
+
+- 特征图代表了卷积层所提取到的特定特征。
+- 不同的滤波器会产生不同的特征图，这些特征图捕捉了图像中不同的模式。
+
+#### 关键点:
+- **无需手动定义滤波器**：在卷积层的训练过程中，网络会自动学习到最有用的滤波器，用以完成具体任务。上层的卷积层则会将这些简单的特征组合成更复杂的模式。
+
+{.marker-none}
+
+### 多个特征图的堆叠
+
+#### 问题1: 什么是多个特征图的堆叠 (Stacking Multiple Feature Maps)？
+
+到目前为止，卷积层的输出通常被简化为二维层，实际上，卷积层包含多个滤波器 (filters)，每个滤波器输出一个特征图。因此，卷积层的输出更准确地表示为三维数据结构，包含多个特征图。每个特征图中的神经元共享相同的权重和偏置。
+
+#### 关键点:
+- 每个卷积层可以包含多个滤波器，分别生成对应的特征图。
+- 层中的所有神经元在相同特征图中共享相同的参数（滤波器和偏置项）。
+- 不同特征图的神经元使用不同的参数，提取不同的特征。
+- 卷积层通过应用多个可训练的滤波器来检测输入中多个区域的特征。
+
+#### 图解:
+- 图名: **Figure 14-6. Two convolutional layers with multiple filters each (kernels), processing a color image with three color channels; each convolutional layer outputs one feature map per filter**
+  该图展示了如何处理具有多个颜色通道的输入图像（如 RGB 图像），以及如何生成多个特征图。
+
+
+#### 问题2: 卷积层神经元的输出如何计算？
+
+卷积层中位于行 `KaTeX:i`、列 `KaTeX:j` 的神经元与前一层中的多个神经元相连。其连接的感受野大小为 `KaTeX:f_h \times f_w`，并且跨越前一层的所有特征图。
+
+#### 数学公式:
+`KaTeX:Equation 14-1` 总结了前述的计算过程，显示了如何计算卷积层中每个神经元的输出。其数学表达式为：
+
+```KaTeX
+z_{i,j,k} = b_k + \sum_{u=0}^{f_h-1} \sum_{v=0}^{f_w-1} \sum_{k'=0}^{f_n'-1} x_{i',j',k'} \times w_{u,v,k}
+```
+
+在此公式中：
+- `KaTeX:z_{i,j,k}` 是卷积层中位于 `KaTeX:i` 行、`KaTeX:j` 列、`KaTeX:k` 特征图上的神经元输出。
+- `KaTeX:f_h` 和 `KaTeX:f_w` 分别是感受野的高度和宽度。
+- `KaTeX:s_h` 和 `KaTeX:s_w` 是垂直和水平的步幅。
+- `KaTeX:b_k` 是特征图 `KaTeX:k` 的偏置项。
+- `KaTeX:w_{u,v,k}` 是连接到前一层的神经元的权重。
+- `KaTeX:x_{i',j',k'}` 是前一层中位于 `KaTeX:i'` 行、`KaTeX:j'` 列、`KaTeX:k'` 特征图上的神经元的输出。
+
+
+{.marker-round}
+
+### 在Keras中实现卷积层
+
+#### 问题1: 如何在Keras中实现卷积层？
+
+Keras 提供了 `Conv2D` 层，可以用来实现卷积操作。你可以通过加载样本图像，使用 `CenterCrop` 和 `Rescaling` 进行预处理，然后使用卷积层提取特征。
+
+#### 代码示例：
+```python
+from sklearn.datasets import load_sample_images
+import tensorflow as tf
+
+images = load_sample_images()["images"]
+images = tf.keras.layers.CenterCrop(height=70, width=120)(images)
+images = tf.keras.layers.Rescaling(scale=1 / 255)(images)
+```
+
+在这个例子中，图像被裁剪到 `70×120` 的大小，并将像素值缩放到 `0-1` 的范围。
+
+
+
+#### 问题2: 卷积层的输出形状如何计算？
+
+卷积层的输出形状由滤波器的数量、步幅以及输入图像的尺寸决定。首先，我们创建一个 2D 卷积层，并应用到图像上，查看其输出形状：
+
+```python
+conv_layer = tf.keras.layers.Conv2D(filters=32, kernel_size=7)
+fmaps = conv_layer(images)
+```
+
+#### 输出形状示例：
+```plaintext
+>>> fmaps.shape
+TensorShape([2, 64, 114, 32])
+```
+
+解释：
+- `KaTeX:2` 表示样本数量。
+- `KaTeX:64` 和 `KaTeX:114` 表示输出特征图的高度和宽度（由于没有使用零填充，导致尺寸缩小）。
+- `KaTeX:32` 表示我们使用了 32 个滤波器，所以有 32 张输出特征图。
+
+
+#### 问题3: 如何处理卷积层的边界问题？
+
+默认情况下，卷积层的填充方式是 `padding="valid"`，这意味着没有零填充，输出尺寸会比输入小。为了避免这种尺寸缩减，可以使用 `padding="same"`，确保输出尺寸与输入相同。
+
+#### 代码示例：
+```python
+conv_layer = tf.keras.layers.Conv2D(filters=32, kernel_size=7, padding="same")
+```
+
+
+#### 问题4: 如何理解不同的填充选项？
+
+在 `padding="valid"` 和 `padding="same"` 两种模式下，输出的形状会有所不同。
+
+#### 图解:
+- ![Figure14-7当 strides=1时有两个填充选项](../assets/attachment/hands_on_machine_learning/Figure14-7当 strides=1时有两个填充选项.png)图名: **Figure 14-7. The two padding options, when strides=1**
+- ![Figure14-8当步长大于1时即使使用相同填充输出也会小得多](../assets/attachment/hands_on_machine_learning/Figure14-8当步长大于1时即使使用相同填充输出也会小得多.png)图名: **Figure 14-8. With strides greater than 1, the output is much smaller even when using "same" padding**
+
+这些图说明了在不同的填充方式下，卷积层如何处理边界像素。
+
+
+
+#### 问题5: 如何计算卷积层的输出大小？
+
+对于 `padding="valid"`：
+```KaTeX
+\frac{i_h - f_h + s_h}{s_h}
+```
+对于 `padding="same"`：
+```KaTeX
+\frac{i_h}{s_h}
+```
+其中，`KaTeX:i_h` 是输入图像的高度，`KaTeX:f_h` 是卷积核的高度，`KaTeX:s_h` 是步幅。
+
+
+
+#### 问题6: 如何查看卷积层的权重？
+
+你可以使用 `get_weights()` 方法查看卷积层的权重，包括滤波器和偏置项。卷积核的形状是 4D 张量。
+
+#### 代码示例：
+```python
+kernels, biases = conv_layer.get_weights()
+>>> kernels.shape
+(7, 7, 3, 32)
+>>> biases.shape
+(32,)
+```
+
+- `KaTeX:(7, 7, 3, 32)`：表示卷积核的高度、宽度、输入通道数（RGB 图像为 3），以及输出通道数（滤波器数）。
+- `KaTeX:(32,)`：表示偏置项的数量，等于滤波器数量。
+
+
+
+#### 问题7: 卷积层有哪些超参数？
+
+卷积层具有多个超参数，如 `filters`（滤波器数量）、`kernel_size`（卷积核大小）、`padding`、`strides`、`activation`、`kernel_initializer` 等。你通常需要进行超参数调优来找到最优参数设置。
+
+{.marker-none}
+
+### CNN的内存需求
+
+#### 问题1: CNN 的内存需求如何影响训练？
+
+卷积神经网络 (CNN) 的内存需求通常非常高，特别是在训练期间。这是因为在反向传播过程中，需要保留前向传播计算的所有中间值以便进行梯度计算。
+
+#### 例子:
+考虑一个具有 200 个 `5×5` 滤波器、步幅为 1、填充为 `"same"` 的卷积层。如果输入是一个 `150×100` 的 RGB 图像（3 个通道），那么参数数量为：
+
+```KaTeX
+(5 \times 5 \times 3 + 1) \times 200 = 15,200
+```
+
+虽然参数数量较小，但每个神经元需要对其 `75` 个输入进行加权和，因此卷积操作仍然计算密集。
+
+每个特征图的尺寸为 `150×100`，并且有 200 个特征图，因此每次前向传播的输出会占用大量内存：
+
+```KaTeX
+200 \times 150 \times 100 \times 32 \text{ bits} = 12 \text{ MB}
+```
+
+如果训练批次大小为 100，那么该卷积层的内存使用量为：
+
+```KaTeX
+100 \times 12 \text{ MB} = 1.2 \text{ GB}
+```
+
+#### 提示：
+如果由于内存不足而导致训练崩溃，你可以尝试以下几种方法：
+- 减小 mini-batch 大小。
+- 使用步幅来减少输出维度。
+- 将 32 位浮点数替换为 16 位浮点数。
+- 将 CNN 任务分布到多个设备上。
+
+
+
+#### 问题2: 推理阶段的内存需求与训练阶段有何不同？
+
+在推理阶段（即处理新实例时），一旦计算完某一层的输出，前一层的内存就可以释放。因此，只需要保留两个连续层所需的内存。
+
+然而，在训练过程中，由于需要保留所有中间结果以便进行反向传播，因此所需的内存至少是所有层内存需求的总和。
+
+{.marker-none}
+
+### 池化层
+
+#### 问题1: 什么是池化层 (Pooling Layer)？
+
+池化层的主要目的是通过下采样 (subsampling) 输入图像来减少计算负担、内存使用量以及参数数量，从而降低过拟合的风险。池化层通过将输入分块，并在每个块上执行聚合函数（例如最大值或平均值）来生成下采样的输出。
+
+#### 关键点:
+- **最大池化层 (Max Pooling Layer)** 是最常见的池化层，通常使用 `2×2` 的池化核，步幅为 `2`，没有填充。
+- 每个池化窗口的最大值会被传递到下一层，而其他值会被丢弃。
+- 输出图像的尺寸约为输入图像的一半（如果使用 `2×2` 池化核和步幅 `2`），因为池化窗口会减少图像的高度和宽度。
+
+#### 图解:
+  - ![Figure14-10输入图像的轻微位移对池化层输出的影响](../assets/attachment/hands_on_machine_learning/Figure14-10输入图像的轻微位移对池化层输出的影响.png)图名: **Figure 14-9. Max pooling layer (2 × 2 pooling kernel, stride 2, no padding)**
+  - 图中展示了最大池化层如何在 `2×2` 的窗口中选择最大值并生成缩小的输出图像。
+
+
+
+#### 问题2: 池化层的平移不变性 (Translation Invariance) 是什么？
+
+除了减少计算量、内存使用量和参数数量外，最大池化层还引入了一定程度的**平移不变性**。平移不变性意味着当输入图像中的特征轻微移动时，池化层的输出几乎保持不变。
+
+#### 图解:
+  - ![Figure14-10输入图像的轻微位移对池化层输出的影响](../assets/attachment/hands_on_machine_learning/Figure14-10输入图像的轻微位移对池化层输出的影响.png)图名: **Figure 14-10. Invariance to small translations**
+  - 图中展示了输入图像的轻微位移对池化层输出的影响。对于图像 A 和 B，输出是相同的，而图像 C 的输出因平移量过大而有所不同。
+
+
+
+#### 问题3: 池化层的缺点是什么？
+
+池化层有时可能是破坏性的。例如，在使用 `2×2` 池化核和步幅为 `2` 时，输出图像的尺寸会减少 4 倍，丢失 75% 的输入值。这可能会导致一些应用中不需要的平移不变性。
+
+#### 关键点:
+- 在某些任务中（例如语义分割），**平移等变性 (equivariance)** 比平移不变性更重要。等变性意味着输入的微小变化应该导致输出的相应变化。
+
+{.marker-none}
+
+### 在Keras中实现池化层
+
+#### 问题1: 如何在 Keras 中实现池化层？
+
+Keras 提供了简单的方法来创建最大池化层和平均池化层，最常用的池化层是 `MaxPooling2D` 和 `AveragePooling2D`。
+
+#### 代码示例：
+创建一个 `MaxPooling2D` 层，可以使用以下代码：
+
+```python
+max_pool = tf.keras.layers.MaxPool2D(pool_size=2)
+```
+
+你可以将 `pool_size` 设置为任意值，默认步幅与 `pool_size` 相同。最大池化层会在每个 `2×2` 的窗口中选择最大值，并传递给下一层。
+
+如果你想创建一个平均池化层，可以使用 `AveragePooling2D`：
+
+```python
+avg_pool = tf.keras.layers.AvgPool2D(pool_size=2)
+```
+
+
+
+#### 问题2: 最大池化和平均池化有什么不同？
+
+- 最大池化会选择池化窗口中的最大值。
+- 平均池化会计算窗口中所有值的平均值。
+
+虽然计算均值会保留更多信息，但在实践中，最大池化通常表现更好，因为它保留了最强的特征，并且具有更强的**平移不变性**。
+
+
+
+#### 问题3: 什么是深度池化 (Depthwise Pooling)？
+
+深度池化是沿深度维度（即通道维度）而不是空间维度进行池化的操作。它可以帮助卷积神经网络对某些特征（例如旋转不变性）保持不变。
+
+#### 图解:
+  - ![Figure14-11展示了深度池化如何帮助CNN学习旋转不变性](../assets/attachment/hands_on_machine_learning/Figure14-11展示了深度池化如何帮助CNN学习旋转不变性.png)图名: **Figure 14-11. Depthwise max pooling can help the CNN learn to be invariant (to rotation in this case)**
+  - 该图展示了深度池化如何帮助 CNN 学习旋转不变性。
+
+Keras 不提供内置的深度池化层，但可以通过自定义层来实现：
+
+#### 自定义深度池化层示例：
+```python
+class DepthPool(tf.keras.layers.Layer):
+    def __init__(self, pool_size=2, **kwargs):
+        super().__init__(**kwargs)
+        self.pool_size = pool_size
+
+    def call(self, inputs):
+        shape = tf.shape(inputs)  # shape[-1] is the number of channels
+        groups = shape[-1] // self.pool_size  # number of channel groups
+        new_shape = tf.concat([shape[:-1], [groups, self.pool_size]], axis=0)
+        return tf.reduce_max(tf.reshape(inputs, new_shape), axis=-1)
+```
+
+这个自定义层会将输入沿深度维度分成多个组，并计算每组的最大值。
+
+
+
+#### 问题4: 什么是全局平均池化层 (Global Average Pooling Layer)？
+
+全局平均池化层与普通平均池化层不同，它计算整个特征图的均值，并将每个特征图压缩成一个标量。它通常用于网络的最后一层，以减少特征图的维度。
+
+#### 代码示例：
+创建全局平均池化层：
+
+```python
+global_avg_pool = tf.keras.layers.GlobalAvgPool2D()
+```
+
+它等价于以下 `Lambda` 层，计算每个特征图的平均值：
+
+```python
+global_avg_pool = tf.keras.layers.Lambda(lambda X: tf.reduce_mean(X, axis=[1, 2]))
+```
+
+
+
+#### 问题5: 实现全局平均池化层的效果是什么？
+
+当应用全局平均池化层时，输入图像的每个特征图会被压缩成一个值。例如：
+
+```python
+>>> global_avg_pool(images)
+<tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+array([[0.64383624, 0.5971759 , 0.5824972 ],
+       [0.76306933, 0.26011038, 0.10849128]], dtype=float32)>
+```
+
+在这个例子中，我们得到了每个输入图像的红色、绿色和蓝色通道的平均强度。
+
+{.marker-none}
+
+### CNN架构
+
+#### 问题1：什么是卷积神经网络(CNN)的典型架构？
+
+CNN的典型架构包括多个卷积层、池化层和全连接层。具体的构造如下：
+- **卷积层**：用于提取图像中的特征，通常每个卷积层后面会跟一个ReLU激活函数。
+- **池化层**：用于下采样，减小数据的维度和计算量，最常用的是最大池化。
+- **全连接层**：卷积和池化操作后，特征图被扁平化，进入全连接层用于最终的分类。
+
+![Figure14-12典型的CNN架构](../assets/attachment/hands_on_machine_learning/Figure14-12典型的CNN架构.png)如图所示，这种架构会让图像在每经过一个卷积和池化层之后，逐渐变得更小（即尺寸减小）且更深（即特征图的数量增加）。在CNN的顶部，通常会加入一个全连接神经网络，输出最终的预测结果，比如用`softmax`层输出分类概率。
+
+#### 问题2：如何实现一个基本的CNN来处理Fashion MNIST数据集？
+
+下面是实现一个简单的CNN模型的代码：
+
+```python
+from functools import partial
+
+DefaultConv2D = partial(tf.keras.layers.Conv2D, kernel_size=3, padding="same", activation="relu", kernel_initializer="he_normal")
+model = tf.keras.Sequential([
+    DefaultConv2D(filters=64, kernel_size=7, input_shape=[28, 28, 1]),
+    tf.keras.layers.MaxPool2D(),
+    DefaultConv2D(filters=128),
+    DefaultConv2D(filters=128),
+    tf.keras.layers.MaxPool2D(),
+    DefaultConv2D(filters=256),
+    DefaultConv2D(filters=256),
+    tf.keras.layers.MaxPool2D(),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(units=128, activation="relu", kernel_initializer="he_normal"),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(units=64, activation="relu", kernel_initializer="he_normal"),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(units=10, activation="softmax")
+])
+```
+
+**代码解释**：
+- **DefaultConv2D**：使用`functools.partial()`函数定义了一个带有默认参数的卷积层（3×3卷积核，"same"填充，ReLU激活函数，He初始化器）。
+- **Sequential模型**：模型的第一层是`DefaultConv2D`，带有64个过滤器，7×7的卷积核，输入形状为28×28×1（单通道灰度图像）。接着是最大池化层，然后是两层128个过滤器的卷积层，紧接着是最大池化层，再是两层256个过滤器的卷积层，最后是最大池化层。特征图经过扁平化后，进入两个全连接层，每个全连接层后面还加入了`Dropout`层（以减少过拟合）。
+
+- **全连接层**：最后的全连接层使用`softmax`输出层来预测10个类别的概率分布。
+
+#### 问题3：CNN架构中的卷积核大小如何影响模型性能？
+
+使用较大的卷积核（如5×5）可能会导致模型的参数和计算量增大，因此，建议使用较小的卷积核（如3×3）来叠加构建深度模型。这样可以减少计算量并提高性能。例如，**TIP**中提到，与使用单个5×5卷积核相比，使用两个3×3卷积核通常会减少参数，计算更加高效，且性能更好。
+
+#### 问题4：CNN中的滤波器数量是如何增长的？
+
+在CNN模型中，通常会在每个池化层后增加卷积层的滤波器数量。最常见的做法是将每个池化层之后的卷积层的滤波器数量加倍。例如：
+- 开始时有64个滤波器，接着128，再接着256。池化层减少了特征图的空间尺寸，因此在下一层可以增加特征图的数量而不会显著增加计算负担。
+
+#### 问题5：CNN中的数据集上的性能如何评估？
+
+模型使用“`sparse_categorical_crossentropy`”作为损失函数，用Fashion MNIST数据集进行训练，并在测试集上评估模型的性能。该模型在测试集上的准确率可以达到92%以上，表现明显好于密集网络模型的性能。
+
+#### 问题6：CNN架构在近几年取得了哪些进展？
+
+近年来，CNN架构取得了显著进步，特别是在ILSVRC（ImageNet大规模视觉识别挑战赛）比赛中，模型的错误率从最初超过26%下降到2.3%以下。这些进展是通过引入新的网络架构，如AlexNet、GoogLeNet、ResNet等实现的。
+
+{.marker-none}
+
+### LeNet-5
+
+LeNet-5 是最广为人知的CNN架构之一。它是由Yann LeCun在1998年提出，并被广泛应用于手写数字识别（例如MNIST数据集）。LeNet-5由如下表所示的层组成。
+
+#### LeNet-5架构
+
+| Layer | Type            | Maps | Size   | Kernel size |
+|-------|-----------------|------|--------|-------------|
+| Out   | Fully connected  | –    | 10     | –           |
+| F6    | Fully connected  | –    | 84     | –           |
+| C5    | Convolution      | 120  | 1 × 1  | 5 × 5       |
+| S4    | Avg pooling      | 16   | 5 × 5  | 2 × 2       |
+| C3    | Convolution      | 16   | 10 × 10| 5 × 5       |
+| S2    | Avg pooling      | 6    | 14 × 14| 2 × 2       |
+| C1    | Convolution      | 6    | 28 × 28| 5 × 5       |
+| In    | Input            | 1    | 32 × 32| –           |
+
+{.show-header .left-text}
+
+**架构分析**：
+
+- **输入层 (Input)**：32×32的输入图像。
+- **C1卷积层**：包含6个特征图（feature maps），卷积核大小为5×5，输出28×28的特征图。
+- **S2池化层**：平均池化层，将输入的大小缩小为14×14，输出6个特征图。
+- **C3卷积层**：包含16个特征图，卷积核大小为5×5，输出10×10的特征图。
+- **S4池化层**：平均池化层，将输入的大小缩小为5×5，输出16个特征图。
+- **C5卷积层**：包含120个特征图，卷积核大小为5×5，输出1×1的特征图。
+- **F6全连接层**：输出84个单元。
+- **输出层 (Out)**：全连接层，输出10个分类结果。
+
+{.marker-round}
+
+尽管LeNet-5与我们之前实现的Fashion MNIST模型结构相似（包括卷积层、池化层和全连接层的堆叠），主要的不同在于现代分类CNN中使用的激活函数。今天我们通常会使用ReLU代替tanh，使用softmax代替RBF。
+
+{.marker-none}
+
+### AlexNet
+
+#### 问题1: AlexNet CNN 的架构是如何设计的？
+
+**解答：**
+AlexNet 是由 Alex Krizhevsky 等人设计的，它在 2012 年的 ILSVRC 比赛中取得了显著的成功，取得了 17% 的前五错误率，远远优于其他模型。
+
+#### AlexNet 主要特点：
+- AlexNet 采用了更大的卷积网络，使用多层卷积层叠加，而不是将池化层放置在每个卷积层之后。
+- 使用了两个重要的正则化技术：`KaTeX: dropout` 和 `KaTeX: 数据增强`。
+
+下表展示了 AlexNet 的架构：
+
+| Layer | Type            | Maps | Size      | Kernel size   |
+|-------|-----------------|------|-----------|---------------|
+| Out   | Fully connected | –    | 1,000     | –             |
+| F10   | Fully connected | –    | 4,096     | –             |
+| F9    | Fully connected | –    | 4,096     | –             |
+| S8    | Max pooling     | `KaTeX: 256`  | `KaTeX: 6 \times 6`  | `KaTeX: 3 \times 3`     |
+| C7    | Convolution     | `KaTeX: 256`  | `KaTeX: 13 \times 13` | `KaTeX: 3 \times 3`     |
+| C6    | Convolution     | `KaTeX: 384`  | `KaTeX: 13 \times 13` | `KaTeX: 3 \times 3`     |
+| C5    | Convolution     | `KaTeX: 384`  | `KaTeX: 13 \times 13` | `KaTeX: 3 \times 3`     |
+| S4    | Max pooling     | `KaTeX: 256`  | `KaTeX: 13 \times 13` | `KaTeX: 3 \times 3`     |
+| C3    | Convolution     | `KaTeX: 256`  | `KaTeX: 27 \times 27` | `KaTeX: 5 \times 5`     |
+| S2    | Max pooling     | `KaTeX: 96`   | `KaTeX: 27 \times 27` | `KaTeX: 3 \times 3`     |
+| C1    | Convolution     | `KaTeX: 96`   | `KaTeX: 55 \times 55` | `KaTeX: 11 \times 11`   |
+| In    | Input           | `KaTeX: 3` (RGB) | `KaTeX: 227 \times 227` | –           |
+
+{.show-header .left-text}
+
+#### 问题2: AlexNet 如何进行正则化？
+
+**解答：**
+为了减少过拟合，AlexNet 使用了两种正则化技术：
+1. **Dropout**: 在训练时，50% 的 `KaTeX: dropout` 被应用于 `KaTeX: F9` 和 `KaTeX: F10` 层的输出。
+2. **数据增强**: 通过随机偏移、水平翻转以及改变光照条件等方式增加训练集的多样性（如 **图14-13** 所示）。
+
+```KaTeX
+\text{Figure 14-13. Generating new training instances from existing ones}
+```
+
+
+
+#### 问题3: 数据增强 (Data Augmentation) 在 AlexNet 中如何应用？
+
+**解答：**
+**数据增强**是一种通过生成每个训练样本的多个现实变体来人工增大训练集大小的技术。这减少了过拟合并使模型对训练数据的变异更具有鲁棒性。
+
+- **常用的增强方式**: 随机平移、旋转、调整大小以及翻转图片。例如，可以使用 Keras 中的 `KaTeX: RandomCrop`、`KaTeX: RandomRotation` 等增强层来执行这些操作。
+
+以下是一个简单的数据增强代码示例：
+
+```python
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+datagen = ImageDataGenerator(
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+```
+
+#### 图解：
+![Figure14-13从现有实例生成新的训练实例](../assets/attachment/hands_on_machine_learning/Figure14-13从现有实例生成新的训练实例.png)如 **图14-13** 所示，原始图片通过各种增强操作生成了多个不同的样本，这些样本将被添加到训练集中以提高模型的泛化能力。
+
+
+
+#### 问题4: 什么是局部响应归一化 (LRN)？
+
+**解答：**
+AlexNet 采用了一个称为 **局部响应归一化**（Local Response Normalization，LRN）的竞争归一化步骤。此步骤在 ReLU 激活函数之后应用于 `KaTeX: C1` 和 `KaTeX: C3` 层，具体公式如下：
+
+```KaTeX
+b_i = a_i \mid k + \alpha \sum_{j=j_{\text{low}}}^{j_{\text{high}}} a_j^2 \mid^{-\beta}
+```
+
+**参数解释**:
+- `KaTeX: b_i` 是归一化后的输出。
+- `KaTeX: a_i` 是 ReLU 步骤后激活的神经元值。
+- `KaTeX: k, \alpha, \beta, r` 是超参数，`KaTeX: k` 是偏差，`KaTeX: r` 是深度半径。
+- `KaTeX: f_n` 是特征图数量。
+
+LRN 机制鼓励神经元在特征图上分化，允许模型更好地泛化。
+
+以下是使用 TensorFlow 实现 LRN 的代码：
+
+```python
+tf.nn.local_response_normalization(input, depth_radius=5, bias=1.0, alpha=0.0001, beta=0.75)
+```
+
+{.marker-none}
+
+### GoogLeNet
+
+
+#### 问题1: GoogLeNet的架构是如何设计的？
+
+**解答：**
+GoogLeNet是由Christian Szegedy等人于2014年开发的，Google Research 团队创造的架构，在ILSVRC 2014竞赛中取得了前五错误率低于7%的成绩。GoogLeNet的架构引入了 **Inception模块**，使其相比之前的CNN架构，能够使用更少的参数（约600万，而AlexNet使用了约6000万参数）。
+
+GoogLeNet的架构深度比以往的CNN更深，如 **图14-14** 中所示。Inception模块使用了并行的卷积层和池化层，并使用 **深度拼接 (depth concatenation)** 来合并这些卷积层的输出。
+
+**架构特性**:
+- 采用 `KaTeX: 1 \times 1, 3 \times 3, 5 \times 5` 的卷积核以捕获不同尺度的特征。
+- 所有卷积层均使用ReLU激活函数。
+- 使用 **"same"** 填充，使得输出和输入的尺寸一致，便于后续层拼接。
+
+#### Inception模块 (如 **图14-14** 所示):
+
+![Figure14-14Inceptionmodule](../assets/attachment/hands_on_machine_learning/Figure14-14Inceptionmodule.png)
+
+- `KaTeX: 1 \times 1` 卷积层: 用于减少输入的维度，提升计算效率（**瓶颈层**）。
+- `KaTeX: 3 \times 3` 和 `KaTeX: 5 \times 5` 卷积层: 以不同的卷积核尺寸捕获不同尺度的特征。
+- 最大池化层: 用于减少特征图的尺寸，压缩信息。
+- 最终的 **depth concatenation** 层将不同的卷积层和池化层的输出在深度方向上拼接在一起，形成最终的输出。
+
+
+
+#### 问题2: 为什么Inception模块使用了 `KaTeX: 1 \times 1` 的卷积核？
+
+**解答：**
+虽然 `KaTeX: 1 \times 1` 的卷积层不能捕获空间模式（因为它一次只能处理一个像素），但它在Inception模块中有三个重要作用：
+
+- 它能够在深度维度上捕获特征，即沿着通道方向的模式。
+- 它被配置为输出比输入更少的特征图，减少了特征图的维度，这种层被称为 **瓶颈层**，减少了计算开销，加速训练并提高了泛化能力。
+- 它与 `KaTeX: 3 \times 3` 和 `KaTeX: 5 \times 5` 的卷积层配合使用，模拟一个更复杂的卷积层，捕获更复杂的模式。
+
+
+
+#### 问题3: GoogLeNet的整体架构是怎样的？
+
+**解答：**
+GoogLeNet的架构非常深，由多个Inception模块堆叠而成。如 **图14-15** 所示，整个网络中包含9个Inception模块，每个模块中包含卷积层、池化层、深度拼接层。所有卷积层均使用ReLU激活函数。
+
+**GoogLeNet结构分析**:
+- 输入图片通常为 `KaTeX: 224 \times 224`，经过5次最大池化层后，高度和宽度分别被除以2，最终特征图的尺寸缩小为 `KaTeX: 7 \times 7`。
+- GoogLeNet包含两层 **局部响应归一化**，确保每个卷积层能够捕获丰富的特征。
+- 使用 **全局平均池化层** 来消除剩余的空间信息。
+- 最后一层为1000个类别的全连接层，并使用 **softmax** 激活函数来输出类别概率。
+
+GoogLeNet 的结构通过减少参数的数量有效地避免了过拟合问题，同时保留了大量的深度和多样化的特征提取能力。
+
+![Figure14-15googleLeNet架构](../assets/attachment/hands_on_machine_learning/Figure14-15googleLeNet架构.png)
+
+
+
+#### 问题4: GoogLeNet中如何使用Inception模块提升性能？
+
+**解答：**
+Inception模块的设计核心在于使用不同尺寸的卷积核来捕获不同尺度的特征，同时使用 `KaTeX: 1 \times 1` 卷积层作为瓶颈层来减少特征图的尺寸。这种设计方式大大减少了参数数量，同时保留了丰富的特征提取能力。
+
+- `KaTeX: 1 \times 1` 的卷积层不仅减少了输入维度，还在深度维度上捕获了特征。
+- 使用不同的卷积核（例如 `KaTeX: 3 \times 3` 和 `KaTeX: 5 \times 5`）允许Inception模块捕获不同尺度的模式。
+- 通过将多个卷积层和池化层的输出在 **深度拼接层** 中合并，Inception模块能够在保持计算效率的前提下提取出更加丰富和复杂的特征。
+
+
+
+#### 问题5: GoogLeNet中如何进行正则化以防止过拟合？
+
+**解答：**
+为了防止过拟合，GoogLeNet采用了两个主要的正则化技术：
+
+1. **Dropout**: 在全连接层上使用了40%的dropout，随机屏蔽神经元来防止过拟合。
+2. **辅助分类器**: GoogLeNet引入了两个 **辅助分类器**，它们被插入到第三个和第六个Inception模块的顶部，这些分类器通过引入辅助损失来防止梯度消失问题。
+
+辅助分类器的损失函数通过缩放系数（70%）加入到整体损失函数中，帮助稳定网络的训练。
+
+{.marker-none}
+
+### VGGNet
+
+#### 问题1: VGGNet的架构是如何设计的？
+
+**解答：**
+VGGNet 是由 **Karen Simonyan** 和 **Andrew Zisserman** 在牛津大学的 Visual Geometry Group (VGG) 开发的，并在ILSVRC 2014竞赛中获得亚军。VGGNet的设计非常简单和经典，它使用了多个小卷积核和最大池化层的堆叠来构建深度卷积神经网络。
+
+#### VGGNet的主要特性：
+- 使用了小的 `KaTeX: 3 \times 3` 卷积核，但堆叠了大量卷积层。
+- 在每个卷积层组之后添加了一个最大池化层来缩小特征图的尺寸。
+- VGGNet有不同的变体（VGG16 和 VGG19），分别具有16层或19层卷积层。
+- 在最后，网络连接了一个密集网络（全连接层）和输出层，其中包含两个隐藏层。
+
+
+
+#### 问题2: 为什么VGGNet使用小卷积核 `KaTeX: 3 \times 3`？
+
+**解答：**
+VGGNet的关键设计决策是使用小卷积核 `KaTeX: 3 \times 3`，但通过堆叠多个卷积层来实现深度的增加。使用小卷积核有以下优点：
+
+1. **更细粒度的特征提取**: 尽管卷积核小，它能够捕捉图像中的细节，并且通过堆叠多个 `KaTeX: 3 \times 3` 的卷积层，能够等效于更大的感受野（例如，两个 `KaTeX: 3 \times 3` 的卷积层感受野与一个 `KaTeX: 5 \times 5` 的卷积层相似）。
+2. **减少参数**: 与更大的卷积核相比，多个小卷积核的参数数量较少，因而能够在保留较高表达能力的同时减少过拟合的风险。
+
+例如：两个 `KaTeX: 3 \times 3` 卷积核叠加感受野与 `KaTeX: 5 \times 5` 类似。
+
+
+
+#### 问题3: VGGNet 的不同变体是如何设计的？
+
+**解答：**
+VGGNet 有两个主要变体：
+
+- **VGG16**: 包含 16 个卷积层。
+- **VGG19**: 包含 19 个卷积层。
+
+**VGG16 结构**:
+- 输入: `KaTeX: 224 \times 224` RGB 图像。
+- 两个 `KaTeX: 3 \times 3` 卷积层，接一个最大池化层。
+- 两个 `KaTeX: 3 \times 3` 卷积层，接一个最大池化层。
+- 三个 `KaTeX: 3 \times 3` 卷积层，接一个最大池化层。
+- 三个 `KaTeX: 3 \times 3` 卷积层，接一个最大池化层。
+- 三个 `KaTeX: 3 \times 3` 卷积层，接一个最大池化层。
+- 最后两个全连接层，每层 4096 个神经元，并使用 ReLU 激活函数，接着一个全连接的 softmax 输出层。
+
+**VGG19** 设计与 VGG16 类似，只是在几个卷积层组中增加了更多的卷积层。两者的不同之处在于层数的增加。
+
+
+
+#### 问题4: VGGNet 如何进行分类？
+
+**解答：**
+VGGNet 的最终几层由全连接层组成，用于图像分类：
+
+- 最后的卷积层输出的特征图展平为一个一维向量。
+- 两个全连接层，每个层有4096个神经元，使用 **ReLU** 激活函数。
+- 最后一层为 **Softmax** 层，输出类别的概率分布。
+
+```python
+# PyTorch 实现 VGGNet（简化版）
+import torch
+import torch.nn as nn
+
+class VGG(nn.Module):
+    def __init__(self):
+        super(VGG, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # 类似结构重复多次...
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 1000),  # 1000个类别
+        )
+    
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)  # 展平
+        x = self.classifier(x)
+        return x
+
+```
+
+这段代码展示了如何实现一个类似于 VGGNet 的模型。VGG 的特征提取部分由多个卷积层和池化层组成，最后通过全连接层进行分类。
+
+
+
+#### 问题5: VGGNet的优缺点是什么？
+
+**解答：**
+
+**优点**:
+- **简单且经典的架构**: VGGNet 的架构非常规则，便于理解和实现。
+- **深度网络**: 使用多个小卷积层的堆叠来加深网络，提高了特征提取的能力。
+- **适用于迁移学习**: VGGNet 尤其适合在其他任务上进行迁移学习，因为其特征表示具有通用性。
+
+**缺点**:
+- **参数数量庞大**: 虽然使用了小的卷积核，但由于层数较多，参数总数依然非常大，训练需要强大的计算资源。
+- **计算代价高**: VGGNet 在推理时的计算成本也很高，尤其在设备受限的场景下不是最优选择。
+
+{.marker-none}
+
+### ResNet
+
+#### 问题1: ResNet的核心思想是什么？
+
+**解答：**
+ResNet（Residual Network）由 Kaiming He 等人于 2015 年提出，赢得了当年的 ILSVRC 挑战，前五错误率低于 3.6%。ResNet 的核心思想是 **残差学习**，通过使用 **跳跃连接（skip connections）** 或 **捷径连接（shortcut connections）**，它解决了随着网络变深而出现的 **退化问题**。
+
+在训练神经网络时，目标是让网络拟合一个目标函数 `KaTeX: h(x)`。ResNet 的创新在于：通过加入跳跃连接，将输入 `KaTeX: x` 直接加到输出上，网络被迫去学习一个残差函数 `KaTeX: f(x) = h(x) - x`，而不是直接去拟合 `KaTeX: h(x)`，这被称为 **残差学习**（见 **图14-16**）。
+![Figure14-16残差学习](../assets/attachment/hands_on_machine_learning/Figure14-16残差学习.png)
+
+
+
+#### 问题2: ResNet如何通过跳跃连接加速训练？
+
+**解答：**
+ResNet 通过使用跳跃连接，可以有效地缓解深层网络训练中的梯度消失问题。跳跃连接可以使得信号直接跳过几个层，使其能够有效地传播到更深的网络层，即使一些层还没有开始学习（见 **图14-17**）。![Figure14-17跳跃连接的作用](../assets/attachment/hands_on_machine_learning/Figure14-17跳跃连接的作用.png)
+
+- 在标准的深度神经网络中（左侧），随着层数加深，可能会出现部分层无法学习或阻碍反向传播的情况。
+- 在深度残差网络中（右侧），跳跃连接使得信号可以更容易地通过网络传播，即便是层数很深的网络也能顺利进行训练。
+
+
+
+#### 问题3: ResNet的架构是如何设计的？
+
+**解答：**
+ResNet 的架构非常深（例如，获胜的变体有 152 层），但其基本单元是 **残差单元（Residual Unit, RU）**。每个残差单元包含两层卷积层，并且使用了 **批归一化（Batch Normalization, BN）** 和 **ReLU** 激活函数。每层卷积使用 `KaTeX: 3 \times 3` 卷积核，保持输入和输出的空间维度一致（stride为1，padding为“same”）。
+
+**ResNet 架构的关键设计**：
+- 每隔几个残差单元，特征图的数量会加倍，同时高和宽会减半（通过卷积层stride为2实现）。
+- 在这种情况下，输入不能直接添加到残差单元的输出中，因为它们的形状不同。解决方法是通过 `KaTeX: 1 \times 1` 卷积层调整输入的形状（见 **图14-18** 和 **图14-19**）。
+![Figure14-18ResNet架构图](../assets/attachment/hands_on_machine_learning/Figure14-18ResNet架构图.png)
+
+
+
+#### 问题4: ResNet是如何通过跳跃连接处理特征图尺寸变化的？
+
+**解答：**
+在 ResNet 中，每隔几个残差单元，特征图的尺寸会发生变化，具体来说，特征图的宽度和高度减半，特征图数量加倍。当这种变化发生时，输入的特征图与残差单元的输出形状不同，无法直接进行加法运算。
+
+解决方法是通过 `KaTeX: 1 \times 1` 卷积层和 stride=2 的卷积操作来调整输入的尺寸和深度，使得它能够与残差单元的输出匹配（见 **图14-19**）。
+![Figure14-19ResNet通过跳跃连接处理特征图尺寸变化问题](../assets/attachment/hands_on_machine_learning/Figure14-19ResNet通过跳跃连接处理特征图尺寸变化问题.png)
+
+
+
+#### 问题5: ResNet的不同变体有什么区别？
+
+**解答：**
+ResNet有多个变体，层数不同但基本单元结构相同。以 **ResNet-34** 为例，它包含34个层（仅计算卷积层和全连接层），并包含以下配置的残差单元（RU）：
+
+- 3 个残差单元输出 64 个特征图；
+- 4 个残差单元输出 128 个特征图；
+- 6 个残差单元输出 256 个特征图；
+- 3 个残差单元输出 512 个特征图。
+
+ResNet的更深变体，如 **ResNet-152**，使用稍有不同的残差单元结构。具体来说，每个残差单元不再是两层卷积层，而是三层卷积层（包含 `KaTeX: 1 \times 1` 卷积层作为瓶颈层），以减少参数数量并提高计算效率。
+
+{.marker-none}
+
+### Xception
+
+
+#### 问题1: Xception架构的核心思想是什么？
+
+**解答：**
+Xception（Extreme Inception）是由 **François Chollet** 提出的，它是 GoogLeNet 的一种变体，并显著超越了 Inception-v3。Xception 的创新在于用 **深度可分离卷积层（Depthwise Separable Convolution Layer）** 取代了 Inception 模块。
+
+**深度可分离卷积层的特点**:
+- 常规卷积层使用的滤波器同时捕捉空间模式和跨通道模式，而深度可分离卷积层将这两种模式分开处理。
+- 具体来说，深度可分离卷积层的第一部分使用空间滤波器（每个输入特征图一个滤波器），然后第二部分使用跨通道滤波器（这类似于 `KaTeX: 1 \times 1` 卷积层）。
+
+这种分离的假设使得Xception能够减少参数，降低计算复杂度（见 **图14-20**）。![Figure14-20深度可分离卷积层](../assets/attachment/hands_on_machine_learning/Figure14-20深度可分离卷积层.png)
+
+
+
+
+#### 问题2: 深度可分离卷积层如何减少计算量和参数数量？
+
+**解答：**
+深度可分离卷积层将常规卷积操作分为两个步骤：
+- **空间卷积**: 每个输入特征图应用一个单独的空间滤波器，捕捉空间模式。
+- **跨通道卷积**: 然后通过 `KaTeX: 1 \times 1` 卷积层对这些空间卷积的输出进行跨通道卷积，捕捉通道间的模式。
+
+与常规卷积相比，这种操作减少了参数数量，因为它不需要同时处理空间和通道模式。这样，深度可分离卷积层的计算开销和内存需求都显著降低。
+
+
+
+#### 问题3: Xception的架构是如何设计的？
+
+**解答：**
+Xception 的架构由 36 层深度可分离卷积层组成，并通过 `KaTeX: 1 \times 1` 卷积层实现跨通道的特征提取。在网络的前两层使用了常规卷积层，随后所有的层都使用深度可分离卷积。其总体设计如下：
+
+- **输入层**: 一些常规卷积层用于提取初步的空间特征。
+- **深度可分离卷积层**: 剩余的 34 层都使用深度可分离卷积，分开处理空间模式和跨通道模式。
+- **全局平均池化层**: 最终的池化层对每个特征图进行全局平均。
+- **输出层**: 最后一层是全连接层，用于分类。
+
+这个设计使得 Xception 在减少参数数量的同时，保留了对空间和跨通道模式的良好提取能力。
+
+
+
+#### 问题4: 为什么 Xception 被认为是 GoogLeNet 的变体？
+
+**解答：**
+虽然 Xception 不使用 Inception 模块，但它被认为是 GoogLeNet 的一种变体。这是因为：
+
+- 在 Inception 模块中使用了 `KaTeX: 1 \times 1` 卷积核用于捕捉跨通道模式，而 Xception 使用了相同的 `KaTeX: 1 \times 1` 卷积核来专门处理跨通道模式。
+- 这种分离操作在 Xception 中更为极端，即它完全将空间卷积和通道卷积分离开来，而 Inception 模块则是同时进行这两种模式的提取。
+
+因此，Xception 可以被看作是 Inception 模块的进一步发展，它更加强调在空间模式和通道模式上的分离处理。
+
+
+
+#### 问题5: 深度可分离卷积层的使用场景和优势是什么？
+
+**解答：**
+深度可分离卷积层在计算效率和性能上表现优越，尤其在以下场景中：
+- **减少参数和计算量**: 深度可分离卷积层的主要优势在于大大减少了参数和计算量，因此它在需要高效模型的场景下非常适用（如移动设备或嵌入式系统）。
+- **性能提升**: 实际应用中，深度可分离卷积层通常表现更好，因为它能够更精确地分别捕捉空间模式和通道模式。
+
+在 Keras 中，使用 `KaTeX: SeparableConv2D` 可以很方便地代替常规的卷积操作，达到这一目的。
+
+{.marker-none}
+
+### SENet
+
+#### 问题1: SENet 是如何提升现有架构性能的？
+
+**解答：**
+SENet 的核心创新在于引入了 **SE Block**。它增强了现有架构（如 Inception 网络和 ResNet）的性能，主要是通过**分析和重新校准特征图**来提高网络的表现。SE Block 通过学习特征图间的关系，自适应地调整每个特征图的权重，从而增强网络对重要特征的关注。
+
+-  ![Figure14-21SE-Inception模块和SE-ResNet单元](../assets/attachment/hands_on_machine_learning/Figure14-21SE-Inception模块和SE-ResNet单元.png)**图14-21** 中展示了 SE Block 如何被集成到 Inception 模块和 ResNet 残差单元中，使得 SENet 能够显著提高性能。通过将 SE Block 添加到这些模块后，网络能够更高效地利用特征信息。
+
+
+
+在这里，SE Block 专注于特征图的深度维度，通过分析哪些特征图在一起被频繁激活，动态调整特征图的重要性，进而提高网络的表现。
+
+
+
+#### 问题2: SE Block 是如何工作的？
+
+**解答：**
+SE Block 的工作机制可以分为三个步骤：
+- **全局平均池化**：首先，它计算每个特征图的整体激活水平，生成一个向量。这个向量代表每个特征图在输入中的平均响应。
+- **通过全连接层学习校准向量**：接下来，SE Block 使用两个全连接层来学习哪些特征图更为重要，生成一个校准向量，每个特征图的权重值介于 `0` 到 `1` 之间。
+- **重新校准特征图**：最后，SE Block 利用校准向量对特征图进行加权调整，增强相关的特征图，抑制不相关的特征图。
+
+#### **图14-22** (SE Block 对特征图进行重新校准)
+![Figure14-22SEBlock进行特征图重新校准](../assets/attachment/hands_on_machine_learning/Figure14-22SEBlock进行特征图重新校准.png)
+- **输入特征图**：模型生成的特征图通过 SE Block 进行处理。
+- **校准向量**：SE Block 输出一个表示每个特征图重要性的权重向量。
+- **重新校准后的特征图**：特征图经过加权后，相关特征被增强，不相关的特征被削弱。
+
+例如，SE Block 可以学习到，在人脸图像中，嘴巴、鼻子和眼睛常常一起出现。因此，当嘴巴和鼻子被强烈激活时，SE Block 会增加对眼睛特征图的激活值，帮助模型更好地捕捉整体人脸特征。
+
+
+
+
+#### 问题3: 为什么 SE Block 能够提高模型的表现？
+
+**解答：**
+SE Block 提升模型表现的原因在于它能让网络根据每个特征图的重要性动态调整权重，从而：
+- **增强相关特征**：模型更集中关注那些对当前任务最重要的特征图。
+- **抑制无关特征**：对那些在当前任务中不相关或噪声较大的特征图，SE Block 会降低它们的激活值。
+
+这使得模型可以在不增加大量计算资源的情况下，显著提升其泛化能力和准确性。例如，SENet 在 ILSVRC 2017 比赛中取得了 2.25% 的前五错误率，这是对 SE Block 增强能力的有力证明。
+
+
+
+#### 问题4: SE Block 的具体结构是什么？
+
+**解答：**
+**SE Block** 的结构由以下三部分组成：
+
+- **全局平均池化层**：计算每个特征图的平均激活值，生成一个全局特征向量，代表特征图整体的响应。
+- **两层全连接网络**：
+  - 第一层：通过 **ReLU** 激活函数对全局特征向量进行压缩，通常将特征图数量压缩到原来的 `1/16`。
+  - 第二层：通过 **Sigmoid** 激活函数生成校准向量，数值范围为 `0` 到 `1`，表示每个特征图的重要性。
+- **特征图重新校准**：用校准向量对原始特征图进行重新加权，抑制无关特征，增强相关特征。
+
+{.marker-round}
+
+#### **图14-23** (SE Block 的架构)
+![Figure14-23SEBlock架构图](../assets/attachment/hands_on_machine_learning/Figure14-23SEBlock架构图.png)
+- **全局平均池化** 生成特征图响应的向量，输入到全连接层。
+- **两个全连接层** 负责生成校准向量，输出每个特征图的权重，范围在 `0` 到 `1` 之间。
+- **Sigmoid 输出** 用来控制每个特征图的权重，重新校准特征图。
+
+
+
+这一结构的核心是 **压缩-激励机制**：SE Block 通过减少特征图间的冗余性，提升网络对关键特征的响应，从而提高模型的表现。
+
+
+
+总结：
+SE Block 是 SENet 的关键组件，通过深度维度的重新校准，增强了模型对关键特征的关注，减少了无关或噪声特征的干扰。SENet 的成功在于它以较少的计算开销实现了显著的性能提升，尤其是在图像分类任务中。
+
+{.marker-none}
+
+### 其他值得关注的架构
+
+#### 问题1: ResNeXt 相比 ResNet 有什么改进？
+
+**解答：**
+**ResNeXt** 是 **ResNet** 的一种改进版本，它优化了 **残差单元 (Residual Units)** 的结构。与 ResNet 中的残差单元包含 3 个卷积层不同，ResNeXt 的残差单元由多个**并行堆栈**组成，每个堆栈都有 3 个卷积层。例如，ResNeXt 使用 32 个并行堆栈（称为 **cardinality**），每个堆栈有 3 层卷积层。
+
+改进点：
+- 虽然每个堆栈中的前两层只使用了少量滤波器（例如，只有 4 个），但通过将所有堆栈的输出相加，整体参数数量与 ResNet 相似。
+- ResNeXt 的并行化设计提高了模型的表达能力，同时保持了参数数量的稳定。
+
+这使得 ResNeXt 在保持参数量不变的情况下，增加了模型的表达力，进一步提升了性能。
+
+
+
+#### 问题2: DenseNet 如何通过“密集连接”实现高效特征提取？
+
+**解答：**
+**DenseNet** 的关键创新在于其 **“密集连接”** (Densely Connected Layers) 的架构。DenseNet 由多个 **密集块 (Dense Blocks)** 组成，每个块由少数多个密集连接的卷积层构成。
+
+**密集连接** 的含义：
+- 每层的输出不仅作为下一层的输入，还被输入到该块内的所有后续层。这意味着第 `i` 层的输出会连接到第 `i+1`、`i+2` 等层，形成一个 **密集的连接模式**。
+- 例如，在一个块中，**第4层** 会接收到 **第1、2、3层的输出**。
+
+这种连接方式不仅增加了特征的复用性，还减少了梯度消失的问题，使得模型能够更好地传播信息。此外，DenseNet 的这种连接模式通过减少参数数量达到了优异的精度。
+
+
+
+#### 问题3: MobileNet 如何通过轻量化设计提高效率？
+
+**解答：**
+**MobileNet** 主要针对移动和 Web 应用的需求进行优化，其设计理念是 **轻量化和高效性**。MobileNet 使用了 **深度可分离卷积层**，类似于 **Xception** 中的设计，来减少计算复杂度和参数数量。
+
+设计特点：
+- **深度可分离卷积层** 将常规卷积操作分解为两步：首先对每个输入特征图应用单独的空间卷积，然后使用 `1 \times 1` 卷积来实现跨通道的卷积。这大大减少了计算量。
+- MobileNet 的多种变体通过在性能和速度之间进行权衡，满足了不同场景的需求，使得其能够在低算力的设备上高效运行。
+
+MobileNet 的设计使它成为移动设备和嵌入式设备中使用 CNN 的理想选择，特别是在计算资源受限的环境中。
+
+
+
+#### 问题4: CSPNet 是如何改进 DenseNet 的？
+
+**解答：**
+**CSPNet** (Cross Stage Partial Network) 是对 **DenseNet** 的进一步优化。与 DenseNet 不同，CSPNet 将每个密集块的输入部分分离出来，直接连接到该块的输出，而不是通过所有的卷积层。
+
+CSPNet 的关键思想是减少卷积层的重复计算，同时保持信息的有效传递。通过将一部分输入直接连接到输出，CSPNet 在降低计算成本的同时，保留了 DenseNet 中的长距离信息传递特性。
+
+这种优化使 CSPNet 能够进一步减少计算复杂度和内存消耗，适用于需要高效性和资源节约的场景。
+
+
+
+#### 问题5: EfficientNet 如何通过复合缩放 (Compound Scaling) 提高模型性能？
+
+**解答：**
+**EfficientNet** 是这个列表中最具影响力的架构之一，它通过一种叫做 **复合缩放 (Compound Scaling)** 的方法来高效地扩展 CNN 模型。其设计理念是同时增加：
+- **深度 (depth)**：增加网络层数；
+- **宽度 (width)**：增加每层的卷积核数量；
+- **分辨率 (resolution)**：增加输入图片的尺寸。
+
+**复合缩放的原理**：
+- EfficientNet 的设计基于一个重要公式：`KaTeX: \alpha \cdot \beta^2 + \gamma^2 \approx 2`。该公式指导了深度、宽度和分辨率的平衡增长，确保计算资源的合理利用。
+- EfficientNet 通过网络架构搜索，找到了一个适用于 ImageNet 任务的初始模型 **EfficientNet-B0**，并使用复合缩放生成更大版本的 EfficientNet-B1 至 EfficientNet-B7。
+
+这种方法使得 EfficientNet 在各种计算预算下都能取得良好的表现，并大幅超越了此前的 CNN 模型。
+
+{.marker-none}
+
+### 选择合适的CNN架构 {.col-span-2}
+
+#### 问题1: 如何选择合适的 CNN 架构？
+
+**解答：**
+选择合适的 CNN 架构主要取决于几个关键因素，包括：
+- **准确率**：模型的准确性在你的任务中是否足够高？
+- **模型大小**：模型的参数数量和大小是否适合目标设备？例如，移动设备或嵌入式系统要求模型尽可能小。
+- **推理速度**：在 CPU 或 GPU 上的推理速度是否符合你的应用需求？
+
+**表14-3** 列出了 Keras 中预训练模型的性能、大小、推理速度等信息。这些预训练模型按照大小排序，并展示了每个模型在 ImageNet 数据集上的 **Top-1 准确率** 和 **Top-5 准确率**，同时也列出了每个模型的参数数量（以百万为单位）。
+
+| Class name       | Size (MB) | Top-1 acc | Top-5 acc | Params (M) |
+|------------------|-----------|-----------|-----------|------------|
+| MobileNetV2      | 14        | 71.3%     | 90.1%     | 3.5        |
+| MobileNet        | 16        | 70.4%     | 89.5%     | 4.3        |
+| NASNetMobile     | 23        | 74.4%     | 91.9%     | 5.3        |
+| EfficientNetB0   | 29        | 77.1%     | 93.3%     | 5.3        |
+| EfficientNetB1   | 31        | 79.1%     | 94.4%     | 7.8        |
+| EfficientNetB2   | 36        | 80.1%     | 94.9%     | 9.2        |
+| EfficientNetB3   | 48        | 81.6%     | 95.7%     | 12.3       |
+| EfficientNetB4   | 75        | 82.9%     | 96.4%     | 19.5       |
+| InceptionV3      | 92        | 77.9%     | 93.7%     | 23.9       |
+| ResNet50V2       | 98        | 76.0%     | 93.0%     | 25.6       |
+| EfficientNetB5   | 118       | 83.6%     | 96.7%     | 30.6       |
+| EfficientNetB6   | 166       | 84.0%     | 96.8%     | 43.3       |
+| ResNet101V2      | 171       | 77.2%     | 93.8%     | 44.7       |
+| InceptionResNetV2| 215       | 80.3%     | 95.3%     | 55.9       |
+| EfficientNetB7   | 256       | 84.3%     | 97.0%     | 66.7       |
+
+{.show-header .left-text}
+
+- 例如，表中的 **MobileNetV2** 模型仅有 14MB 大小，参数数量为 3.5M，在 CPU 和 GPU 上的推理速度都非常快，且它在 ImageNet 上的 Top-1 准确率为 71.3%，Top-5 准确率为 90.1%，非常适合移动端应用。
+- 而 **EfficientNetB2** 虽然稍大一些（36MB），但它在准确率上超越了 **InceptionV3**，而且在 CPU 上的推理速度几乎是 **EfficientNetB2** 的两倍，因此如果追求精度和计算速度的平衡，它也是一个不错的选择。
+
+
+
+#### 问题2: 为什么不同的 CNN 模型在准确率和推理速度上表现不同？
+
+**解答：**
+每个 CNN 模型的设计都在计算复杂度和准确率之间做了不同的权衡：
+- **模型大小** 和 **参数数量** 会影响模型的表现。例如，较小的模型通常具有较少的参数和较少的计算需求，因此在低算力设备上运行更快，但其准确率可能略低。
+- **架构设计** 也决定了模型的效率。例如，**MobileNetV2** 使用了 **深度可分离卷积**，这使得它在较小的模型大小下仍能保持较高的精度。而 **EfficientNet** 通过 **复合缩放**（即同时增加深度、宽度和输入分辨率）在多个维度上提升了模型的性能。
+
+因此，不同的架构在准确率、推理速度和模型大小之间做出了不同的权衡，具体选择需要根据任务需求。
+
+
+
+#### 问题3: EfficientNet 如何在准确率和模型大小之间取得平衡？
+
+**解答：**
+**EfficientNet** 是一组通过 **复合缩放 (Compound Scaling)** 提升的 CNN 架构，它通过增加网络的 **深度、宽度和输入图像的分辨率** 同时提升模型的表现。不同版本的 EfficientNet（如 **EfficientNetB0** 到 **EfficientNetB7**）提供了在模型大小、准确率和计算复杂度之间的多种选择。
+
+- **EfficientNetB0** 是最小的 EfficientNet 版本，具有 5.3M 参数和 77.1% 的 Top-1 准确率。
+- 随着版本升级，模型大小和参数数量逐渐增加，例如 **EfficientNetB7** 具有 66.7M 参数，但其 Top-1 准确率达到了 84.3%，表现非常出色。
+
+这种复合缩放方法确保了在提高准确率的同时，不会显著增加计算资源需求，使得 EfficientNet 成为一个在多个应用场景下性能卓越的模型。
+
+
+
+#### 问题4: 表14-3 中的不同模型各有什么优势？
+
+**解答：**
+**表14-3** 展示了多个预训练模型在 **Keras** 中的性能和模型大小，我们可以从中提炼出每个模型的优势：
+- **MobileNetV2** 和 **MobileNet**：这些模型体积小、推理速度快，适合移动端或资源受限的设备。
+- **NASNetMobile**：相比 MobileNet，有更高的准确率，但模型稍大，适合对准确率有更高要求的移动应用。
+- **EfficientNet 系列**：高效的复合缩放使其在准确率和推理速度之间取得了良好平衡，特别是 **EfficientNetB7** 提供了最高的 84.3% 的 Top-1 准确率，适合高精度需求的任务。
+- **ResNet 系列** 和 **InceptionResNetV2**：这些模型在 GPU 上推理速度快，适合大规模、高性能的计算任务。
+
+
+
+#### 问题5: 如何根据项目需求选择 CNN 架构？
+
+**解答：**
+选择合适的 CNN 架构应考虑以下几个因素：
+- **任务的准确率要求**：如果任务对精度要求较高，选择像 **EfficientNetB3** 或 **EfficientNetB7** 这样的高精度模型。
+- **设备的算力**：如果运行环境是移动端或嵌入式系统，选择 **MobileNetV2** 或 **NASNetMobile** 这类轻量化模型。
+- **推理速度**：如果需要高推理速度，尤其是在 GPU 上，考虑使用 **ResNet50V2** 或 **InceptionResNetV2** 这样的模型。
+
+综合来看，表14-3 列出的模型涵盖了从低资源需求到高性能需求的各种场景，用户可以根据具体需求进行权衡选择。
+
+{.marker-none}
+
+### Implementing a ResNet-34 CNN Using Keras
+
+#### 问题1: 如何从头开始实现 ResNet-34 的 ResidualUnit？
+
+**解答：**
+ResNet-34 的核心组件是 **ResidualUnit**，它是 ResNet 中的残差单元。以下代码展示了如何使用 Keras 来创建这个基本单元：
+
+```python
+DefaultConv2D = partial(tf.keras.layers.Conv2D, kernel_size=3, strides=1, padding="same", kernel_initializer="he_normal", use_bias=False)
+
+class ResidualUnit(tf.keras.layers.Layer):
+    def __init__(self, filters, strides=1, activation="relu", **kwargs):
+        super().__init__(**kwargs)
+        self.activation = tf.keras.activations.get(activation)
+        self.main_layers = [
+            DefaultConv2D(filters, strides=strides),
+            tf.keras.layers.BatchNormalization(),
+            self.activation,
+            DefaultConv2D(filters),
+            tf.keras.layers.BatchNormalization()
+        ]
+        self.skip_layers = []
+        if strides > 1:
+            self.skip_layers = [
+                DefaultConv2D(filters, kernel_size=1, strides=strides),
+                tf.keras.layers.BatchNormalization()
+            ]
+    
+    def call(self, inputs):
+        Z = inputs
+        for layer in self.main_layers:
+            Z = layer(Z)
+        skip_Z = inputs
+        for layer in self.skip_layers:
+            skip_Z = layer(skip_Z)
+        return self.activation(Z + skip_Z)
+```
+
+#### 代码说明：
+- **ResidualUnit** 类实现了 ResNet 的基本残差单元。
+- `main_layers` 包含两个卷积层、批归一化和激活函数，这些构成了主要的计算路径。
+- 当 stride 大于 1 时，**skip_layers** 会进行下采样（通过 `1x1` 的卷积层），以保证输入和输出的形状一致。
+- 在 `call` 方法中，输入同时通过 **main_layers** 和 **skip_layers**，然后将它们的输出相加，这就是 ResNet 中的跳跃连接机制。
+
+这段代码对应 **图14-19**，该图展示了 ResidualUnit 的基本结构及其如何执行残差计算。![Figure14-19ResNet通过跳跃连接处理特征图尺寸变化问题](../assets/attachment/hands_on_machine_learning/Figure14-19ResNet通过跳跃连接处理特征图尺寸变化问题.png)
+
+
+
+#### 问题2: 如何构建 ResNet-34 的完整架构？
+
+**解答：**
+接下来，我们可以使用 **Sequential** 模型来构建 ResNet-34，因为它是由多个 ResidualUnit 组成的一长串层。以下是如何使用 Keras 构建完整的 ResNet-34：
+
+```python
+model = tf.keras.Sequential([
+    DefaultConv2D(64, kernel_size=7, strides=2, input_shape=[224, 224, 3]),
+    tf.keras.layers.BatchNormalization(),
+    tf.keras.layers.Activation("relu"),
+    tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding="same"),
+])
+
+prev_filters = 64
+for filters in [64]*3 + [128]*4 + [256]*6 + [512]*3:
+    strides = 1 if filters == prev_filters else 2
+    model.add(ResidualUnit(filters, strides=strides))
+    prev_filters = filters
+
+model.add(tf.keras.layers.GlobalAvgPool2D())
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(10, activation="softmax"))
+```
+
+#### 代码说明：
+- 我们使用 `Sequential` 模型，因为 ResNet 是一个由多个残差单元顺序连接而成的网络。
+- **卷积层和池化层** 用于初步处理输入图像。
+- 然后根据卷积滤波器的数量和 stride 参数，逐步添加 ResidualUnit。
+- 最后，使用全局平均池化层和全连接层进行分类。
+
+该代码与 **图14-18** 非常相似，展示了 ResNet-34 的完整架构，体现了残差单元如何在网络中层层堆叠。![Figure14-18ResNet架构图](../assets/attachment/hands_on_machine_learning/Figure14-18ResNet架构图.png)
+
+
+
+#### 问题3: 如何确保输入和输出尺寸一致？
+
+**解答：**
+在 ResNet 的残差单元中，如果卷积层的 stride 大于 1，输入的特征图尺寸会缩小，这时我们需要使用 **跳跃连接** (skip connection) 来调整输入和输出的形状一致。为此，**skip_layers** 使用了 `1x1` 卷积层进行尺寸调整。
+
+具体步骤：
+- 当 `stride` 大于 1 时，skip connection 会通过 `1x1` 卷积层对输入进行降采样，使其尺寸与输出相匹配。
+- 然后，经过 **main_layers** 和 **skip_layers** 的输出被相加，并经过激活函数。
+
+这一过程保证了在网络的每一层，无论输入和输出的尺寸如何变化，都能够进行相加操作，实现跳跃连接的功能。
+
+
+#### 问题4: ResNet-34 架构的核心优势是什么？
+
+**解答：**
+ResNet-34 的核心优势在于其 **残差学习机制**。通过引入跳跃连接，它解决了深层网络中常见的梯度消失问题。以下是其主要优势：
+- **跳跃连接**：允许信号直接跳过某些层，从而防止梯度在深层网络中消失。
+- **简化训练**：通过学习残差函数，而不是直接拟合输入，使网络能够更轻松地训练深层模型。
+- **高效性**：ResNet 在增加网络深度的同时，保持了计算效率，不会显著增加计算复杂度。
+
+{.marker-round}
+
+### 在Keras中加载预训练模型
+
+#### 问题1: 如何在 Keras 中加载预训练模型？
+
+**解答：**
+在 Keras 中，你可以轻松加载预训练模型，只需要一行代码。例如，以下代码展示了如何加载在 ImageNet 上预训练的 **ResNet-50** 模型：
+
+```python
+model = tf.keras.applications.ResNet50(weights="imagenet")
+```
+
+这行代码会下载 **ResNet-50** 模型，并加载在 **ImageNet** 上的预训练权重。这样，你可以直接使用这个模型进行预测或进一步调整。
+
+
+
+#### 问题2: 使用预训练模型时，如何调整输入图像的大小？
+
+**解答：**
+不同的预训练模型可能期望输入图像具有特定的大小。比如，**ResNet-50** 需要输入图像的大小为 `224x224` 像素。因此，你需要将输入图像调整到正确的尺寸。
+
+以下是使用 Keras 的 `Resizing` 层调整图像大小的代码：
+
+```python
+images = load_sample_images()["images"]
+images_resized = tf.keras.layers.Resizing(height=224, width=224, crop_to_aspect_ratio=True)(images)
+```
+
+这里，`Resizing` 层将图像调整到 `224x224`，并根据目标宽高比进行裁剪。这是确保输入图像能够与预训练模型兼容的重要一步。
+
+
+
+#### 问题3: 如何预处理图像以输入到预训练模型中？
+
+**解答：**
+预训练模型通常期望输入数据已经过特定的预处理。例如，某些模型期望输入数据的范围从 `-1` 到 `1`，而有些模型则期望数据的范围从 `0` 到 `255`。为了适应这些需求，Keras 提供了相应的预处理函数。
+
+对于 **ResNet-50**，我们可以使用以下代码进行预处理：
+
+```python
+inputs = tf.keras.applications.resnet50.preprocess_input(images_resized)
+```
+
+这段代码确保输入图像的像素值符合 ResNet-50 模型的期望格式，使得图像能够正确输入到模型中进行预测。
+
+
+
+#### 问题4: 如何使用预训练模型进行预测？
+
+**解答：**
+加载并预处理图像后，你可以使用预训练模型进行预测。以下是使用 **ResNet-50** 模型对输入图像进行预测的代码：
+
+```python
+Y_proba = model.predict(inputs)
+```
+
+预测的输出 `Y_proba` 是一个形状为 `(2, 1000)` 的矩阵，表示每张图像对于 1000 个类别的预测概率。这里有两张图像，每一行包含 1000 个类别的预测概率。
+
+
+
+#### 问题5: 如何解码预测结果并显示前 K 个类别？
+
+**解答：**
+Keras 提供了一个 **decode_predictions** 函数，可以将模型的输出转化为可读的类别名称和概率。例如，以下代码展示了如何显示每张图片的前 3 个预测类别：
+
+```python
+top_K = tf.keras.applications.resnet50.decode_predictions(Y_proba, top=3)
+for image_index in range(len(images)):
+    print(f"Image #{image_index}")
+    for class_id, name, y_proba in top_K[image_index]:
+        print(f"{class_id} - {name:12s} {y_proba:.2%}")
+```
+
+输出会显示每张图像的类别编号、类别名称以及该类别的预测概率。例如：
+
+```
+Image #0
+n03877845 - palace      54.69%
+n03781244 - monastery   24.72%
+n02825657 - bell_cote   18.55%
+```
+
+该模型正确预测了第一张图像的类别为宫殿 (palace)，但对第二张图像的预测出现了一些小错误。这是因为某些类别（如 dahlia）不包含在 ImageNet 的 1000 个类别中。
+
+
+#### 问题6: 如果想对不属于 ImageNet 的类别进行分类，该怎么办？
+
+**解答：**
+虽然预训练模型在 ImageNet 数据集上进行了训练，但你可以通过 **迁移学习 (Transfer Learning)** 来扩展这些模型的能力，以处理不属于 ImageNet 的类别。这意味着你可以保留模型的大部分预训练权重，但调整最后几层，使其适应新的任务。
+
+迁移学习的步骤包括：
+- **冻结模型的早期层**，只训练模型的最后几层。
+- **用你自己的数据集** 对模型进行微调，以适应新的分类任务。
+
+这使得你能够从预训练模型中受益，即使你的目标任务并不包含 ImageNet 数据中的类别。
+
+{.marker-none}
+
+### 用于迁移学习的预训练模型
+
+#### 问题1: 如何使用 TensorFlow Datasets 加载数据集？
+
+**解答：**
+在迁移学习中，我们首先需要加载合适的数据集。以下是如何使用 **TensorFlow Datasets** 加载 **flowers** 数据集的代码：
+
+```python
+import tensorflow_datasets as tfds
+
+dataset, info = tfds.load("tf_flowers", as_supervised=True, with_info=True)
+dataset_size = info.splits["train"].num_examples  # 数据集总共包含 3670 张图片
+class_names = info.features["label"].names  # 类别名称 ["dandelion", "daisy", ...]
+n_classes = info.features["label"].num_classes  # 总共 5 类
+```
+
+**说明：**
+- **`tfds.load()`** 函数可以从 TensorFlow 的预加载数据集中加载数据，这里我们加载了 `tf_flowers` 数据集。
+- **`as_supervised=True`** 表示返回的数据集中每一项是 `(input, label)` 的元组。
+- `with_info=True` 返回数据信息（`info`），我们可以从中获取数据集的大小、类别名称和类别总数。
+
+
+
+#### 问题2: 如何对数据集进行分割（训练集、验证集、测试集）？
+
+**解答：**
+由于 **flowers** 数据集中只有一个训练集，我们需要手动对数据进行分割。以下是如何将数据集分割为训练集、验证集和测试集的代码：
+
+```python
+test_set_raw, valid_set_raw, train_set_raw = tfds.load(
+    "tf_flowers",
+    split=["train[:10%]", "train[10%:25%]", "train[25%:]"],
+    as_supervised=True
+)
+```
+
+**说明：**
+- 使用 `split` 参数，我们将数据集按照比例划分：前 10% 为测试集，接下来的 15% 为验证集，剩下的 75% 作为训练集。
+
+
+
+#### 问题3: 如何预处理图像数据以适应 Xception 模型？
+
+**解答：**
+为了适应 Xception 预训练模型的输入要求，我们需要对图像数据进行预处理。以下代码展示了如何调整图像大小，并使用 Xception 预处理函数处理图像：
+
+```python
+preprocess = tf.keras.Sequential([
+    tf.keras.layers.Resizing(height=224, width=224, crop_to_aspect_ratio=True),
+    tf.keras.layers.Lambda(tf.keras.applications.xception.preprocess_input)
+])
+
+train_set = train_set_raw.map(lambda X, y: (preprocess(X), y)).shuffle(1000, seed=42).batch(32).prefetch(1)
+valid_set = valid_set_raw.map(lambda X, y: (preprocess(X), y)).batch(32).prefetch(1)
+test_set = test_set_raw.map(lambda X, y: (preprocess(X), y)).batch(32).prefetch(1)
+```
+
+**说明：**
+- **Resizing** 层将所有图像调整为 `224x224` 的大小。
+- **Lambda** 层应用了 `Xception` 的预处理函数，将图像像素值从 `[0, 255]` 范围转换为 `[-1, 1]` 范围。
+- 最后，数据集通过 **shuffle**、**batch** 和 **prefetch** 方法进行批处理和预取，以加速训练。
+
+
+
+#### 问题4: 如何使用迁移学习创建一个自定义模型？
+
+**解答：**
+我们将使用 **Xception** 模型，并通过迁移学习来训练自己的模型。以下是加载 Xception 预训练模型并构建自定义输出层的代码：
+
+```python
+base_model = tf.keras.applications.xception.Xception(weights="imagenet", include_top=False)
+avg = tf.keras.layers.GlobalAveragePooling2D()(base_model.output)
+output = tf.keras.layers.Dense(n_classes, activation="softmax")(avg)
+model = tf.keras.Model(inputs=base_model.input, outputs=output)
+```
+
+**说明：**
+- `include_top=False` 意味着我们只加载 Xception 的卷积部分，忽略原始的分类层。
+- 我们添加了一个 **GlobalAveragePooling2D** 层和一个 **Dense** 输出层（与我们的类别数相对应）。
+
+
+
+#### 问题5: 如何冻结预训练模型的权重并进行训练？
+
+**解答：**
+在迁移学习的初期阶段，我们通常会冻结预训练模型的卷积层，只训练最后几层。以下代码展示了如何冻结 Xception 模型的权重：
+
+```python
+for layer in base_model.layers:
+    layer.trainable = False
+```
+
+然后我们使用编译器和优化器来编译模型：
+
+```python
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.1, momentum=0.9)
+model.compile(loss="sparse_categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+history = model.fit(train_set, validation_data=valid_set, epochs=3)
+```
+
+**说明：**
+- **SGD 优化器** 和 **学习率** 的设置在迁移学习中特别重要，因为我们不希望大幅度修改预训练模型的权重。
+- 模型训练过程中，验证集用于监控模型的性能。
+
+
+
+#### 问题6: 如何微调预训练模型的高层？
+
+**解答：**
+当模型训练了几个 epoch 并取得了不错的结果后，我们可以解冻预训练模型的某些高层进行微调。以下代码展示了如何解冻模型的高层并继续训练：
+
+```python
+for layer in base_model.layers[56:]:
+    layer.trainable = True
+
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.9)
+model.compile(loss="sparse_categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+history = model.fit(train_set, validation_data=valid_set, epochs=10)
+```
+
+**说明：**
+- 解冻从第 56 层开始的所有层，并使用更小的学习率（`0.01`），这样可以避免大幅修改预训练的权重。
+- 继续训练模型，使其达到更高的准确率，通常可以达到 92%-97%。
+
+{.marker-round}
+
+### 使用Keras模型同时进行分类和定位
+
+#### 问题1: 如何使用 Keras 模型同时进行分类和定位？
+
+**解答：**
+在图像分类和定位任务中，我们不仅要预测图像中的类别（分类），还要预测对象的边界框（定位）。我们可以通过添加额外的输出层来扩展预训练模型，使其能够同时进行这两种任务。
+
+以下代码展示了如何修改 Xception 模型以同时输出类别和边界框信息：
+
+```python
+base_model = tf.keras.applications.xception.Xception(weights="imagenet", include_top=False)
+avg = tf.keras.layers.GlobalAveragePooling2D()(base_model.output)
+
+# 分类输出
+class_output = tf.keras.layers.Dense(n_classes, activation="softmax")(avg)
+
+# 定位输出（4个值，表示边界框的x、y、宽度和高度）
+loc_output = tf.keras.layers.Dense(4)(avg)
+
+model = tf.keras.Model(inputs=base_model.input, outputs=[class_output, loc_output])
+
+# 编译模型，损失函数使用交叉熵和均方误差
+model.compile(loss=["sparse_categorical_crossentropy", "mse"],
+              loss_weights=[0.8, 0.2],  # 根据任务的相对重要性分配权重
+              optimizer=optimizer, metrics=["accuracy"])
+```
+
+**说明：**
+- 模型有两个输出层：一个用于分类，另一个用于预测边界框的坐标。
+- 使用 **均方误差 (MSE)** 作为边界框的损失函数，因为它是一个回归任务。
+- 通过设置 `loss_weights`，你可以控制分类损失和定位损失的相对权重。
+
+
+#### 问题2: 如何标注数据中的边界框？
+
+**解答：**
+在图像分类和定位任务中，边界框是图像中物体的外接矩形，需要通过手动标注或工具生成。以下是一些常见的标注工具：
+- **VGG Image Annotator**
+- **LabelImg**
+- **OpenLabeler**
+- **LabelBox**
+- **Supervise.ly**
+
+如果数据集较小，推荐手动标注以确保质量；如果数据集较大，可以使用众包平台（如 Amazon Mechanical Turk）进行标注。
+
+
+
+#### 问题3: 如何规范化边界框坐标？
+
+**解答：**
+为了确保模型输出的边界框预测值具有一致性，通常我们需要对边界框的坐标进行规范化。以下是规范化的步骤：
+- **将坐标归一化**：使得水平和垂直坐标（以及高度和宽度）都在 `[0, 1]` 范围内。
+- **预测高度和宽度的平方根**：而不是直接预测高度和宽度，以减少大物体和小物体之间的误差。
+
+
+#### 问题4: 如何评估模型的定位性能？
+
+**解答：**
+虽然 **MSE** 可以作为训练的损失函数，但它并不是评估边界框预测质量的最佳指标。更常用的评估指标是 **Intersection over Union (IoU)**，它计算预测的边界框与实际边界框之间的重叠区域与联合区域的比值。
+
+如图 **Figure 14-24** 所示：![Figure14-24IoU指标](../assets/attachment/hands_on_machine_learning/Figure14-24IoU指标.png)
+
+在 Keras 中，我们可以使用 `tf.keras.metrics.MeanIoU` 类来实现该指标：
+
+```python
+iou_metric = tf.keras.metrics.MeanIoU(num_classes=2)
+```
+
+IoU 计算方式如下：
+```KaTeX
+\text{IoU} = \frac{\text{Area of Overlap}}{\text{Area of Union}}
+```
+它是边界框评估的常用标准，可以直接应用于多种物体检测任务。
+
+
+
+#### 问题5: 如何处理包含多个物体的图像？
+
+**解答：**
+在某些图像中可能会包含多个物体，因此你需要为每个物体创建多个边界框。在这种情况下，每张图像会包含多个分类标签和多个边界框坐标，你需要调整数据集的标签格式以包含所有物体的信息。
+
+{.marker-none}
+
+### 物体检测
+
+#### 问题1: 什么是物体检测任务？
+
+**解答：**
+物体检测不仅涉及图像中的分类问题，还涉及定位多个物体。简单来说，物体检测的任务是识别出图像中出现的所有对象，并为每个对象预测其边界框。
+
+CNN（卷积神经网络）常用于这类任务，原始的方法是使用**滑动窗口**技术（Sliding Window）。即，将训练好的 CNN 模型在图像上滑动，预测不同区域中是否存在物体，并生成相应的类别概率、边界框以及物体分数（objectness score）。这个过程在图 **Figure 14-25** 中展示。![Figure14-25通过在图像上滑动CNN来检测多个物体](../assets/attachment/hands_on_machine_learning/Figure14-25通过在图像上滑动CNN来检测多个物体.png)
+
+
+
+#### 问题2: 什么是 objectness score？如何使用它进行检测？
+
+**解答：**
+**Objectness score** 是一种度量，表示当前滑动窗口中心区域是否包含物体的概率。对于每个检测区域，CNN 不仅会输出分类概率和边界框，还会输出一个 objectness score，用于度量该区域是否有物体。这个得分可以通过使用 sigmoid 激活函数输出单个神经元来生成，通常使用 **二元交叉熵损失函数** 进行训练。
+
+如果 objectness score 低于某个阈值，表示该区域可能没有物体，因此可以忽略这些区域的预测结果。
+
+
+
+#### 问题3: 如何通过滑动 CNN 进行物体检测？
+
+**解答：**
+滑动 CNN 的过程如图 **Figure 14-25** 所示，图像被分割为一个 5x7 的网格，CNN 滑动在每个 3x3 的区域上进行预测：
+
+- **第一个区域**：在红色网格的中心，CNN 检测到左上方的玫瑰，并输出高概率的 "rose" 类别。同时，生成的边界框超出了 3x3 区域的边界，但这是可以接受的，因为 CNN 能够合理推测玫瑰的位置。
+- **第二个区域**：在蓝色网格中心，CNN 没有检测到物体，objectness score 较低，忽略该区域的预测结果。
+- **第三个区域**：在绿色网格中心，虽然玫瑰没有完美地处于中心位置，但 CNN 仍然检测到了它，只是 objectness score 较低。
+
+通过滑动 CNN，我们可以在整个图像上生成多个预测结果。为了处理大小不同的物体，可以再次滑动 CNN，这次针对更大的 4x4 区域。
+
+
+
+#### 问题4: 如何减少重复预测的边界框？
+
+**解答：**
+由于 CNN 可能会对同一物体在不同位置进行多次检测，因此我们需要对生成的边界框进行后处理。常见的后处理技术是 **非最大抑制 (Non-Max Suppression)**，其流程如下：
+- 删除所有 objectness score 低于阈值的边界框。
+- 找到剩余边界框中 objectness score 最高的边界框，删除与该框重叠度（IoU）超过 60% 的其他边界框。
+- 重复步骤 2，直到没有重叠的边界框需要删除。
+
+
+
+#### 问题5: 如何使用全卷积网络 (FCN) 加速滑动窗口的过程？
+
+**解答：**
+滑动 CNN 的方法虽然有效，但速度较慢，因为需要对图像的每个滑动窗口区域多次运行 CNN。为了加速这个过程，可以使用 **全卷积网络 (Fully Convolutional Network, FCN)**，它将整个图像作为输入，并一次性输出所有预测结果，从而避免逐个滑动窗口的运算。
+
+
+{.marker-none}
+
+### 全卷积网络
+
+#### 问题1：什么是全卷积网络（Fully Convolutional Networks, FCNs）？为什么要将全连接层替换为卷积层？
+
+全卷积网络（Fully Convolutional Networks, FCNs）是为图像任务而设计的一种架构，最早提出是用于语义分割，即对图像中的每个像素进行分类。Jonathan Long 等人提出了用卷积层替换 CNN 顶部的全连接层，从而使网络可以处理任意大小的输入图像，而不是只处理固定尺寸的图像。
+
+在传统 CNN 中，顶部的全连接层对输入图像的大小有严格的要求，而卷积层则没有这种限制。卷积层只需要处理局部特征，并且可以在任意大小的图像上滑动。
+
+**示例解析**：
+假设一个全连接层有 200 个神经元，它连接到一个卷积层输出的 `100` 个特征图，每个特征图大小为 `KaTeX:7 \times 7`。每个神经元计算 `KaTeX:100 \times 7 \times 7` 个激活的加权和，再加上偏置项（bias term）。
+
+如果我们将这个全连接层替换为一个卷积层，这个卷积层将输出 200 个特征图，卷积核大小为 `KaTeX:7 \times 7`，其计算的加权和与全连接层的加权和相同。但卷积层的优势是，它可以在输入图像上滑动，从而处理任意大小的图像，并保持同样的功能。
+
+```KaTeX
+\text{[batch size, 1, 1, 200]} 
+\quad \text{vs} \quad
+\text{[batch size, 1, 1, 200]}
+```
+
+#### 问题2：全卷积网络的核心优势是什么？
+
+全卷积网络的优势在于，它不依赖于输入图像的固定尺寸，意味着它可以处理任意大小的输入图像。这种特性使 FCN 非常适合于任务，如物体检测、语义分割等。
+
+具体来说，FCN 取代全连接层的卷积层可以根据输入的尺寸调整输出，例如，当处理的图像为 `KaTeX:448 \times 448` 时，输出的特征图也会变成相应的尺寸。
+
+![Figure14-26同一全卷积网络处理小图像和大图像](../assets/attachment/hands_on_machine_learning/Figure14-26同一全卷积网络处理小图像和大图像.png)如 **Figure 14-26** 中展示了一个全卷积网络分别处理 `KaTeX:224 \times 224` 和 `KaTeX:448 \times 448` 两种尺寸的输入图像，输出的特征图为 `KaTeX:7 \times 7` 和 `KaTeX:14 \times 14`，这与输入的大小成正比。
+
+#### 问题3：如何将卷积层应用于目标检测？
+
+当我们将 CNN 顶部的全连接层替换为卷积层时，我们不仅可以检测图像中的多个物体，还可以通过滑动窗口的方式来处理任意尺寸的输入图像。
+
+具体例子：
+- 输出的 `0-4` 是类别概率，通过 softmax 激活函数处理。
+- 输出的 `5` 是 objectness 分数，通过 sigmoid 激活函数处理。
+- 输出的 `6-9` 是物体边界框的中心坐标、高度和宽度，通过 sigmoid 激活函数处理，并允许边界框超出图像的边界。
+
+这种方法使得 CNN 可以生成一张 `8 \times 8` 的网格，其中每个单元对应的 `10` 个输出，包括类别概率、objectness 分数和边界框坐标。
+
+#### 问题4：FCN 是如何提升物体检测效率的？
+
+与滑动 CNN 在图像上逐个区域检测不同，全卷积网络只需将整个图像看一次，并同时计算所有的网格单元（预测结果），这种高效的计算方式避免了重复运行 CNN，从而提升了物体检测的速度。
+
+![Figure14-26同一全卷积网络处理小图像和大图像](../assets/attachment/hands_on_machine_learning/Figure14-26同一全卷积网络处理小图像和大图像.png)**Figure 14-26** 清楚地展示了 FCN 在处理不同尺寸图像时的效率提高，这种网络只需一次处理图像，而不需要在图像上滑动多次。
+
+{.marker-none}
+
+### YOLO
+
+#### 问题1：YOLO如何处理网格单元中的目标检测？
+
+**解答：**
+
+YOLO（You Only Look Once）是一种快速、准确的目标检测算法，它的主要特点是将图像分割为网格单元，并仅考虑中心位于该网格单元内的目标。具体的处理方式如下：
+
+- **网格划分与中心检测**：
+  - 每个图像被划分为 `KaTeX: S \times S` 的网格。
+  - 对于每个网格单元，YOLO只考虑中心位于该单元内的物体。
+  - 物体的边界框坐标是相对于网格单元的左上角 `KaTeX: (0,0)` 和右下角 `KaTeX: (1,1)` 来定义的，但边界框的宽度和高度可以超出网格。
+
+- **边界框预测**：
+  - 每个网格单元预测 **两个** 边界框，而不是一个。这样可以处理两个物体的中心可能同时落在同一网格中的情况。
+  - 每个边界框还会输出其置信度得分。
+
+- **类别概率图**：
+  - YOLO还为每个网格单元输出类别概率分布。由于使用的是PASCAL VOC数据集，该数据集有20类，因此每个网格单元预测20个类别概率。
+  - 类别概率图（class probability map）提供每个网格单元中某一类目标的概率。
+
+- **后处理的类匹配**：
+  - 在后处理中，类别概率图帮助确定每个边界框所属的类别。通过测量每个边界框与类别概率图的匹配程度，来判断边界框应分配到哪一类别。
+  - 例如，在一个人站在车前的场景中，有两个边界框：一个是水平的边界框（对应汽车），另一个是垂直的边界框（对应人）。通过匹配类别概率图中的“车”和“人”区域，边界框就可以正确分配到汽车和人。
+
+
+
+#### 问题2：YOLOv3和其他版本的改进有哪些？
+
+**解答：**
+
+随着YOLO的发展，不同版本（YOLOv2、YOLOv3、YOLOv4等）在速度和准确性上都做了显著的改进。以下是YOLOv3的主要改进点：
+
+- **使用锚框先验**：
+  - YOLOv3通过使用锚框先验（`KaTeX: anchor\ priors`）提高了准确性。这是因为某些目标的边界框形状比其他目标更常见。例如，人通常有垂直的边界框，而汽车通常有水平的边界框。
+
+- **增加检测类别**：
+  - YOLOv3增加了每个网格单元预测的边界框数量，并在不同数据集上训练了更多类别的目标（多达9000类目标，组织成层次结构）。
+
+- **跳跃连接**：
+  - 为了弥补CNN丢失的部分空间分辨率，YOLOv3增加了跳跃连接（`KaTeX: skip\ connections`），这在处理语义分割时尤为重要。
+
+- **不同的YOLO版本**：
+  - YOLO的不同版本，比如YOLOv4-tiny，专门针对低计算资源的设备进行优化，可以在每秒超过1000帧的速度下运行。
+
+
+
+#### 问题3：什么是平均精度均值（mAP）？
+
+**解答：**
+
+平均精度均值（`KaTeX: mAP`）是目标检测任务中常用的评估指标。要理解这个指标，需要回顾分类任务中的两个重要指标：**精度**和**召回率**。精度和召回率之间存在权衡：召回率越高，精度通常越低。
+
+mAP的计算步骤如下：
+
+- **精度-召回曲线**：
+  - 精度-召回曲线展示了精度和召回率的变化情况。为了将这条曲线总结成一个数字，可以计算曲线下的面积（`KaTeX: AUC`，area under the curve）。
+
+- **最大精度**：
+  - 我们不直接使用某个固定召回率下的精度，而是计算每个召回率区间的最大精度。例如，当召回率至少为10%时，计算10%的最大精度，以此类推，直到召回率达到100%。
+
+- **计算AP和mAP**：
+  - 对每个类别计算其平均精度（`KaTeX: AP`），然后将所有类别的AP取平均得到`KaTeX: mAP`。
+
+**公式**：
+```KaTeX
+mAP = \frac{1}{N}\sum_{i=1}^{N}AP_i
+```
+
+其中，`KaTeX: N` 是类别的数量，`KaTeX: AP_i` 是第 `KaTeX: i` 类的平均精度。
+
+
+
+#### 问题4：mAP如何处理不同的IoU阈值？
+
+**解答：**
+
+在目标检测任务中，通常会使用交并比（`KaTeX: IoU`，Intersection over Union）阈值来判断预测是否正确。常见的IoU阈值有0.5（即预测框和真实框的重叠区域超过50%时，认为预测是正确的）。
+
+- **`KaTeX: mAP@0.5`**：表示在IoU阈值为0.5时计算的mAP。
+- **`KaTeX: mAP@0.75`**：表示在IoU阈值为0.75时计算的mAP。
+
+为了更全面地评估模型的性能，有时会计算多个IoU阈值下的mAP，比如：
+```KaTeX
+mAP@[0.50:0.95]
+```
+这意味着从0.50到0.95之间以0.05为步长，计算多个IoU阈值下的mAP，并取平均值。
+
+{.marker-none}
+
+### 目标跟踪
+
+#### 问题1：Object Tracking 是什么？
+
+**解答：**
+
+目标跟踪（Object Tracking）是一项挑战性的任务。其主要挑战在于，目标可能会因为运动而变大或变小，或者因为与摄像机的距离变化而影响外观。此外，目标的外观也会因旋转、光照变化、背景变化等因素发生改变，甚至可能被其他物体暂时遮挡。
+
+
+
+#### 问题2：DeepSORT目标跟踪系统如何工作？
+
+**解答：**
+
+DeepSORT 是一个流行的目标跟踪系统，它基于经典算法和深度学习相结合的方式来进行目标跟踪。其工作原理包括以下几部分：
+
+- **Kalman滤波器（Kalman filters）**：
+  - 它使用 `KaTeX: Kalman\ filters` 来估计物体的当前位置。Kalman滤波器基于先前的检测结果，并假设目标以恒定速度运动。
+
+- **深度学习模型**：
+  - DeepSORT 使用深度学习模型来度量新的检测结果与现有的已跟踪物体之间的相似度。
+
+- **匈牙利算法（Hungarian algorithm）**：
+  - 最后，系统使用 `KaTeX: Hungarian\ algorithm` 来将新的检测结果与现有的已跟踪物体匹配（或将新的物体与新的检测结果匹配）。匈牙利算法通过找到最优的映射组合，最小化检测结果与跟踪物体预测位置之间的距离，同时最小化外观差异。
+
+
+
+#### 问题3：DeepSORT中的匈牙利算法如何避免位置混淆？
+
+**解答：**
+
+匈牙利算法通过结合外观相似度来避免位置混淆。举例来说，假设一个红色球和一个蓝色球分别从不同方向反弹，如果只根据先前位置进行匹配，Kalman滤波器可能会预测两个球会“穿过”对方，而算法则会错误地将它们的检测结果互换。
+
+然而，借助于相似度度量，匈牙利算法可以检测到外观的不同之处（即红球和蓝球的颜色），从而正确地将检测结果匹配到正确的球体。
+
+
+
+#### 问题4：DeepSORT中Kalman滤波器的作用是什么？
+
+**解答：**
+
+`KaTeX: Kalman\ filters` 主要用于预测物体在当前帧中的最可能位置。其作用如下：
+
+- 基于前几帧中物体的位置和速度，Kalman滤波器会假设物体保持恒定速度运动，从而预测其当前位置。
+- 当检测结果到达时，滤波器会根据新的数据对预测进行调整，以提高跟踪的准确性。
+
+
+
+#### 问题5：如何获得DeepSORT的实现？
+
+**解答：**
+
+DeepSORT有一些可用的开源实现。以下是一个基于TensorFlow的实现，结合了YOLOv4和DeepSORT：
+- GitHub链接：[https://github.com/theAIGuysCode/yolov4-deepsort](https://github.com/theAIGuysCode/yolov4-deepsort)
+
+{.marker-none}
+
+### 语义分割 {.col-span-2}
+
+#### 问题1：什么是语义分割（Semantic Segmentation）？
+
+**解答：**
+
+语义分割是一种将每个像素分类为其所属类别的技术。在语义分割中，每个像素被分配给一个对象类别（例如：道路、汽车、行人、建筑物等）。正如 `KaTeX: Figure\ 14-27` 中所示，不同类别的物体通过颜色进行区分，但属于同一类别的对象（例如所有的自行车）不会被进一步区分。
+
+- **主要挑战**：
+  - 通过常规的卷积神经网络（`KaTeX: CNN`），图像会逐渐失去空间分辨率，因此CNN只能识别图像中有某个类别的物体，但很难精确到具体的位置。
+
+- ![Figure14-27语义分割](../assets/attachment/hands_on_machine_learning/Figure14-27语义分割.png)**图示**：`KaTeX: Figure\ 14-27` 展示了语义分割的示例，其中自行车、行人、建筑物等都被不同颜色标记。
+
+
+#### 问题2：如何通过卷积神经网络进行语义分割？
+
+**解答：**
+
+Jonathan Long 等人在2015年提出了一种简单的解决方案，称为全卷积网络（`KaTeX: Fully\ Convolutional\ Networks,\ FCN`）。他们使用预训练的 `KaTeX: CNN` 模型并将其转化为FCN，步骤如下：
+
+- **全卷积网络的架构**：
+  - CNN 对输入图像应用一个总体步幅为32的卷积核，这意味着输出的特征图分辨率比输入图像小 `KaTeX: 32` 倍。
+  - 这会产生过于粗糙的结果，因此作者添加了一个**上采样层**，将分辨率放大 `KaTeX: 32` 倍。
+
+- **上采样层**：
+  - 上采样的几种方法中，包括双线性插值（bilinear interpolation），但这种方法在 `KaTeX: \times 4` 或 `KaTeX: \times 8` 时效果不错，但精度不足。
+  - 更好的方法是使用**转置卷积层**（transposed convolutional layer），它通过插入空行和空列（填充为零），然后进行常规卷积来放大图像（详见 `KaTeX: Figure\ 14-28`）。
+
+- ![Figure14-28使用转置卷积层进行升采样](../assets/attachment/hands_on_machine_learning/Figure14-28使用转置卷积层进行升采样.png)**图示**：`KaTeX: Figure\ 14-28` 展示了如何通过转置卷积层进行上采样。
+
+
+
+#### 问题3：如何进一步提高上采样的精度？
+
+**解答：**
+
+使用转置卷积层进行上采样虽然有效，但仍然不够精确。Long 等人提出了以下改进：
+
+- **跳跃连接**（Skip Connections）：
+  - 他们从较低的卷积层添加了跳跃连接，例如，将输出上采样 `KaTeX: \times 2`，并将具有两倍分辨率的低层输出与其相加。
+  - 然后，将结果进一步上采样 `KaTeX: \times 16`，最终达到 `KaTeX: \times 32` 的上采样因子（详见 `KaTeX: Figure\ 14-29`）。![Figure14-29跳过图层从较低图层恢复部分空间分辨率](../assets/attachment/hands_on_machine_learning/Figure14-29跳过图层从较低图层恢复部分空间分辨率.png)
+
+- **恢复空间分辨率**：
+  - 通过这些跳跃连接，恢复了一些在早期池化层中丢失的空间分辨率。
+  - 这种架构允许模型从较低层恢复更多的细节，达到更精确的分割结果。
+
+- **超分辨率**：
+  - 通过这些步骤，模型甚至可以进一步将图像分辨率放大到超出原始图像的大小，这一技术称为**超分辨率**（super-resolution）。
+
+- **图示**：`KaTeX: Figure\ 14-29` 展示了通过跳跃连接从较低层恢复空间分辨率的过程。
+
+
+
+#### 问题4：Mask R-CNN是如何实现实例分割的？
+
+**解答：**
+
+`KaTeX: Mask\ R-CNN` 是一种扩展了 `KaTeX: Faster\ R-CNN` 的架构，它不仅生成每个物体的边界框，还为每个目标生成像素级的分割掩码。这意味着每个目标不仅会有分类和位置估计，还会生成一个像素掩码，准确地定位目标的像素。
+
+- **Mask R-CNN的工作原理**：
+  - 它首先通过边界框对每个对象进行估计，然后基于此生成一个像素掩码，将每个像素归类为特定的目标。
+  - 该模型的预训练版本可在TensorFlow Hub上找到，并在COCO 2017数据集上进行训练。
+
+- **示例**：
+  - `KaTeX: Mask\ R-CNN` 可以区分同一类别中的不同实例（例如：区分图像中的每一辆自行车）。
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                                                                                                                                                                                                                                                   | 中文翻译                                                                                              |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 1   | What are the advantages of a CNN over a fully connected DNN for image classification?                                                                                                                                                                                                                                                                       | 对于图像分类，CNN相对于全连接DNN的优势是什么？                                                        |
+| 2   | Consider a CNN composed of three convolutional layers, each with 3 × 3 kernels, a stride of 2, and "same" padding. The lowest layer outputs 100 feature maps, the middle one outputs 200, and the top one outputs 400. The input images are RGB images of 200 × 300 pixels:<br>a. What is the total number of parameters in the CNN?<br>b. If we are using 32-bit floats, at least how much RAM will this network require when making a prediction for a single instance?<br>c. What about when training on a mini-batch of 50 images? | 考虑一个由三层卷积层组成的CNN，每层都有3×3卷积核，步幅为2，并使用“same”填充。最低层输出100个特征图，中间层输出200个，顶部输出400个。输入图像是200×300像素的RGB图像：<br>a. CNN中的参数总数是多少？<br>b. 如果我们使用32位浮点数，在对单个实例进行预测时，这个网络至少需要多少RAM？<br>c. 在对50张图像的小批量进行训练时又如何？ |
+| 3   | If your GPU runs out of memory while training a CNN, what are five things you could try to solve the problem?                                                                                                                                                                                                                                               | 如果在训练CNN时GPU内存不足，你可以尝试哪些五种方法来解决问题？                                        |
+| 4   | Why would you want to add a max pooling layer rather than a convolutional layer with the same stride?                                                                                                                                                                                                                                                        | 为什么你想要添加一个最大池化层而不是具有相同步幅的卷积层？                                             |
+| 5   | When would you want to add a local response normalization layer?                                                                                                                                                                                                                                                                                            | 什么时候你会想要添加局部响应归一化层？                                                                |
+| 6   | Can you name the main innovations in AlexNet, as compared to LeNet-5? What about the main innovations in GoogLeNet, ResNet, SENet, Xception, and EfficientNet?                                                                                                                                                                                               | 你能说出AlexNet与LeNet-5相比的主要创新吗？GoogLeNet、ResNet、SENet、Xception和EfficientNet的主要创新是什么？|
+| 7   | What is a fully convolutional network? How can you convert a dense layer into a convolutional layer?                                                                                                                                                                                                                                                         | 什么是全卷积网络？你如何将密集层转换为卷积层？                                                         |
+| 8   | What is the main technical difficulty of semantic segmentation?                                                                                                                                                                                                                                                                                             | 语义分割的主要技术难点是什么？                                                                        |
+| 9   | Build your own CNN from scratch and try to achieve the highest possible accuracy on MNIST.                                                                                                                                                                                                                                                                   | 从头构建你自己的CNN，并尝试在MNIST上达到尽可能高的准确率。                                             |
+| 10  | Use transfer learning for large image classification, going through these steps:<br>a. Create a training set containing at least 100 images per class. For example, you could classify your own pictures based on the location (beach, mountain, city, etc.), or alternatively you can use an existing dataset (e.g., from TensorFlow Datasets).<br>b. Split it into a training set, a validation set, and a test set.<br>c. Build the input pipeline, apply the appropriate preprocessing operations, and optionally add data augmentation.<br>d. Fine-tune a pretrained model on this dataset. | 使用迁移学习进行大型图像分类，按照以下步骤进行：<br>a. 创建一个包含至少100张每类图像的训练集。例如，你可以根据位置（海滩、山脉、城市等）对自己的图片进行分类，或者你可以使用现有的数据集（例如来自TensorFlow数据集）。<br>b. 将其分为训练集、验证集和测试集。<br>c. 构建输入管道，应用适当的预处理操作，并可选地添加数据增强。<br>d. 在此数据集上微调预训练模型。 |
+| 11  | Go through TensorFlow’s Style Transfer tutorial. This is a fun way to generate art using deep learning.                                                                                                                                                                                                                                                      | 完成TensorFlow的风格迁移教程。这是一种使用深度学习生成艺术作品的有趣方法。                             |
+
+{.show-header .left-text}
 
 
 
