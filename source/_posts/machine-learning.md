@@ -16651,7 +16651,6 @@ Jonathan Long 等人在2015年提出了一种简单的解决方案，称为全�
 
 {.show-header .left-text}
 
-
 ## Processing Sequences Using RNNs and CNNs
 
 ### 背景
@@ -16740,7 +16739,7 @@ Jonathan Long 等人在2015年提出了一种简单的解决方案，称为全�
    ```KaTeX
    \hat{y}(t) = \phi(W_x^T x(t) + W_{\hat{y}}^T \hat{y}(t-1) + b)
    ```
-   其中，`KaTeX: b` 是偏置向量，`KaTeX: \phi(\cdot)` 是激活函数（例如 `KaTeX: ReLU`）。
+  其中，`KaTeX: b` 是偏置向量，`KaTeX: \phi(\cdot)` 是激活函数（例如 `KaTeX: ReLU`）。
 
 - **图解**：
   - ![Figure15-2一个递归神经层的展开图](../assets/attachment/hands_on_machine_learning/Figure15-2一个递归神经层的展开图.png)`KaTeX: Figure\ 15-2` 展示了递归神经层的展开图，显示了多个递归神经元在时间步骤上的工作过程。
@@ -16906,7 +16905,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    L(\hat{Y}(0), Y(0), \dots, \hat{Y}(T), Y(T))
    ```
 
-   其中 `KaTeX: \hat{Y}(i)` 是第 `KaTeX: i` 个预测，`KaTeX: Y(i)` 是第 `KaTeX: i` 个目标值，`KaTeX: T` 是最大时间步长。
+  其中 `KaTeX: \hat{Y}(i)` 是第 `KaTeX: i` 个预测，`KaTeX: Y(i)` 是第 `KaTeX: i` 个目标值，`KaTeX: T` 是最大时间步长。
 
 - **损失函数的应用**：
   - 例如，在序列到向量（sequence-to-vector）网络中，除了最后一个输出外，所有的输出都被忽略。因此，损失函数只基于最后的输出值计算。
@@ -17023,7 +17022,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    diff_7.abs().mean()
    ```
 
-   结果显示，公交乘客的 MAE 大约为 43,916 人，而铁路的 MAE 大约为 42,143 人。
+  结果显示，公交乘客的 MAE 大约为 43,916 人，而铁路的 MAE 大约为 42,143 人。
 
 - **平均绝对百分比误差（MAPE）**：
   - 为了更好地理解预测误差的相对大小，可以计算 MAPE，它衡量误差占实际值的百分比：
@@ -17032,7 +17031,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    (diff_7 / targets).abs().mean()
    ```
 
-   结果显示，公交的 MAPE 大约为 8.3%，铁路的 MAPE 大约为 9%。
+  结果显示，公交的 MAPE 大约为 8.3%，铁路的 MAPE 大约为 9%。
 
 
 
@@ -17053,7 +17052,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    plt.show()
    ```
 
-   ![Figure15-8年度季节性和长期趋势](../assets/attachment/hands_on_machine_learning/Figure15-8年度季节性和长期趋势.png)`KaTeX: Figure\ 15-8` 展示了年度季节性和长期趋势。
+  ![Figure15-8年度季节性和长期趋势](../assets/attachment/hands_on_machine_learning/Figure15-8年度季节性和长期趋势.png)`KaTeX: Figure\ 15-8` 展示了年度季节性和长期趋势。
 
 - **差分方法消除趋势**：
   - 使用12个月的差分方法来消除年度季节性和长期趋势：
@@ -17063,7 +17062,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    plt.show()
    ```
 
-   ![Figure15-9使用差分法后的结果](../assets/attachment/hands_on_machine_learning/Figure15-9使用差分法后的结果.png)`KaTeX: Figure\ 15-9` 展示了使用差分法后的结果。
+  ![Figure15-9使用差分法后的结果](../assets/attachment/hands_on_machine_learning/Figure15-9使用差分法后的结果.png)`KaTeX: Figure\ 15-9` 展示了使用差分法后的结果。
 
 
 {.marker-none}
@@ -17162,7 +17161,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    mae = (y_preds - rail_series[time_period]).abs().mean()
    ```
 
-   结果显示 `MAE` 为 `32,041`，比天真的预测方法 `42,143` 更加准确。
+  结果显示 `MAE` 为 `32,041`，比天真的预测方法 `42,143` 更加准确。
 
 {.marker-timeline}
 
@@ -17199,7 +17198,7 @@ RNN能够处理不同类型的输入和输出序列，具体有以下几种常�
    list(my_dataset)
    ```
 
-   输出为每个窗口及其目标值，示例如下：
+  输出为每个窗口及其目标值，示例如下：
 
    ```plaintext
    [([0, 1, 2], 3), ([1, 2, 3], 4), ([2, 3, 4], 5)]
@@ -17934,10 +17933,10 @@ model = tf.keras.Sequential([
 ```
 
 **解释**：
-  - **LSTM** 的核心思想是通过引入 **长时记忆状态** `KaTeX:c_t` 和 **短时记忆状态** `KaTeX:h_t` 来控制信息的传递。LSTM 使用三个重要的门控机制：
-  - **遗忘门** (`KaTeX:f_t`) 决定应该丢弃哪些信息。
-  - **输入门** (`KaTeX:i_t`) 决定哪些新的信息应该被添加到长期记忆状态。
-  - **输出门** (`KaTeX:o_t`) 控制当前时间步的输出和短时记忆。
+- **LSTM** 的核心思想是通过引入 **长时记忆状态** `KaTeX:c_t` 和 **短时记忆状态** `KaTeX:h_t` 来控制信息的传递。LSTM 使用三个重要的门控机制：
+- **遗忘门** (`KaTeX:f_t`) 决定应该丢弃哪些信息。
+- **输入门** (`KaTeX:i_t`) 决定哪些新的信息应该被添加到长期记忆状态。
+- **输出门** (`KaTeX:o_t`) 控制当前时间步的输出和短时记忆。
 
 ![Figure15-12一个LSTM单元](../assets/attachment/hands_on_machine_learning/Figure15-12一个LSTM单元.png)如 **Figure 15-12** 所示，LSTM 的工作流程如下：
 
@@ -18045,6 +18044,1745 @@ LSTM 和 GRU 单元通过门控机制有效解决了 RNN 的短期记忆问题�
 | 10  | Download the Bach chorales dataset and unzip it. It is composed of 382 chorales composed by Johann Sebastian Bach. Each chorale is 100 to 640 time steps long, and each time step contains 4 integers, where each integer corresponds to a note’s index on a piano (except for the value 0, which means that no note is played). Train a model—recurrent, convolutional, or both—that can predict the next time step (four notes), given a sequence of time steps from a chorale. Then use this model to generate Bach-like music, one note at a time: you can do this by giving the model the start of a chorale and asking it to predict the next time step, then appending these time steps to the input sequence and asking the model for the next note, and so on. Also make sure to check out Google’s Coconet model, which was used for a nice Google doodle about Bach. | 下载Bach和声数据集并解压。该数据集由Johann Sebastian Bach创作的382首和声组成。每首和声的长度从100到640个时间步不等，每个时间步包含4个整数，每个整数对应于钢琴上音符的索引（值0除外，这意味着没有音符被播放）。训练一个模型（递归、卷积或两者兼有），它能够根据和声的时间步序列预测下一个时间步（四个音符）。然后使用这个模型逐个音符生成类似Bach的音乐：你可以通过给模型提供和声的起始部分，要求它预测下一个时间步，然后将这些时间步附加到输入序列中，并要求模型预测下一个音符，依此类推。还要确保查看Google的Coconet模型，该模型被用于一个与Bach相关的Google涂鸦。 |
 
 {.show-header .left-text}
+
+## Natural Language Processing with RNNs and Attention
+
+### NLP背景
+
+#### 问题 1: 什么是图灵测试？它与自然语言处理有何关系？
+
+**关键点**：  
+图灵测试由 Alan Turing 于 1950 年提出，旨在评估机器是否能够与人类进行智能对话。Turing 选择了语言作为机器智能的测试基础，即要求机器能够通过语言交流，欺骗人类对话者，使其认为自己是在与另一名人类交谈。
+
+**解释**：
+图灵测试本质上是一种**语言任务**，因此它与**自然语言处理（NLP）**有直接关系。该测试对机器的语言能力提出了极高的要求，因为它不仅需要理解自然语言，还需要做出看似合理的回应。这也是现代 NLP 研究的核心目标之一，即开发能够理解和生成自然语言的机器。
+
+
+
+#### 问题 2: 现代自然语言处理的目标是什么？
+
+**关键点**：  
+现代 NLP 的目标是开发能够理解和生成书面和口语语言的机器。然而，这一目标过于宽泛，因此研究人员通常会专注于具体的任务，例如：
+- **文本分类**：如情感分析。
+- **翻译**：神经机器翻译（NMT）。
+- **问答**：开发能够回答问题的系统。
+- **文本摘要**：生成段落或文章的简要总结。
+
+这些任务的共同点是，它们都需要机器具有强大的语言理解能力和生成能力。
+
+
+
+#### 问题 3: 如何利用 RNN 构建自然语言模型？
+
+**关键点**：  
+RNN（递归神经网络）是一种常见的用于处理自然语言任务的网络架构。由于语言是有序的，RNN 可以通过其循环结构有效地捕捉句子中单词或字符之间的序列依赖。
+
+我们将从一个**字符 RNN（char-RNN）** 开始，训练其预测句子中的下一个字符。然后，我们将扩展到**有状态 RNN（stateful RNN）**，它能够在多次训练迭代之间保持隐藏状态，从而学习更长的模式。
+
+
+
+#### 问题 4: 如何使用无状态 RNN 生成文本？
+
+**关键点**：  
+**无状态 RNN**（stateless RNN）在每次训练迭代之间不会保留其隐藏状态。这意味着它只能根据当前的输入生成下一个字符或单词，而无法记住更早的信息。这种 RNN 适用于较短的序列，无法处理长期依赖。
+
+
+
+#### 问题 5: 什么是有状态 RNN？它如何帮助处理长序列？
+
+**关键点**：  
+**有状态 RNN**（stateful RNN）通过在多次训练迭代之间保留其隐藏状态，使其能够在处理长序列时捕捉更长时间跨度上的依赖关系。每次输入新数据时，它会继续从上次结束的地方学习，而不会从头开始。
+
+**解释**：  
+在情感分析或机器翻译等任务中，有状态 RNN 可以记住句子开头的信息，从而在分析句子时产生更一致的预测结果。
+
+
+
+#### 问题 6: 什么是 Encoder-Decoder 架构？它在 NLP 中的应用是什么？
+
+**关键点**：  
+**Encoder-Decoder** 架构是一种常用于神经机器翻译（NMT）和其他生成任务的结构。它由两个部分组成：
+- **Encoder**：将输入序列编码成一个固定长度的向量，通常为隐藏状态向量。
+- **Decoder**：从该隐藏状态向量开始，生成目标语言的输出序列。
+
+该架构使模型能够从一种语言（如英语）翻译成另一种语言（如西班牙语），这在 NLP 中具有广泛应用。
+
+
+
+#### 问题 7: 注意力机制如何提升 RNN 的性能？
+
+**关键点**：  
+**注意力机制** 是一种增强 RNN 性能的技术。它允许模型在生成每个输出时动态地关注输入序列的不同部分，而不仅仅依赖于最后一个隐藏状态。通过注意力，模型可以在不同时间步选择性地关注与当前任务相关的输入信息。
+
+**解释**：  
+例如，在翻译任务中，注意力机制允许模型在生成句子中的每个单词时，关注源句子中不同单词的隐藏表示，这可以大大提升翻译质量。
+
+
+
+#### 问题 8: 什么是 Transformer？它为什么不需要 RNN？
+
+**关键点**：  
+**Transformer** 是一种完全基于注意力机制的神经网络架构，**不需要使用 RNN**。与传统 RNN 不同，Transformer 使用并行计算，能够更高效地处理长序列任务，同时通过自注意力机制捕捉序列中的依赖关系。
+
+**解释**：  
+Transformer 架构已经在 NLP 领域取得了巨大的成功，特别是在大型预训练语言模型（如 GPT 和 BERT）的发展中。它的速度更快，效果更好，因为它不依赖于顺序计算，可以同时处理输入的所有部分。
+
+
+
+#### 问题 9: 如何使用 Hugging Face 的 Transformer 库？
+
+**关键点**：  
+Hugging Face 提供了开源的 **Transformers 库**，允许用户轻松加载和使用预训练的 Transformer 模型。这个库支持多种 NLP 任务，例如文本分类、翻译和生成。
+
+**解释**：  
+使用 Hugging Face 的库，用户可以快速加载像 GPT-2 或 BERT 这样的模型，并将其用于自己的任务，显著缩短了模型开发时间。
+
+
+
+#### 总结：
+在本章中，我们将深入探索 RNN 在 NLP 任务中的应用，包括如何构建字符级和词级 RNN 模型，使用 Encoder-Decoder 架构进行翻译，并通过注意力机制提升性能。此外，我们还将研究 Transformer 模型，这是一种不依赖 RNN 的架构，并学习如何使用 Hugging Face 的库来快速应用预训练的 Transformer 模型。
+
+
+{.marker-none}
+
+### 使用字符 RNN 生成类似莎士比亚的文本
+
+#### 问题 1: 如何使用字符RNN生成类似莎士比亚的文本？
+
+**关键点**：  
+字符 RNN（char-RNN）是一种基于字符序列训练的递归神经网络模型。它可以根据输入文本的字符序列来预测下一个字符，逐字符生成新的文本。通过学习字符之间的依赖关系，模型可以生成类似于训练数据的句子和段落。
+
+
+
+#### 问题 2: Karpathy在2015年的研究中是如何展示字符RNN的效果的？
+
+**关键点**：  
+在 2015 年，Andrej Karpathy 在他的博文《The Unreasonable Effectiveness of Recurrent Neural Networks》中展示了字符 RNN 的强大能力。通过训练字符 RNN 来预测句子中的下一个字符，Karpathy 证明了这种模型能够生成具有一定语言结构的新文本。
+
+一个典型的应用是训练模型生成类似于莎士比亚风格的文本。下列是一个训练后的字符 RNN 模型生成的示例：
+
+```
+PANDARUS:
+Alas, I think he shall be come approached and the day
+When little srain would be attain'd into being never fed,
+And who is but a chain and subjects of his death,
+I should not sleep.
+```
+
+虽然这些生成的文本并不是完美的，但令人印象深刻的是，模型仅通过学习预测下一个字符就能够掌握基本的词汇、语法和标点符号。
+
+
+
+#### 问题 3: 生成的莎士比亚文本展示了语言模型的哪些特性？
+
+**关键点**：  
+这个例子展示了字符 RNN 可以作为一个简单的**语言模型**。该模型学会了如何生成符合语法规则和基本词汇结构的文本，尽管生成的文本有时没有完全的语义逻辑。
+
+语言模型的关键在于它通过学习大量的文本数据，逐字符或逐词预测下一个元素的方式来生成文本。现代 NLP 任务中的更强大的语言模型（如 GPT 和 BERT）也是基于类似的原理，只是它们在规模和能力上得到了显著扩展。
+
+
+
+#### 小结
+
+通过训练字符 RNN 生成类似莎士比亚的文本，我们展示了递归神经网络在语言建模中的应用。虽然生成的文本并不完美，但字符 RNN 展现了其在学习词汇、语法和标点符号方面的潜力。在接下来的部分中，我们将逐步构建一个字符 RNN 模型，展示如何从数据集创建到最终生成文本。
+
+{.marker-none}
+
+### 下载准备莎士比亚文本作为训练数据集
+
+#### 问题 1: 如何下载并准备莎士比亚的文本作为训练数据集？
+
+**关键点**：  
+使用 Keras 的 `tf.keras.utils.get_file()` 函数可以方便地下载数据集。在此示例中，我们下载的是 Andrej Karpathy 的字符 RNN 项目中提供的所有莎士比亚作品。我们会对文本进行预处理，编码为字符 ID，并将其转化为训练 RNN 模型所需的输入和输出。
+
+```python
+import tensorflow as tf
+
+shakespeare_url = "https://homl.info/shakespeare"  # shortcut URL
+filepath = tf.keras.utils.get_file("shakespeare.txt", shakespeare_url)
+with open(filepath) as f:
+    shakespeare_text = f.read()
+```
+
+
+
+#### 问题 2: 如何查看下载的数据集并将其编码为字符级别的表示？
+
+**关键点**：  
+通过打印莎士比亚文本的前几行来检查数据集是否正确下载。然后使用 Keras 的 `TextVectorization` 层将文本转化为字符级别的整数编码。
+
+```python
+# 打印前 80 个字符
+print(shakespeare_text[:80])
+
+# 使用 TextVectorization 将字符转化为 ID
+text_vec_layer = tf.keras.layers.TextVectorization(split="character", standardize="lower")
+text_vec_layer.adapt([shakespeare_text])
+encoded = text_vec_layer([shakespeare_text])[0]
+```
+
+每个字符都会被映射为一个从 2 开始的整数。`TextVectorization` 层将 0 保留给填充标记，1 保留给未知字符（我们不需要这两个标记）。
+
+
+
+#### 问题 3: 如何处理字符 ID 并计算字符总数和字符种类？
+
+**关键点**：  
+我们需要从字符 ID 中减去 2，以便 0 和 1 对应的填充和未知标记不会被使用。然后计算有多少不同字符和字符总数：
+
+```python
+# 减去 2 处理字符 ID
+encoded -= 2  # pad tokens (0) and 1 (unknown), which we will not use
+n_tokens = text_vec_layer.vocabulary_size() - 2  # 共有多少种字符
+dataset_size = len(encoded)  # 总字符数
+```
+
+在此示例中，总共有 39 种不同的字符，且字符总数为 1,115,394。
+
+
+
+#### 问题 4: 如何将字符序列转化为 RNN 训练所需的数据集？
+
+**关键点**：  
+我们将长字符序列切分为若干窗口（window），每个窗口代表输入，目标是预测下一个字符。我们写了一个 `to_dataset` 的函数将序列转化为输入和目标对。
+
+```python
+def to_dataset(sequence, length, shuffle=False, seed=None, batch_size=32):
+    ds = tf.data.Dataset.from_tensor_slices(sequence)
+    ds = ds.window(length + 1, shift=1, drop_remainder=True)
+    ds = ds.flat_map(lambda window_ds: window_ds.batch(length + 1))
+    if shuffle:
+        ds = ds.shuffle(buffer_size=100_000, seed=seed)
+    ds = ds.batch(batch_size)
+    return ds.map(lambda window: (window[:, :-1], window[:, 1:])).prefetch(1)
+```
+
+
+
+#### 图解：**Figure 16-1** 数据集准备步骤
+
+![Figure16-1数据集准备步骤](../assets/attachment/hands_on_machine_learning/Figure16-1数据集准备步骤.png)如 **Figure 16-1** 所示，数据集的准备过程可以概括为：
+
+- 对文本创建窗口：每个窗口为长度 11。
+- 将窗口的前 10 个字符作为输入，最后一个字符作为目标。
+- 打乱、批量处理，并将结果映射为输入/输出对。
+
+
+
+#### 问题 5: 如何创建训练集、验证集和测试集？
+
+**关键点**：  
+通过将文本按比例划分为训练集、验证集和测试集，我们可以分别对模型进行训练和评估。我们使用 90% 的文本作为训练集，5% 用作验证集，5% 用作测试集。
+
+```python
+length = 100
+tf.random.set_seed(42)
+
+train_set = to_dataset(encoded[:1_000_000], length=length, shuffle=True, seed=42)
+valid_set = to_dataset(encoded[1_000_000:1_060_000], length=length)
+test_set = to_dataset(encoded[1_060_000:], length=length)
+```
+
+**提示**：设置窗口长度为 100，但你可以尝试调节它。较短的窗口使训练更快，但窗口过短可能无法学习超过窗口长度的模式。
+
+
+
+**总结**：  
+数据集的准备是构建 RNN 模型的第一步，也是最具挑战的一步。我们从下载莎士比亚文本开始，对其进行字符级编码，创建输入/输出对，并将数据集划分为训练集、验证集和测试集。接下来，我们将创建模型并进行训练。
+
+{.marker-none}
+
+### 构建并训练Char-RNN模型
+
+#### 问题 1: 如何构建并训练 Char-RNN 模型？
+
+**关键点**：  
+由于我们的数据集较大，且语言建模是一项复杂任务，我们需要构建一个具有足够复杂性的 RNN 模型。在此示例中，我们将构建一个带有 128 个单元的 GRU 层和一个 Embedding 层的模型。你也可以根据需求调整层数和单元数。
+
+```python
+# 构建 Char-RNN 模型
+model = tf.keras.Sequential([
+    tf.keras.layers.Embedding(input_dim=n_tokens, output_dim=16),
+    tf.keras.layers.GRU(128, return_sequences=True),
+    tf.keras.layers.Dense(n_tokens, activation="softmax")
+])
+
+# 编译模型
+model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam", metrics=["accuracy"])
+
+# 使用 ModelCheckpoint 回调函数保存最佳模型
+model_ckpt = tf.keras.callbacks.ModelCheckpoint(
+    "my_shakespeare_model", monitor="val_accuracy", save_best_only=True
+)
+
+# 训练模型
+history = model.fit(train_set, validation_data=valid_set, epochs=10, callbacks=[model_ckpt])
+```
+
+
+
+#### 问题 2: 模型中的每一层的功能是什么？
+
+**关键点**：
+- **Embedding 层**：将字符 ID 映射到对应的嵌入向量。嵌入维度为 16，表示每个字符 ID 被映射到一个长度为 16 的向量。
+    - 输入：2D tensor，形状为 `[batch_size, window_length]`。
+    - 输出：3D tensor，形状为 `[batch_size, window_length, embedding_size]`。
+
+- **GRU 层**：该层有 128 个 GRU 单元，能够捕捉字符序列中的依赖关系，并输出一个时间步序列。
+    - 使用 `return_sequences=True` 来返回整个序列的输出。
+
+- **Dense 层**：输出层包含 39 个单元（因为我们有 39 种不同的字符），并使用 softmax 激活函数输出每个字符的概率。
+
+
+
+#### 问题 3: 模型的损失函数和优化器是什么？
+
+**关键点**：
+- 我们使用了 `sparse_categorical_crossentropy` 作为损失函数，因为我们有多个字符类别需要进行分类。
+- 优化器选择了 `Nadam`，它结合了 Adam 优化器和 Nesterov 动量，是训练 RNN 的一个高效选择。
+
+训练过程中，我们还使用 `ModelCheckpoint` 回调函数保存验证集上最佳性能的模型。
+
+
+
+#### 问题 4: 如何对模型进行文本预处理和预测？
+
+**关键点**：  
+为了简化预测过程，我们将文本预处理部分与模型合并在一起，使用 Keras 的 `TextVectorization` 层和 Lambda 层。这样我们就不需要手动对文本进行编码和解码。
+
+```python
+shakespeare_model = tf.keras.Sequential([
+    text_vec_layer,
+    tf.keras.layers.Lambda(lambda X: X - 2),  # 不使用 <PAD> 和 <UNK> token
+    model
+])
+```
+
+**预测下一个字符**：
+
+```python
+# 模型预测句子中的下一个字符
+y_proba = shakespeare_model.predict(["To be or not to b"])[:, -1]
+y_pred = tf.argmax(y_proba)  # 选择最可能的字符 ID
+text_vec_layer.get_vocabulary()[y_pred + 2]  # 解码字符
+```
+
+在这个示例中，模型正确预测了下一个字符是 `'e'`。
+
+
+
+#### 总结：
+在这一节中，我们构建了一个带有嵌入层、GRU 层和全连接层的字符级 RNN 模型。我们训练了该模型并通过回调函数保存最佳性能的模型。之后，我们将模型与文本预处理结合在一起，能够直接输入文本进行字符预测。接下来，我们将进一步利用此模型生成类似莎士比亚的文本。
+
+{.marker-none}
+
+### 生成类似莎士比亚风格的文本
+
+#### 问题 1: 如何生成类似莎士比亚风格的文本？
+
+**关键点**：  
+要生成新的文本，我们可以使用已经训练好的字符 RNN 模型。最简单的方法是使用**贪婪解码**（greedy decoding），即让模型预测最有可能的下一个字符，并将其添加到文本中，然后继续用扩展后的文本预测下一个字符。然而，贪婪解码容易导致生成重复的字符或单词，因此我们采用更为多样的**随机采样**技术来生成更有趣和多样化的文本。
+
+```python
+# 使用 tf.random.categorical() 函数按概率随机采样字符
+log_probas = tf.math.log([0.5, 0.4, 0.1])  # 概率 50%、40%、10%
+tf.random.set_seed(42)
+tf.random.categorical(log_probas, num_samples=8)
+```
+
+**解释**：
+我们使用 TensorFlow 的 `tf.random.categorical()` 函数根据模型的输出概率随机采样字符，这样可以生成更多元化的文本。这样的方法避免了重复生成相同的字符序列。
+
+
+
+#### 问题 2: 如何通过控制**温度**来调节生成文本的多样性？
+
+**关键点**：  
+为了更好地控制生成文本的多样性，我们可以调整一个叫做**温度**（temperature）的参数。温度影响生成文本时的多样性，高温度值会赋予每个字符较为均等的概率，低温度则倾向于选择高概率的字符。
+
+```python
+# 定义用于选择下一个字符的函数
+def next_char(text, temperature=1):
+    y_proba = shakespeare_model.predict([text])[0, -1]
+    rescaled_logits = tf.math.log(y_proba) / temperature
+    char_id = tf.random.categorical(rescaled_logits, num_samples=1)[0, 0]
+    return text_vec_layer.get_vocabulary()[char_id + 2]
+```
+
+**解释**：
+- 温度值越低，模型越倾向于选择高概率的字符，生成的文本更精确但缺乏创造性。
+- 温度值越高，所有字符的概率越接近，生成的文本则会更加多样化，但可能缺乏一致性。
+
+
+
+#### 问题 3: 如何生成完整的句子？
+
+**关键点**：  
+我们可以通过一个辅助函数 `extend_text()` 来重复调用 `next_char()` 函数生成多个字符，直到构建出完整的句子。
+
+```python
+# 扩展文本，生成更多字符
+def extend_text(text, n_chars=50, temperature=1):
+    for _ in range(n_chars):
+        text += next_char(text, temperature)
+    return text
+```
+
+**解释**：
+- 我们通过设置 `n_chars` 参数来控制生成的字符数量。
+- 调整 `temperature` 参数可以生成不同多样性和风格的文本。
+
+
+
+#### 问题 4: 温度对生成的文本有何影响？
+
+**关键点**：  
+通过不同的温度值生成的文本可以展现多样性。温度越低，文本越倾向于合理且连贯；温度越高，生成的文本越发散且不可预测。
+
+```python
+tf.random.set_seed(42)
+
+# 低温度生成结果（温度=0.01）
+print(extend_text("To be or not to be", temperature=0.01))
+# 结果：
+# To be or not to be the duke as it is a proper strange death, and the...
+
+# 中等温度生成结果（温度=1）
+print(extend_text("To be or not to be", temperature=1))
+# 结果：
+# To be or not to behold? gremio, lord all, a sistermen...
+
+# 高温度生成结果（温度=100）
+print(extend_text("To be or not to be", temperature=100))
+# 结果：
+# To be or not to bef ,mt&co3fpadm!$
+```
+
+**解释**：
+- **低温度**：生成的文本比较一致且具有连贯性，且更加符合训练数据的风格。
+- **中等温度**：生成的文本既有一定创造性，又保持了基本的句子结构。
+- **高温度**：生成的文本则过于随机，缺乏语法和语义上的连贯性。
+
+
+
+#### 问题 5: 如何生成更有逻辑的文本？
+
+**关键点**：
+- 一种常见技术是使用**top-k 采样**，即只从概率最高的 k 个字符中进行采样，从而限制随机性并提高生成文本的逻辑性。
+- 另一种技术是**核采样**（nucleus sampling），即从概率总和超过一定阈值的字符中进行采样。
+- 我们还可以使用**beam search** 来生成文本，这种方法会在后续章节中讨论。
+
+**提示**：对于更长的序列或更复杂的文本生成任务，可以尝试使用更多的 GRU 层、增加每层的神经元数量、或增加正则化技术来改进模型性能。
+
+
+
+#### 总结：
+我们通过训练的字符 RNN 模型生成了类似于莎士比亚风格的文本，并通过调整温度参数来控制文本生成的多样性。低温度生成的文本较为保守和连贯，高温度则生成了更多具有创造性的文本。为了生成更为合理且连贯的文本，我们还可以进一步使用其他技术，例如 top-k 采样或 beam search。
+
+{.marker-none}
+
+### Stateful RNN
+
+#### 问题 1: 什么是 Stateful RNN？它与 Stateless RNN 有什么区别？
+
+**关键点**：  
+到目前为止，我们只使用了**无状态的 RNN（stateless RNN）**。每次训练时，模型都会从零开始，丢弃之前的隐藏状态。然而，在一些情况下，我们希望模型记住前一批训练数据中的状态，以学习长时间序列的模式。这就是**有状态的 RNN（stateful RNN）**。Stateful RNN 会将处理批次后的最终状态保留，并作为下一个批次的初始状态，允许模型学习跨越多个批次的长时间依赖关系。
+
+
+
+#### 问题 2: 如何为 Stateful RNN 准备数据集？
+
+**关键点**：  
+与无状态 RNN 不同，Stateful RNN 需要确保每个输入序列与前一个序列在逻辑上连续。因此，我们不能像以前那样使用重叠和乱序的输入序列。我们需要构建**非重叠**的序列，每个序列紧接着前一个序列。
+
+```python
+# 创建适用于 Stateful RNN 的数据集
+def to_dataset_for_stateful_rnn(sequence, length):
+    ds = tf.data.Dataset.from_tensor_slices(sequence)
+    ds = ds.window(length + 1, shift=length, drop_remainder=True)
+    ds = ds.flat_map(lambda window: window.batch(length + 1)).batch(1)
+    return ds.map(lambda window: (window[:, :-1], window[:, 1:])).prefetch(1)
+```
+
+这个函数与我们之前使用的函数类似，但它使用了非重叠的序列，且 `shift=length`，即每个窗口的步长等于序列长度，确保它们不重叠。
+
+**数据集的准备步骤图解**：
+![Figure16-2为有状态RNN准备连续序列片段数据集](../assets/attachment/hands_on_machine_learning/Figure16-2为有状态RNN准备连续序列片段数据集.png)如**Figure 16-2**所示，我们将窗口中的序列转化为输入和目标对，并按批次划分。
+
+
+
+#### 问题 3: 如何创建 Stateful RNN 模型？
+
+**关键点**：  
+Stateful RNN 模型的关键是使用 Keras 的 `stateful=True` 参数，并且模型需要知道批次大小（因为它将为每个输入序列保留状态）。我们在构建模型时必须设置 `batch_input_shape` 参数。
+
+```python
+# 创建 Stateful RNN 模型
+model = tf.keras.Sequential([
+    tf.keras.layers.Embedding(input_dim=n_tokens, output_dim=16, batch_input_shape=[1, None]),
+    tf.keras.layers.GRU(128, return_sequences=True, stateful=True),
+    tf.keras.layers.Dense(n_tokens, activation="softmax")
+])
+```
+
+
+
+#### 问题 4: 如何处理每个 epoch 结束时的状态？
+
+**关键点**：  
+由于 RNN 的状态会在批次之间保留，我们需要在每个 epoch 的开始时**重置模型的状态**，以确保模型从头开始处理文本。
+
+```python
+# 自定义回调函数：重置状态
+class ResetStatesCallback(tf.keras.callbacks.Callback):
+    def on_epoch_begin(self, epoch, logs):
+        self.model.reset_states()
+```
+
+在每个 epoch 的开始时，我们调用 `model.reset_states()` 来重置模型状态。
+
+
+
+#### 问题 5: 如何编译和训练 Stateful RNN 模型？
+
+**关键点**：  
+在训练模型时，我们使用 `sparse_categorical_crossentropy` 损失函数和 `Nadam` 优化器，与之前的模型一致。此外，我们添加了自定义的 `ResetStatesCallback` 以在每个 epoch 开始时重置模型状态。
+
+```python
+model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam", metrics=["accuracy"])
+
+# 训练模型
+history = model.fit(stateful_train_set, validation_data=stateful_valid_set, epochs=10, callbacks=[ResetStatesCallback(), model_ckpt])
+```
+
+**提示**：Stateful RNN 模型只能对训练时使用的相同批次大小的序列进行预测。如果你需要对不同大小的序列进行预测，可以创建一个**无状态的模型**，并将 stateful 模型的权重复制到无状态模型中。
+
+
+
+#### 问题 6: Char-RNN 模型能够学习到高级别的任务吗？
+
+**关键点**：  
+虽然字符 RNN 模型主要用于预测下一个字符，但它实际上能够在此过程中学习更高级别的任务。比如，通过上下文来判断情感倾向。一个经典示例是 OpenAI 在 2017 年发表的研究，他们发现一个类似 Char-RNN 模型的神经元可以自动作为情感分析器——称为**情感神经元**。这激发了后来在 NLP 领域的无监督预训练方法。
+
+
+
+#### 总结：
+我们学习了如何构建和训练一个 Stateful RNN 模型。与 Stateless RNN 不同，Stateful RNN 能够保留批次间的状态，允许模型学习长时间序列的依赖关系。通过适当的数据准备和自定义回调函数，我们成功训练了一个能够记住上下文的字符 RNN 模型。接下来，我们将探索如何处理不同长度的序列，并进一步应用于情感分析等任务。
+
+{.marker-none}
+
+### 情感分析
+
+#### 问题 1: 什么是情感分析 (Sentiment Analysis)，以及 IMDb 数据集的特点是什么？
+
+**关键点**：
+- 情感分析是 NLP 中最常见的任务之一，主要用于识别文本表达的情感（例如，电影评论中的积极或消极情感）。
+- **IMDb 数据集**包含 50,000 条英文电影评论，评论分为两部分：25,000 条用于训练，25,000 条用于测试。每条评论都有一个简单的二元标签，0 表示消极，1 表示积极。
+
+```python
+import tensorflow_datasets as tfds
+
+# 加载 IMDb 数据集
+raw_train_set, raw_valid_set, raw_test_set = tfds.load(
+    name="imdb_reviews",
+    split=["train[:90%]", "train[90%:]", "test"],
+    as_supervised=True
+)
+
+# 设置数据集
+train_set = raw_train_set.shuffle(5000, seed=42).batch(32).prefetch(1)
+valid_set = raw_valid_set.batch(32).prefetch(1)
+test_set = raw_test_set.batch(32).prefetch(1)
+```
+
+**提示**：Keras 也提供了 `tf.keras.datasets.imdb.load_data()` 方法来加载 IMDb 数据集，该方法已经将评论预处理为单词 ID 序列。
+
+
+
+#### 问题 2: 为什么一些评论的情感容易分类，而另一些则很难？
+
+**关键点**：
+- 有些评论非常明确地表达了情感，例如包含“terrible movie”这样的词，这显然是一条消极评论。
+- 但有些评论情感表达复杂，可能开头是积极的，但最后是消极的，这样的评论就很难分类。
+
+通过以下代码可以查看部分评论和标签：
+
+```python
+# 查看部分电影评论及其标签
+for review, label in raw_train_set.take(4):
+    print(review.numpy().decode("utf-8"))
+    print("Label:", label.numpy())
+```
+
+
+
+#### 问题 3: 如何预处理文本以用于模型训练？
+
+**关键点**：
+- 我们使用 `tf.keras.layers.TextVectorization` 层将文本划分为单词，而不是字符。为了提高训练效率，我们限制词汇表的大小为 1,000（包括填充词和未知词）。
+- 该词汇表只保留最常见的 998 个单词，再加上填充词和未知词。
+
+```python
+vocab_size = 1000
+text_vec_layer = tf.keras.layers.TextVectorization(max_tokens=vocab_size)
+text_vec_layer.adapt(train_set.map(lambda reviews, labels: reviews))
+```
+
+
+
+#### 问题 4: 如何构建和训练情感分析模型？
+
+**关键点**：
+- 模型首先使用 `TextVectorization` 层对单词进行编码，接着是一个 `Embedding` 层，用于将单词 ID 转换为嵌入向量。
+- 然后使用 GRU 层来处理序列信息，最后一个 `Dense` 层输出预测结果。
+- 由于这是一个二分类问题，激活函数使用 `sigmoid`，损失函数为 `binary_crossentropy`。
+
+```python
+embed_size = 128
+model = tf.keras.Sequential([
+    text_vec_layer,
+    tf.keras.layers.Embedding(vocab_size, embed_size),
+    tf.keras.layers.GRU(128),
+    tf.keras.layers.Dense(1, activation="sigmoid")
+])
+
+# 编译和训练模型
+model.compile(loss="binary_crossentropy", optimizer="nadam", metrics=["accuracy"])
+history = model.fit(train_set, validation_data=valid_set, epochs=2)
+```
+
+
+#### 问题 5: 为什么模型的初始表现不佳？如何改进？
+
+**关键点**：
+- 初始模型可能表现不佳（准确率约为 50%），原因在于文本长度的不同。长文本在转化为单词 ID 时会用大量的填充词（padding token，ID 为 0）来填充，这会导致模型关注填充词而忽略实际文本内容。
+- 为了解决这个问题，有两种常见的解决方案：
+    - **使用等长的文本序列**，这可以通过选择具有相同长度的评论进行训练。
+    - **使用 Masking**，使模型忽略填充词。
+
+
+
+总结：  
+在这一节中，我们学习了如何构建和训练一个简单的情感分析模型。首先，我们通过 `TextVectorization` 层将文本转换为单词 ID，然后使用嵌入和 GRU 层来处理这些序列。虽然模型的初始表现不佳，但通过 Masking 或等长序列训练可以显著提高模型效果。
+
+{.marker-none}
+
+### 掩码
+
+#### 问题1：在自然语言处理模型中，如何处理填充标记（padding tokens）？
+
+**背景**：
+在处理序列数据（例如文本数据）时，通常需要对输入进行填充，使其具有相同的长度。然而，填充标记不应影响模型的训练，因为它们不包含有用的信息。
+
+**解答**：
+在 Keras 中，处理填充标记（即让模型忽略它们）可以通过在创建 `Embedding` 层时设置 `mask_zero=True` 来实现。这意味着 ID 为 0 的填充标记将被模型自动忽略。
+
+**代码示例**：
+
+```python
+embedding_layer = tf.keras.layers.Embedding(input_dim=vocab_size, 
+                                            output_dim=embed_size, 
+                                            mask_zero=True)
+```
+
+如果对之前的模型进行几次重新训练，你会发现验证准确度很快就能达到80%以上。
+
+#### 问题2：Keras 中 `Embedding` 层的掩码（mask）机制是如何工作的？
+
+**解答**：
+当 `mask_zero=True` 时，`Embedding` 层会创建一个与输入相同形状的 `mask tensor`。这个掩码张量使用以下代码生成：
+
+```python
+mask_tensor = tf.math.not_equal(inputs, 0)
+```
+
+`mask_tensor` 是一个布尔张量，其中 token ID 为 0 的位置会被标记为 `False`，其他位置则标记为 `True`。
+
+#### 问题3：掩码张量在模型中是如何传播的？
+
+**解答**：
+掩码张量会自动从一层传播到下一层。如果某一层的 `call()` 方法包含 `mask` 参数，那么该层会自动接收并应用这个掩码。这允许模型忽略被掩码的时间步长。
+
+例如，如果一个循环层在处理掩码时间步时，它会复制前一个时间步的输出。
+
+#### 问题4：Keras 层的 `supports_masking` 属性是如何工作的？
+
+**解答**：
+如果一层的 `supports_masking` 属性为 `True`，那么掩码会自动从该层传播到下一层。这种掩码传播机制在所有支持 masking 的层中持续进行，直到不再需要掩码。例如，`GRU` 或 `LSTM` 层的 `supports_masking` 属性会在 `return_sequences=True` 时生效，但当 `return_sequences=False` 时，掩码将不再传播。
+
+如果模型中有多层循环网络，并且某一层设置了 `return_sequences=False`，掩码将会在那一层停止传播。
+
+#### 问题5：如果模型没有 `Embedding` 层，如何实现掩码机制？
+
+**解答**：
+如果模型没有使用 `Embedding` 层，也可以通过 `Masking` 层来实现掩码机制。默认情况下，`Masking` 层会将所有值为 0 的时间步掩盖掉。
+
+**代码示例**：
+
+```python
+masking_layer = tf.keras.layers.Masking(mask_value=0.0)
+```
+
+这将在模型中的任何位置插入一个 `Masking` 层，忽略值为 0 的输入。
+
+#### 问题6：掩码机制与自定义层如何配合？
+
+**解答**：
+如果要实现自定义层并支持掩码机制，需在该层的 `call()` 方法中加入 `mask` 参数，确保该层能够接收掩码并正确处理。
+
+此外，如果掩码需要在该层之后继续传播，需要在构造函数中将 `self.supports_masking=True`，并在需要更新掩码时实现 `compute_mask()` 方法。
+
+#### 问题7：哪些层支持掩码机制？
+
+**解答**：
+Keras 中许多层都支持掩码机制，包括：
+- `SimpleRNN`
+- `GRU`
+- `LSTM`
+- `Bidirectional`
+- `Dense`
+- `TimeDistributed`
+- `Add`
+
+然而，卷积层（例如 `Conv1D`）并不支持掩码机制。
+
+#### 问题8：使用 Ragged tensors 进行序列处理的掩码机制是怎样的？
+
+**解答**：
+Keras 支持使用 `Ragged tensors` 处理不规则的序列，这意味着不需要使用填充标记。通过将 `ragged=True` 传递给 `TextVectorization` 层，可以使用不规则的张量来表示输入序列。
+
+**代码示例**：
+
+```python
+text_vec_layer_ragged = tf.keras.layers.TextVectorization(
+    max_tokens=vocab_size, ragged=True
+)
+```
+
+这将确保输入序列能够以不规则张量的形式表示，并且自动处理掩码机制。
+
+{.marker-none}
+
+### 重用预训练的嵌入（embeddings）和语言模型
+
+#### 问题1：为什么要重用预训练的嵌入（embeddings）和语言模型？
+
+**背景**：
+模型可以通过 25,000 个影评训练出有效的词嵌入，但设想一下，如果我们有亿万条评论来训练，效果会更好。然而，我们并没有那么多的评论可用。因此，我们可以利用一些大型语料库上训练好的词嵌入。
+
+**解答**：
+可以使用已经预训练好的词嵌入，这些词嵌入即使在与目标任务不完全相关的语料库上训练（如亚马逊评论），也能在情感分析等任务中表现良好。例如，像“awesome”和“amazing”这些词汇的嵌入会彼此接近，因此对于情感分析任务非常有用。
+
+可以使用以下几种流行的预训练词嵌入：
+- **Google’s Word2vec embeddings**
+- **Stanford’s GloVe embeddings**
+- **Facebook’s FastText embeddings**
+
+#### 问题2：预训练词嵌入的局限性是什么？
+
+**解答**：
+预训练的词嵌入虽然有助于解决许多问题，但也有一些局限性。特别是每个词在嵌入中只有一个表示，无论上下文。例如，词汇 `KaTeX:right` 无论是在“left and right”还是在“right and wrong”中，都会被编码为相同的表示，虽然在这两个例子中的含义完全不同。
+
+为了解决这个问题，**2018 年的一篇论文**（Matthew Peters 等人）提出了 **ELMo (Embeddings from Language Models)**，这是一种通过双向语言模型内部状态学习到的上下文相关的词嵌入方法。
+
+#### 问题3：什么是 ELMo，为什么它比静态词嵌入更强大？
+
+**解答**：
+**ELMo** 是一种从语言模型中获取嵌入的技术，与静态词嵌入不同，ELMo 可以根据不同的上下文生成不同的词表示。这是通过深度双向语言模型的内部状态学习实现的。使用 ELMo，不仅仅是简单地使用预训练的词嵌入，还可以重用部分预训练语言模型。
+
+#### 问题4：Universal Language Model Fine-Tuning (ULMFiT) 是什么，它有何优势？
+
+**解答**：
+**Universal Language Model Fine-Tuning (ULMFiT)** 是 Jeremy Howard 和 Sebastian Ruder 提出的一种方法，展示了在 NLP 任务中无监督预训练的有效性。作者训练了一个 LSTM 语言模型，并通过微调实现了多个任务的顶尖性能。
+
+ULMFiT 展现了强大的泛化能力，作者展示了只需 100 个标注样本的微调模型可以达到在 10,000 个样本上从头训练的模型相同的性能。这篇论文标志着 NLP 中预训练语言模型的新时代。
+
+#### 问题5：如何基于预训练语言模型构建一个分类器？
+
+**解答**：
+可以通过 TensorFlow Hub 提供的预训练模型来构建分类器。以 **Universal Sentence Encoder** 为例，它基于 transformer 架构，并可以进行微调。
+
+**代码示例**：
+
+```python
+import os
+import tensorflow_hub as hub
+
+os.environ["TFHUB_CACHE_DIR"] = "my_tfhub_cache"
+
+model = tf.keras.Sequential([
+    hub.KerasLayer("https://tfhub.dev/google/universal-sentence-encoder/4", 
+                   trainable=True, dtype=tf.string, input_shape=[]),
+    tf.keras.layers.Dense(64, activation="relu"),
+    tf.keras.layers.Dense(1, activation="sigmoid")
+])
+
+model.compile(loss="binary_crossentropy", optimizer="nadam", metrics=["accuracy"])
+model.fit(train_set, validation_data=valid_set, epochs=10)
+```
+
+**说明**：
+- 在 `KerasLayer` 中设置 `trainable=True`，这样可以在训练过程中微调预训练的 Universal Sentence Encoder 的权重。
+- 通过设置环境变量 `TFHUB_CACHE_DIR`，可以将 TensorFlow Hub 的模块保存到本地目录中，避免每次运行时重新下载。
+
+#### 问题6：为什么要设置 `trainable=True` 来微调预训练模型？
+
+**解答**：
+通过设置 `trainable=True`，预训练的 Universal Sentence Encoder 会在训练期间被微调。一些权重会通过反向传播进行调整。这种方式能够让模型在特定任务上进一步提升性能。
+
+需要注意的是，并不是所有的 TensorFlow Hub 模块都支持微调，所以在使用之前需要查看相关模块的文档。
+
+{.marker-none}
+
+### Neural Machine Translation模型
+
+#### 问题1：什么是神经机器翻译（NMT）模型的基本架构？
+
+**背景**：
+神经机器翻译（NMT）模型是一种使用深度学习的自动翻译模型。它的基本架构由一个**编码器**和一个**解码器**组成，编码器接收源语言（例如英语），解码器生成目标语言（例如西班牙语）的翻译。
+
+**解答**：
+在 NMT 模型中，输入的英语句子会被编码器转换为一个上下文向量（context vector），解码器根据该向量生成翻译。在训练过程中，解码器接收到的输入并不是它上一步的输出，而是目标句子中它应该输出的词，这就是所谓的 **teacher forcing**。
+
+- 例如，在训练时，输入句子是“**I like soccer**”，模型应该生成“**Me gusta el fútbol**”。
+- 解码器每一步的输入是前一个时间步的目标词，而不是它实际输出的词。
+
+**图解**：
+- **Figure 16-3** 展示了该模型的整体架构：![Figure16-3一个简单的MT模型](../assets/attachment/hands_on_machine_learning/Figure16-3一个简单的MT模型.png)此图显示了如何通过编码器输入句子 “I like soccer”，并在解码器中逐词生成输出句子 “Me gusta el fútbol”。解码器在每个时间步通过 softmax 选择生成概率最高的词。
+
+
+
+#### 问题2：什么是 **teacher forcing** 技术，它如何改善模型的训练？
+
+**解答**：
+**Teacher forcing** 是一种训练技术，它使用实际的目标输出（例如目标句子中的下一个词）作为解码器的输入，而不是模型自己生成的词。这样做的好处是，它可以加快模型的训练速度，并使模型在初期训练时更容易收敛。
+
+在训练时，解码器接收的输入是目标句子中它应该输出的词语。例如：
+- 如果解码器生成了 “Me gusta”，下一步它将得到目标句子中的下一个词 “el” 作为输入，而不是它自己在上一时间步生成的词。
+
+通过这种方式，解码器学习到更准确的词语预测。
+
+
+
+#### 问题3：在推理阶段，NMT 模型如何进行翻译？
+
+**解答**：
+在推理阶段，模型不能接收到目标句子，因此解码器会使用前一个时间步生成的词作为当前时间步的输入。这意味着在推理过程中，解码器通过不断迭代，逐步生成完整的翻译句子，直到生成结束标记（`EOS`）。
+
+**图解**：
+- **Figure 16-4** 解释了推理阶段的流程：![Figure16-4在推理时解码器的输入是它在前一时间步刚刚输出的字词示意图](../assets/attachment/hands_on_machine_learning/Figure16-4在推理时解码器的输入是它在前一时间步刚刚输出的字词示意图.png) 在推理阶段，解码器的输入是它在上一个时间步生成的单词。例如，第一步生成 “Me”，然后将其作为输入用于生成下一词 “gusta”，依此类推，直到生成结束标记 `<eos>`。
+
+
+
+#### 问题4：如何加载并预处理数据集用于训练？
+
+**解答**：
+在训练模型之前，我们需要一个包含英语-西班牙语句子对的数据集。我们可以从 TensorFlow 下载一个语料库，并对这些句子进行预处理，比如去掉不必要的符号，打乱句子对的顺序，并将其分离成两个独立的列表，一个包含英语句子，一个包含西班牙语句子。
+
+**代码示例**：
+
+```python
+url = "https://storage.googleapis.com/download.tensorflow.org/data/spa-eng.zip"
+path = tf.keras.utils.get_file("spa-eng.zip", origin=url, cache_dir="datasets", extract=True)
+text = (Path(path).with_name("spa-eng") / "spa.txt").read_text()
+
+# 预处理文本
+import numpy as np
+text = text.replace("¿", "").replace("¡", "")
+pairs = [line.split("\t") for line in text.splitlines()]
+np.random.shuffle(pairs)
+sentences_en, sentences_es = zip(*pairs)  # 英文和西班牙文句子对
+```
+
+我们下载并预处理了英语和西班牙语句子对。接下来可以进行进一步处理，构建模型。
+
+
+
+#### 问题5：如何使用 `TextVectorization` 将句子转化为数字表示？
+
+**解答**：
+为了将文本数据输入到模型中，我们需要将句子转化为数字表示。这可以通过 `TextVectorization` 层来完成。它会将句子中的词映射为数字 ID，并可以为句子添加 `SOS`（开始标记）和 `EOS`（结束标记）。
+
+**代码示例**：
+
+```python
+vocab_size = 1000
+max_length = 50
+
+text_vec_layer_en = tf.keras.layers.TextVectorization(
+    vocab_size=vocab_size, output_sequence_length=max_length)
+text_vec_layer_es = tf.keras.layers.TextVectorization(
+    vocab_size=vocab_size, output_sequence_length=max_length)
+
+# 适配句子
+text_vec_layer_en.adapt(sentences_en)
+text_vec_layer_es.adapt([f"startofseq {s} endofseq" for s in sentences_es])
+```
+
+该代码创建了两个 `TextVectorization` 层，将英语和西班牙语句子转换为固定长度的数字序列。对于西班牙语句子，我们还添加了 `startofseq` 和 `endofseq` 标记。
+
+
+
+#### 问题6：如何构建和训练编码器-解码器模型？
+
+**解答**：
+为了构建编码器-解码器模型，我们使用 Keras 的功能性 API。我们首先为编码器和解码器准备输入，并使用 `Embedding` 层对单词进行嵌入表示。为了确保模型能够自动忽略填充标记，我们在 `Embedding` 层中设置 `mask_zero=True`。
+
+**代码示例**：
+
+```python
+embed_size = 128
+encoder_input_ids = text_vec_layer_en(encoder_inputs)
+decoder_input_ids = text_vec_layer_es(decoder_inputs)
+
+encoder_embedding_layer = tf.keras.layers.Embedding(vocab_size, embed_size, mask_zero=True)
+decoder_embedding_layer = tf.keras.layers.Embedding(vocab_size, embed_size, mask_zero=True)
+
+encoder_embeddings = encoder_embedding_layer(encoder_input_ids)
+decoder_embeddings = decoder_embedding_layer(decoder_input_ids)
+```
+
+通过上述代码，我们可以为编码器和解码器的输入进行嵌入映射，使得每个单词都转换为对应的嵌入向量。
+
+**图示说明**：
+- **Figure 16-3** 再次展示了编码器-解码器模型的工作流程，编码器将输入映射为隐藏状态，解码器逐步生成目标翻译。
+
+
+
+#### 问题7：如何在推理阶段使用模型进行翻译？
+
+**解答**：
+在推理阶段，解码器使用模型在前一个时间步生成的输出作为当前时间步的输入。我们可以通过一个循环逐步生成翻译句子，直到生成结束标记。
+
+**代码示例**：
+
+```python
+def translate(sentence_en):
+    translation = ""
+    for word_idx in range(max_length):
+        X = np.array([sentence_en])  # encoder input
+        X_dec = np.array(["startofseq " + translation])  # decoder input
+        Y_proba = model.predict([X, X_dec])[0, word_idx]  # last token's probas
+        predicted_word_id = np.argmax(Y_proba)
+        predicted_word = text_vec_layer_es.get_vocabulary()[predicted_word_id]
+        if
+
+ predicted_word == "endofseq":
+            break
+        translation += " " + predicted_word
+    return translation.strip()
+```
+
+此函数通过循环逐步生成目标句子的翻译，直到生成结束标记。
+
+{.marker-none}
+
+### 双向循环神经网络
+
+#### 问题1：为什么需要使用双向循环神经网络（Bidirectional RNN）？
+
+**背景**：
+在常规的 RNN 中，每个时间步仅依赖于先前的输入，因此它是因果性的（causal），无法观察未来的输入。在许多任务中，尤其是自然语言处理（例如文本分类或翻译任务的编码器部分），看前后文可能会带来更好的表现。
+
+**解答**：
+为了克服这种局限性，双向 RNN 可以同时考虑从左到右和从右到左的输入，最终在每个时间步将两个方向的输出结合起来（通常是通过拼接）。这种双向结构使得网络在编码当前词时不仅可以看过去的词，还能看未来的词，这对很多任务都非常有利。
+
+- **示例**：考虑句子“the right arm”，“the right person”和“the right to criticize”，要正确编码“right”这个词，必须结合前后的上下文。因此，可以在同一输入上运行两个循环层，一个从左到右读取，一个从右到左读取，最后在每个时间步拼接它们的输出。
+
+**图示说明**：
+- **Figure 16-5** 展示了双向 RNN 的工作机制：![Figure16-5双向RNN的工作机制](../assets/attachment/hands_on_machine_learning/Figure16-5双向RNN的工作机制.png)在该图中，你可以看到双向 RNN 如何在每个时间步上结合两个方向的信息。正向 RNN 处理从 `x(0)` 到 `x(2)` 的输入，反向 RNN 则从 `x(2)` 到 `x(0)` 处理输入。最后，它们的输出被拼接在一起，以便提供更多上下文信息。
+
+
+#### 问题2：如何在 Keras 中实现双向 RNN？
+
+**解答**：
+在 Keras 中，你可以通过将循环层（例如 LSTM 或 GRU）包裹在 `Bidirectional` 层中来实现双向 RNN。每个时间步的输出将是正向和反向两个 RNN 的输出拼接在一起。
+
+**代码示例**：
+
+```python
+encoder = tf.keras.layers.Bidirectional(
+    tf.keras.layers.LSTM(256, return_state=True)
+)
+```
+
+这里，`Bidirectional` 层包装了一个 LSTM 层，LSTM 的隐藏单元数为 256，并返回它的状态（短期状态和长期状态）。
+
+
+
+#### 问题3：双向 RNN 在输出状态时有什么特殊处理？
+
+**解答**：
+双向 RNN 会返回四个状态：前向 LSTM 的短期状态和长期状态，以及反向 LSTM 的短期状态和长期状态。然而，解码器的 LSTM 只能接收两个状态（短期和长期）。因此，不能直接将这四个状态传递给解码器，而是需要将前向和反向的状态分别合并。
+
+**图示说明**：**Figure 16-5** 进一步展示了如何结合两个方向的输出。
+
+**代码示例**：
+
+```python
+encoder_outputs, *encoder_state = encoder(encoder_embeddings)
+encoder_state = [tf.concat(encoder_state[:2], axis=-1),  # short-term (0 & 2)
+                 tf.concat(encoder_state[1::2], axis=-1)]  # long-term (1 & 3)
+```
+
+这里，我们将前向和反向的短期状态以及长期状态分别合并，生成两个状态，以便传递给解码器。
+
+**注意**：
+双向 RNN 产生的输出维度是正向和反向拼接后的结果。例如，如果每个方向的 RNN 单元数是 10，那么总输出将是 20 维。
+
+
+
+#### 问题4：为什么不能将双向 RNN 用于解码器？
+
+**解答**：
+在编码器中使用双向 RNN 没有问题，但在解码器中，RNN 必须保持因果性，因为解码器的任务是逐词生成翻译。如果在解码器中使用双向 RNN，它将会看到未来的词，这会在训练过程中造成作弊。
+
+因此，双向 RNN 只在编码器中使用，而解码器必须保持单向。
+
+{.marker-none}
+
+### Beam Search
+
+#### 问题1：什么是 Beam Search，它是如何帮助改进翻译质量的？
+
+**背景**：
+在训练好的编码器-解码器模型中，我们可能会遇到翻译不准确的问题。例如，将句子“**I like soccer**”翻译成西班牙语时，模型可能错误地输出了“**me gustan los jugadores**”（“我喜欢运动员”），而不是正确的“**me gusta el fútbol**”。这是因为模型只能一次生成一个词，无法回头修正之前的错误。
+
+**解答**：
+**Beam Search** 是一种常见的解决方案。它通过保持最有前景的 `k` 个翻译路径，避免模型因为早期的错误翻译而无法产生更好的后续翻译。`k` 值被称为**beam width**，即模型在每一步保存的最佳候选翻译的数量。
+
+例如，在每一步中，模型会生成一个可能的单词列表，并为每个单词分配一个概率。Beam Search 保留 `k` 个最有可能的单词，然后在下一步继续扩展这些单词，直到句子结束。
+
+
+
+#### 问题2：Beam Search 是如何工作的？（以一个 beam width 为 3 的例子）
+
+**解答**：
+假设我们要使用 `beam width = 3` 来翻译句子 “**I like soccer**”。在解码器的第一步，模型会输出几个可能的词及其相应的概率。假设模型输出了以下三个词：
+- “me” （概率：75%）
+- “a” （概率：3%）
+- “como” （概率：1%）
+
+接下来，模型在第二步为每个候选句子生成下一词，并更新这些候选翻译的概率。例如，对于句子“me”，模型可能输出“gustan” 的概率为 36%，因此句子“me gustan” 的总概率为 `75% × 36% = 27%`。
+
+**图示说明**：
+- **Figure 16-6** 详细展示了 Beam Search 过程，`beam width = 3`：![Figure16-6BeamSearch的搜索过程](../assets/attachment/hands_on_machine_learning/Figure16-6BeamSearch的搜索过程.png)
+
+  图中的箭头表示每一步生成的单词以及每个候选句子的概率更新。例如：
+  - “Me gustan los” 的概率是 `75% × 36% × 37% = 10%`。
+  - “Me gusta el fútbol” 的概率是 `8% × 75% = 6%`。
+
+通过这种方式，模型逐步生成候选句子，并在每一步保留最有可能的 `k` 个翻译，直到句子生成结束。
+
+
+
+#### 问题3：如何计算 Beam Search 中句子的概率？
+
+**解答**：
+在 Beam Search 中，句子的概率是通过每个单词的条件概率逐步累积计算的。例如，如果第一步中生成单词“me”的概率是 75%，第二步生成单词“gustan”的概率是 36%，那么“me gustan”这句话的概率就是 `75% × 36% = 27%`。
+
+在下一步中，模型会继续生成单词，并将每个候选句子的概率更新。例如，句子“me gustan los” 的概率为 `27% × 37% = 10%`。
+
+**图示说明**：
+再次参考 **Figure 16-6** 中的详细步骤，每一步的概率都逐步计算，并保留最有可能的句子。
+
+
+
+#### 问题4：Beam Search 的限制是什么？
+
+**解答**：
+Beam Search 可以显著提高模型的翻译质量，尤其是在短句子上。然而，它在长句子上表现不好。这是因为 RNN 模型的短期记忆能力有限，难以捕捉长句中的复杂依赖关系。
+
+解决这个问题的关键创新是**注意力机制（Attention Mechanism）**，它能够显著改善模型对长句子的翻译质量。
+
+
+
+#### 总结
+
+通过使用 Beam Search，我们可以显著提高模型的翻译性能，特别是在短句子上。Beam Search 通过跟踪多个最有前景的候选翻译，避免模型因为早期错误而陷入不理想的翻译路径。
+
+**提示**：
+TensorFlow Addons 提供了完整的 seq2seq API，包括 Beam Search 和注意力机制，但文档仍然有限，建议查看本章的 notebook 以了解如何实现这些技术。
+
+{.marker-none}
+
+### Attention 机制
+
+#### 问题1：Attention 机制的核心问题是什么，它解决了哪些局限？
+
+**背景**：
+在神经机器翻译（NMT）模型中，RNN 的短期记忆有限，导致模型难以处理长句子的翻译。特别是当句子较长时，编码器需要将每个词的信息传递许多时间步，这会使得重要信息被遗忘或淡化。
+
+**解答**：
+**Attention 机制**的核心问题是如何减少模型在长距离依赖时的损失。它通过让解码器在每个时间步聚焦于与当前输出相关的输入词，来解决传统 RNN 模型的局限性。换句话说，它允许解码器在生成每个词时，有选择地关注编码器的输出，从而缓解 RNN 的短期记忆问题。
+
+- 例如，当解码器需要生成单词“fútbol”时，它可以聚焦到编码器中的“soccer”这一词，而不用依赖 LSTM 中逐步传递的隐藏状态。
+
+
+
+#### 问题2：Attention 机制的工作原理是什么？
+
+**解答**：
+在 Attention 机制中，解码器在每个时间步计算一组权重，这些权重表示编码器输出的每个词对于当前时间步的重要性。Attention 机制的输出是编码器所有输出的加权求和，权重较大的词会对当前时间步的解码器输出有更大的影响。
+
+- 例如，在翻译“soccer”到“fútbol”时，Attention 机制会计算一个权重 `α(t,i)`，表示编码器输出中的第 `i` 个词对解码器在第 `t` 个时间步生成词的重要性。
+
+**图解说明**：
+- ![Figure16-7带有Attention机制的编码器-解码器模型](../assets/attachment/hands_on_machine_learning/Figure16-7带有Attention机制的编码器-解码器模型.png)**Figure 16-7** 展示了带有 Attention 机制的编码器-解码器模型：，解码器通过加权求和的方式使用编码器的所有输出。权重 `α(t,i)` 是由一个小的神经网络（称为 **alignment model** 或 **attention layer**）生成的。模型在每个时间步根据输入生成一个不同的权重分布。
+
+
+
+#### 问题3：这些 Attention 权重是如何生成的？
+
+**解答**：
+这些权重是由一个小型神经网络生成的，这个网络称为 **alignment model**。Alignment model 接收编码器的输出和解码器前一时间步的隐藏状态作为输入，并输出一个分数。然后，通过 softmax 函数，将这些分数转化为权重。
+
+- 例如，在生成单词“fútbol”时，alignment model 可能为编码器输出中的“soccer”分配较高的权重，而为其他词分配较低的权重。
+
+**图解说明**：
+图的右侧展示了 alignment model 的工作原理。它使用 dense 层处理编码器的每个输出，并根据解码器的前一时间步隐藏状态计算每个输出的对齐分数。
+
+
+
+#### 问题4：Attention 机制的数学公式是什么？
+
+**解答**：
+Attention 机制的输出是编码器所有输出的加权求和，权重 `α(t,i)` 是通过 alignment model 计算的。公式如下：
+
+```KaTeX
+h'(t) = \sum_i \alpha(t, i) y(i)
+```
+
+其中：
+- `h'(t)` 是解码器在时间步 `t` 的加权输出，
+- `y(i)` 是编码器的第 `i` 个输出，
+- `α(t,i)` 是在时间步 `t`，第 `i` 个编码器输出的权重。
+
+**公式**：
+
+```KaTeX
+h'(t) = \sum_i \alpha(t, i)y(i)
+\alpha(t, i) = \frac{exp(e(t,i))}{\sum_k exp(e(t,k))}
+```
+
+`e(t,i)` 是 alignment model 为编码器输出 `y(i)` 和解码器隐藏状态 `h(t-1)` 计算的对齐分数。
+
+
+
+#### 问题5：Keras 中如何实现 Attention 机制？
+
+**解答**：
+在 Keras 中，可以使用 `Attention` 层来实现不同的 Attention 机制（例如 **Luong attention** 或 **Bahdanau attention**）。需要注意的是，在使用 Attention 机制时，编码器必须返回所有时间步的输出，而不仅仅是最后一个隐藏状态。
+
+**代码示例**：
+
+```python
+encoder = tf.keras.layers.Bidirectional(
+    tf.keras.layers.LSTM(256, return_sequences=True, return_state=True)
+)
+
+attention_layer = tf.keras.layers.Attention()
+attention_outputs = attention_layer([decoder_outputs, encoder_outputs])
+
+output_layer = tf.keras.layers.Dense(vocab_size, activation="softmax")
+Y_proba = output_layer(attention_outputs)
+```
+
+在这里，我们使用 `Attention` 层将解码器的输出和编码器的输出结合起来。Attention 层会为每个时间步计算一个加权和。
+
+
+
+#### 问题6：Attention 机制如何改进长句子的翻译？
+
+**解答**：
+通过使用 Attention 机制，模型可以在生成每个词时聚焦于与当前翻译词最相关的输入词。这使得模型在长句翻译中表现得更好，因为它不再需要依赖 LSTM 的短期记忆，而是可以直接使用编码器的所有输出。
+
+**代码示例**：
+
+```python
+>>> translate("I like soccer and also going to the beach")
+'me gusta el fútbol y también ir a la playa'
+```
+
+Attention 机制允许模型在处理长句时聚焦到更相关的词，从而改进翻译质量。
+
+
+
+#### 问题7：如何理解 Attention 机制的查询（queries）、键（keys）和值（values）？
+
+**解答**：
+在 Attention 机制中：
+- 解码器的输出（即每个时间步的隐藏状态）是**查询（queries）**，
+- 编码器的输出是**键（keys）**和**值（values）**。
+
+Attention 层会计算查询和键之间的相似度分数（即 alignment scores），然后使用这些分数加权所有的值，以生成每个时间步的加权输出。
+
+
+
+#### 问题8：Attention 机制是如何成为一个可训练的记忆检索系统的？
+
+**解答**：
+Attention 机制通过训练 alignment model 来学习如何在不同的解码时间步检索最相关的输入词。它是如此强大，以至于你可以仅使用 Attention 机制来构建最先进的模型，例如 Transformer。
+
+{.marker-none}
+
+### Attention Is All You Need
+
+#### 问题1：Transformer架构的核心是什么？为什么不再使用RNN或CNN？
+
+**背景**：
+传统的RNN和CNN架构存在处理长依赖时的局限，特别是在机器翻译和自然语言处理中。2017年，Google提出了Transformer架构，完全基于Attention机制，克服了这些局限性。
+
+**解答**：
+Transformer主要通过Attention机制来捕捉长距离依赖，完全放弃了RNN或CNN的结构。这不仅解决了长距离依赖问题，还避免了梯度消失或梯度爆炸的问题。Transformer更易于并行化，尤其是在多GPU上，同时还能更好地捕捉远程模式。下图是Transformer的结构概览：
+
+![Figure16-8原始的2017年Transformer架构图](../assets/attachment/hands_on_machine_learning/Figure16-8原始的2017年Transformer架构图.png)*图 16-8. The original 2017 transformer architecture*
+
+这个图展示了原始的Transformer架构，它由**编码器**和**解码器**两部分组成。让我们仔细拆解每一部分的工作流程和组件：
+
+#### 编码器（左侧部分）
+- **输入嵌入层 (Input Embedding Layer)**：
+  - 编码器首先接受一组输入词（例如一个句子），通过嵌入层将这些词转换成密集的向量表示，每个词会变成一个固定维度的向量。
+  - 输出的形状为：`[batch_size, sequence_length, embedding_size]`，其中`batch_size`表示输入的批次大小，`sequence_length`表示输入的序列长度，`embedding_size`表示词向量的维度。
+
+- **位置编码 (Positional Encoding)**：
+  - 由于Transformer模型是并行的，它不具备传统RNN那样的序列信息。因此，位置编码将序列的位置信息引入到词嵌入中，使得模型可以感知输入的顺序。
+  - 位置编码使用正弦和余弦函数生成，具体计算公式如下：
+
+    ```KaTeX
+    P_{(p,i)} = \begin{cases} 
+    \sin\left(\frac{p}{10000^{i/d}}\right) & \text{if } i \text{ is even} \\
+    \cos\left(\frac{p}{10000^{(i-1)/d}}\right) & \text{if } i \text{ is odd} 
+    \end{cases}
+    ```
+
+- **多头注意力层 (Multi-Head Attention Layer)**：
+  - 多头注意力层允许模型在同一个输入序列中，从不同角度关注不同单词的相互关系。通过这种机制，模型可以同时捕捉到句子中的多个重要信息。
+  - **Scaled Dot-Product Attention** 公式如下：
+
+    ```KaTeX
+    \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+    ```
+  - **Multi-Head Attention** 是通过多个注意力头并行计算，然后将它们拼接在一起。
+
+- **前馈神经网络 (Feed-Forward Neural Network)**：
+  - 前馈网络是每个编码器块中的第二个主要组件。每个词的向量通过一个两层的全连接网络，分别应用ReLU激活和线性变换。
+  - 这部分并不共享注意力层中的权重，它只处理每个词的表示。
+
+- **残差连接 (Residual Connection) 和层归一化 (Layer Normalization)**：
+  - 这两个机制有助于防止梯度消失，并确保网络能够更快收敛。残差连接将输入跳过注意力层和前馈层，然后加在输出上，随后进行层归一化。
+
+- **堆叠多个编码器块 (Stacking Encoder Blocks)**：
+  - 编码器的核心组件（多头注意力 + 前馈网络）可以堆叠多个层（通常是6层），每一层处理不同的词特性。
+
+#### 解码器（右侧部分）
+- **输出嵌入层 (Output Embedding Layer)**：
+  - 解码器的输入是目标句子，先通过嵌入层将目标词转换为向量表示。
+  - 与编码器相似，解码器也使用了位置编码来引入词序信息。
+
+- **Masked Multi-Head Attention Layer**：
+  - 这一层的工作机制与编码器中的多头注意力类似，但它有一个关键的区别：在解码器中，注意力层会掩盖未来的单词（mask future words）。这种机制保证了解码器在生成下一个单词时，不能看到当前时间步之后的单词，从而防止“作弊”。
+
+- **Encoder-Decoder Attention Layer**：
+  - 这一层让解码器能够关注编码器输出的所有词信息，以便在生成每个单词时，解码器能够“关注”编码器中的词，从而翻译上下文。
+  - 这也是一种多头注意力机制，只不过这里的`Key`和`Value`来自编码器的输出，而`Query`来自解码器的自注意力层输出。
+
+- **前馈神经网络 (Feed-Forward Neural Network)**：
+  - 这与编码器中的前馈网络类似，处理每个单词表示的变化。
+
+- **堆叠多个解码器块 (Stacking Decoder Blocks)**：
+  - 与编码器相同，解码器也是由多层相同的结构堆叠组成（通常是6层）。
+
+- **线性层 (Linear Layer) 和 Softmax**：
+  - 解码器的最后一步是将所有的词表示通过一个全连接的线性层，然后通过Softmax计算每个词的概率，从而选择下一个输出单词。
+
+#### 问题2：Transformer中使用了哪些新组件？
+
+**解答**：
+Transformer引入了一些新的组件，具体包括：
+
+1. **多头注意力机制 (Multi-Head Attention)**：
+  - 编码器中的多头注意力层允许模型在同一句子中的不同位置关注其他单词。这样可以使每个单词的表示更准确。
+  - 解码器中的Masked Multi-Head Attention则是一个因果层，处理过程中只能关注前面的单词，而忽略后面的单词，防止“作弊”。
+
+2. **位置编码 (Positional Encoding)**：
+  - ![Figure16-9正弦余弦位置编码矩阵](../assets/attachment/hands_on_machine_learning/Figure16-9正弦余弦位置编码矩阵.png)位置编码是用来弥补模型的顺序缺失的。Transformer中的所有操作都是并行的，这意味着顺序信息无法直接编码。因此，位置编码是通过正弦和余弦函数将单词的位置信息加入到嵌入层。
+
+以下是位置编码的实现代码：
+
+```python
+max_length = 50  # 整个训练集的最大长度
+embed_size = 128
+pos_embed_layer = tf.keras.layers.Embedding(max_length, embed_size)
+encoder_in = encoder_embeddings + pos_embed_layer(tf.range(batch_max_len_enc))
+decoder_in = decoder_embeddings + pos_embed_layer(tf.range(batch_max_len_dec))
+```
+
+#### 问题3：多头注意力机制是如何工作的？
+
+**背景**：
+多头注意力机制允许模型在不同的子空间中同时关注不同的单词特性。其核心是Scaled Dot-Product Attention。
+
+**解答**：
+多头注意力机制是通过对输入的`Query(Q)`，`Key(K)`，`Value(V)`进行线性变换，并通过多个注意力头将结果拼接在一起。其公式如下：
+
+```KaTeX
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+```
+
+- **Q**：查询矩阵，每行对应一个查询。
+- **K**：键矩阵，每行对应一个键。
+- **V**：值矩阵，每行对应一个值。
+- 上述公式计算的是缩放点积注意力（scaled dot-product attention），通过对`Q`和`K`进行点积计算注意力分数，然后通过`V`得到加权值。
+
+#### 图 16-10: Multi-head Attention Layer Architecture
+
+![Figure16-10Transformer多头注意力机制原理图](../assets/attachment/hands_on_machine_learning/Figure16-10Transformer多头注意力机制原理图.png)这个图展示了**多头注意力机制**的结构，以下是详细的分解和解释：
+
+- **输入的Query (Q), Key (K), Value (V)**：
+  - 在多头注意力机制中，模型接受三个输入：查询 (Query, Q)、键 (Key, K) 和值 (Value, V)。这些输入通常是从同一个词表示中变换而来。Q、K、V的形状为 `[batch_size, sequence_length, embedding_size]`。
+
+- **线性变换 (Linear Transformation)**：
+  - 首先，对Q、K、V进行线性变换（通过不同的权重矩阵），生成多个版本的查询、键和值。这一步的目的是将词的表示投影到不同的子空间中，从而使模型可以关注不同的特征。
+  - 线性层的输出为 `[batch_size, sequence_length, key_dim]`。
+
+- **缩放点积注意力 (Scaled Dot-Product Attention)**：
+  - 接着，对每个版本的Q、K和V进行注意力计算，计算公式如下：
+
+    ```KaTeX
+    \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+    ```
+  - 其中，`d_k` 是键的维度，缩放因子有助于避免梯度过小或梯度消失。
+
+- **分割 (Split) 和拼接 (Concat)**：
+  - 在多头注意力中，我们会将输入分成多个注意力头（例如8个），每个头负责处理词的某些特性。分割操作会将Q、K、V的表示沿着头的数量进行划分。
+  - 然后，对每个注意力头计算出它们的注意力结果，并在最终将它们拼接在一起。
+
+- **线性层 (Linear Layer)**：
+  - 拼接后的注意力输出会通过一个最终的线性层，将其映射回与输入相同的维度。这一步的输出会通过残差连接和归一化层送往下一层。
+
+  - **残差连接**：跳跃连接有助于防止梯度消失，并提高深度网络的训练效果。
+
+
+#### 总结
+在**Transformer**架构中，多头注意力机制是核心，能够让模型并行地关注输入序列中不同的词以及它们之间的依赖关系。Transformer通过编码器-解码器结构，实现了从输入序列到输出序列的映射，而这一过程中依赖于多层堆叠的注意力层和前馈神经网络的联合工作。
+
+
+#### 问题4：如何实现完整的Transformer编码器？
+
+**解答**：
+我们可以通过Keras的`MultiHeadAttention`层来实现Transformer的编码器。以下是代码实现：
+
+```python
+N = 2  # 使用两层编码器块
+num_heads = 8
+dropout_rate = 0.1
+n_units = 128  # 前馈块中的第一层Dense层的维度
+encoder_pad_mask = tf.math.not_equal(encoder_input_ids, 0)[:, tf.newaxis]
+Z = encoder_in
+
+for _ in range(N):
+    skip = Z
+    attn_layer = tf.keras.layers.MultiHeadAttention(
+        num_heads=num_heads, key_dim=embed_size, dropout=dropout_rate
+    )
+    Z = attn_layer(Z, value=Z, attention_mask=encoder_pad_mask)
+    Z = tf.keras.layers.LayerNormalization()(tf.keras.layers.Add()([Z, skip]))
+    skip = Z
+    Z = tf.keras.layers.Dense(n_units, activation="relu")(Z)
+    Z = tf.keras.layers.Dense(embed_size)(Z)
+    Z = tf.keras.layers.Dropout(dropout_rate)(Z)
+    Z = tf.keras.layers.LayerNormalization()(tf.keras.layers.Add()([Z, skip]))
+```
+
+上述代码实现了Transformer编码器的多层堆叠，每层包含多头注意力和前馈网络。编码器将输入的词嵌入通过多头注意力处理，最终得到编码后的表示。
+
+#### 问题5：如何实现完整的Transformer解码器？
+
+**解答**：
+解码器的实现与编码器类似，区别在于其使用了两种注意力机制：
+1. Self-Attention（Masked Multi-Head Attention）：用于防止解码器看到未来的单词。
+2. Encoder-Decoder Attention：允许解码器在生成每个单词时，关注编码器输出的表示。
+
+解码器的代码实现如下：
+
+```python
+decoder_pad_mask = tf.math.not_equal(decoder_input_ids, 0)[:, tf.newaxis]
+causal_mask = tf.linalg.band_part(tf.ones((batch_max_len_dec, batch_max_len_dec)), -1, 0)
+
+Z = decoder_in
+for _ in range(N):
+    skip = Z
+    attn_layer = tf.keras.layers.MultiHeadAttention(
+        num_heads=num_heads, key_dim=embed_size, dropout=dropout_rate
+    )
+    Z = attn_layer(Z, value=Z, attention_mask=causal_mask & decoder_pad_mask)
+    Z = tf.keras.layers.LayerNormalization()(tf.keras.layers.Add()([Z, skip]))
+    skip = Z
+    attn_layer = tf.keras.layers.MultiHeadAttention(
+        num_heads=num_heads, key_dim=embed_size, dropout=dropout_rate
+    )
+    Z = attn_layer(Z, value=encoder_outputs, attention_mask=encoder_pad_mask)
+    Z = tf.keras.layers.LayerNormalization()(tf.keras.layers.Add()([Z, skip]))
+    skip = Z
+    Z = tf.keras.layers.Dense(n_units, activation="relu")(Z)
+    Z = tf.keras.layers.Dense(embed_size)(Z)
+    Z = tf.keras.layers.LayerNormalization()(tf.keras.layers.Add()([Z, skip]))
+```
+
+这段代码通过自注意力机制和编码器-解码器注意力机制实现了Transformer的解码器。
+
+#### 问题6：如何训练Transformer并进行翻译任务？
+
+**解答**：
+为了训练Transformer，我们需要添加输出层并编译模型：
+
+```python
+Y_proba = tf.keras.layers.Dense(vocab_size, activation="softmax")(Z)
+model = tf.keras.Model(inputs=[encoder_inputs, decoder_inputs], outputs=[Y_proba])
+
+model.compile(loss="sparse_categorical_crossentropy", optimizer="nadam", metrics=["accuracy"])
+model.fit((X_train, X_train_dec), Y_train, epochs=10, validation_data=((X_valid, X_valid_dec), Y_valid))
+```
+
+这段代码通过编译模型，并使用交叉熵损失和Nadam优化器来训练Transformer模型。
+
+{.marker-none}
+
+### Transformer模型的爆发性发展
+
+#### 问题 1：什么是 Transformer 模型的 "ImageNet 时刻"？
+
+自 2018 年以来，Transformer 模型的出现和发展被称为 NLP 领域的 "ImageNet 时刻"，因为从那时起，基于 Transformer 的架构在大型数据集上取得了巨大进展，推动了语言模型的迅速演化，尤其是无监督预训练的效果得到了广泛验证。
+
+#### 问题 2：GPT 模型是如何在 NLP 任务中取得突破的？
+
+根据 OpenAI 的 GPT 论文，GPT 模型使用了一种自回归的 Transformer 模型，它由 **12 层 Transformer 模块** 组成，并使用 **多头注意力机制**。GPT 模型的训练使用了自监督学习方法，通过在大量数据上预训练，并在不同任务上通过微调取得了优异表现。
+
+关键点：
+- 自监督学习（self-supervised learning）
+- 任务包含文本分类、蕴含判断、相似性匹配以及问答任务。
+
+
+#### 问题 3：BERT 模型与 GPT 模型的区别是什么？
+
+BERT 模型由谷歌提出，与 GPT 不同的是，BERT 使用的是 **非自回归的多头注意力机制**，并且是 **双向编码器**，因此它在编码句子时能够从左右上下文中获取信息，而 GPT 则是单向的。
+
+BERT 模型的关键任务包括：
+- **掩码语言模型** (MLM)：该任务随机遮蔽句子中的一部分单词，并让模型预测这些单词是什么。
+- **下一句预测** (NSP)：该任务要求模型判断两句话是否连贯。
+
+#### 问题 4：BERT 的预训练任务是什么？
+
+BERT 模型的预训练任务主要包含两个部分：
+1. **掩码语言模型（MLM）**：给定一句话，其中15%的单词会被随机遮蔽，并要求模型预测这些遮蔽词。例如，句子"She had fun at the birthday party"中可能变为 "She <mask> fun at the <mask> party"，模型需要预测被遮蔽的单词 "had" 和 "birthday"。
+2. **下一句预测（NSP）**：模型需要预测给定的两句话是否是连续的。例如，模型需要预测 "The dog sleeps" 和 "It snores loudly" 是否是连续的句子。
+
+图解：
+- ![Figure16-11BERT模型](../assets/attachment/hands_on_machine_learning/Figure16-11BERT模型.png)见图 **Figure 16-11**，展示了 BERT 模型的训练和微调过程，包括掩码语言模型和下一句预测。
+
+
+#### 问题 5：GPT-2 和 GPT-3 是如何在 GPT 模型基础上进一步发展的？
+
+GPT-2 模型于 2019 年发布，是对原始 GPT 模型的扩展，它包含了超过 **15 亿参数**。它的一个显著突破在于 **零样本学习（zero-shot learning, ZSL）**，即模型在没有任何任务微调的情况下也能够在许多任务上表现良好。
+
+GPT-3 继续扩大规模，模型包含 **1750 亿参数**，进一步提高了语言生成任务的表现。
+
+#### 问题 6：模型规模的扩展带来了哪些问题？
+
+随着模型规模的扩展，像 **Switch Transformers（2021）** 和 **Wu Dao 2.0（2021）** 等大型模型包含 **数万亿参数**，这带来了如下挑战：
+- **成本**：训练这些模型需要巨额的资金投入，甚至要花费数十万美元。
+- **能耗**：训练单个大型模型可能消耗的能源相当于一个美国家庭数年的电力消耗。
+
+#### 问题 7：DistilBERT 是如何实现更高效的？
+
+为了应对大型模型的资源消耗问题，研究者提出了 **DistilBERT**。这个模型使用了一种称为 **知识蒸馏（knowledge distillation）** 的技术，通过将一个更小的学生模型从一个较大的教师模型中学习到的知识进行转移。DistilBERT 能够保持 BERT 约 **60% 的参数**，但仍能实现接近的性能。
+
+#### 问题 8：还有哪些重要的 Transformer 架构值得关注？
+
+自 BERT 之后，很多新的 Transformer 模型迅速推出，且性能不断提升，以下是几个重要的模型：
+- **XLNet**（2019 年 6 月）
+- **RoBERTa**（2019 年 7 月）
+- **ALBERT**（2019 年 9 月）
+- **T5**（2019 年 10 月）
+- **ELECTRA**（2020 年 3 月）
+- **GPT-3**（2020 年 5 月）
+
+这些模型带来了不同的改进，部分通过调整架构，部分通过扩大参数规模。
+
+#### 问题 9：T5 模型有什么独特之处？
+
+T5 模型采用了 **文本到文本** 的框架，它通过将所有的 NLP 任务（如翻译、摘要、分类）都转换为文本生成任务来简化架构。例如：
+- 翻译任务输入 "translate English to Spanish: I like soccer"，输出则为 "Me gusta el fútbol"。
+- 总结任务输入 "summarize:" 后跟着一段文本，输出则为该文本的摘要。
+
+这一简化过程使得 T5 模型能够在更多任务上进行预训练，且模型的架构保持不变。
+
+#### 问题 10：什么是 Pathways 语言模型（PaLM）？
+
+**Pathways 语言模型（PaLM）** 是由谷歌研究团队于 2022 年 4 月发布的一个巨型语言模型，拥有 **5400 亿参数**，使用了 **6000 个 TPU** 进行训练。这个模型只使用了 **解码器**（带掩码的多头注意力层）构建，并通过 **链式思维提示（chain of thought prompting）** 技术来提高推理能力。
+
+#### 问题 11：链式思维提示（Chain of Thought Prompting）是如何提高模型推理能力的？
+
+链式思维提示通过引导模型进行多步推理。例如，给定问题"John 照顾 10 条狗，每条狗每天需要 0.5 小时"，模型不仅会直接输出正确答案，还会提供推理过程：
+- 每条狗每天需要 0.5 小时。
+- 10 条狗每天共需 5 小时。
+- 每周则需 5 小时 x 7 天 = 35 小时。
+
+通过这种方法，模型可以提供更清晰的推理路径，从而增强复杂任务的理解。
+
+{.marker-none}
+
+### Vision Transformers
+
+
+#### 问题 1：什么是视觉注意力机制？它是如何应用于图像生成的？
+
+视觉注意力机制（**visual attention**）最早用于生成图像描述的任务中。一个卷积神经网络（CNN）首先处理图像并输出特征图，之后一个带有注意力机制的解码器 RNN 逐词生成描述。在每个解码器时间步，注意力机制帮助模型专注于图像的相关部分。例如，在 **图 Figure 16-12** 中，模型生成的描述是 **“A woman is throwing a frisbee in a park”**，其中当模型生成 "frisbee" 这个词时，注意力集中在图像中飞盘的位置。
+
+##### 图解：
+- ![Figure16-12视觉注意力机制在解码器生成词汇时专注于图像中相关部分的效果](../assets/attachment/hands_on_machine_learning/Figure16-12视觉注意力机制在解码器生成词汇时专注于图像中相关部分的效果.png)**Figure 16-12** 展示了视觉注意力机制在解码器生成词汇时专注于图像中相关部分的效果。左侧为输入图像，右侧为模型在生成 “frisbee” 一词时关注的图像区域。
+
+
+
+#### 问题 2：解释性（Explainability）在视觉 Transformer 中如何帮助理解模型的决策过程？
+
+注意力机制的一个额外好处是提高了模型的 **可解释性（explainability）**，这有助于理解模型为何得出特定的输出。例如，假设模型将图像中的狗识别为狼，模型的注意力不仅集中在狗上，还集中在雪上。通过查看模型专注的区域，可以发现它可能是基于雪来区分狼和狗的。因此，可以通过添加更多没有雪的狼和有雪的狗的图像进行重新训练来修正模型。
+
+这类 **解释性技术** 也可以帮助理解模型错误的原因，尤其在某些应用中，解释性不仅是调试工具，还是法律要求。
+
+
+
+#### 问题 3：Transformer 在视觉任务中的首次应用是如何进行的？
+
+最初，Transformer 被用作 CNN 的补充，而不是替代。它们最早与 CNN 结合使用，用于目标检测任务（如 Facebook 2020 年的论文）。CNN 处理图像并输出特征图，这些特征图被传递给 Transformer，后者处理这些特征以输出预测结果。
+
+
+
+#### 问题 4：Vision Transformer (ViT) 模型是如何工作的？
+
+在 2020 年 10 月，谷歌研究人员提出了 **Vision Transformer (ViT)**，这是一个完全基于 Transformer 的视觉模型。它的核心思想是：
+- 将输入图像切分为 16×16 的小块，并将每个小块展平为 768 维的向量（对应于 16×16×3，3 为 RGB 通道）。
+- 将这些向量序列输入到 Transformer 中，与处理文本序列类似。
+- 通过为每个向量添加位置嵌入，使模型了解每个小块的位置，并进行分类任务。
+
+ViT 模型在 **ImageNet 图像分类** 上达到了前沿表现，但需要使用 **超过 3 亿张额外图像** 进行训练，因为与 CNN 相比，Transformer 具有较少的先验假设（inductive biases），因此需要更多数据来学习这些假设。
+
+
+
+#### 问题 5：什么是 DeiT（Data-efficient image transformers）模型？
+
+Facebook 研究人员在 2021 年 1 月提出了 **Data-efficient Image Transformers (DeiT)**，其模型架构几乎与 ViT 相同，但通过使用 **蒸馏技术（distillation technique）**，从最先进的 CNN 模型中转移知识，使得该模型在不增加数据的情况下，依然在 ImageNet 上达到了竞争性的结果。
+
+
+
+#### 问题 6：Perceiver 模型如何解决序列长度问题？
+
+DeepMind 于 2021 年 3 月提出了 **Perceiver** 架构，这是一个多模态 Transformer，能处理文本、图像和音频等不同的输入。传统的 Transformer 随着输入序列长度 \( M \) 的增加，注意力层的复杂度会变成 \( M \times M \)，从而带来计算瓶颈。Perceiver 通过引入较短的 **潜在表示（latent representation）**，逐步改善了这一问题。潜在表示仅由 \( N \) 个 token 组成（通常只有几百个），注意力层的复杂度变为线性，即 \( M \times N \)，大大减少了计算量。
+
+---
+
+#### 问题 7：DINO 模型如何使用无监督学习训练 Vision Transformer？
+
+DINO 是由 Mathilde Caron 等人在 2021 年 5 月提出的，它是一种 **完全不使用标签的视觉 Transformer**。该模型通过 **自蒸馏（self-distillation）** 来训练，模型的学生和教师网络会分别生成图像的不同表示，然后将教师的预测与学生的输出进行匹配。通过这种方式，模型能够学习高层次的语义表示，并防止 **模式坍塌（mode collapse）**。
+
+
+
+#### 问题 8：ViT 如何实现扩展并在 ImageNet 上取得突破性成绩？
+
+在 2021 年的论文中，谷歌研究人员展示了如何将 **ViT** 模型扩展到 **20 亿参数**，并在 ImageNet 上实现了 **90.4% 的 Top-1 准确率**。同时，他们还训练了一个缩小版的 ViT，仅使用 **10,000 张图像**，达到了 **84.8% 的 Top-1 准确率**，这相当于每类仅有 10 张图像。
+
+
+
+#### 问题 9：什么是 DALL·E 和 CLIP？它们如何应用 Transformer 进行图像生成和分类？
+
+- **DALL·E** 是 OpenAI 开发的一个模型，它基于文本提示生成图像。
+- **CLIP** 是另一个 OpenAI 模型，通过将图像与文本配对进行训练，它能够根据文本提示直接进行图像分类，如输入“猫的照片”，模型能够识别相应的图像。
+
+这两个模型展示了 Transformer 在 **跨模态任务** 中的强大能力，尤其是在 **零样本学习（zero-shot learning）** 和 **少样本学习（few-shot learning）** 中。
+
+
+
+#### 问题 10：DeepMind 的 Gato 模型是如何工作的？
+
+2022 年 5 月，DeepMind 提出了 **Gato**，这是一个多模态模型，能够处理 **文本、图像、音频、视频** 以及不同的任务类型（如问答、图像生成、强化学习等）。Gato 仅使用了 **12 亿参数**，但能够完成从聊天到操控机械臂的各种任务。
+
+
+
+#### 问题 11：视觉 Transformer 模型的未来方向是什么？
+
+视觉 Transformer 的发展趋势包括：
+- **多模态模型**：如 Flamingo 模型，能够处理不同模态（文本、图像、视频等）的任务。
+- **自监督学习**：如 DINO，展示了在没有标签的情况下，模型能够自主学习有用的表示。
+
+{.marker-none}
+
+### Hugging Face’s Transformers Library {.col-span-2}
+
+#### 问题 1：如何使用 Hugging Face 的 Transformers 库进行情感分析？
+
+Hugging Face 提供了一个方便的 **pipeline** 方法，可以直接调用预训练模型进行各种任务。下面是进行情感分析的简单示例：
+
+```python
+from transformers import pipeline
+
+classifier = pipeline("sentiment-analysis")  # many other tasks are available
+result = classifier("The actors were very convincing.")
+```
+
+输出将会是一个包含分类结果的 Python 列表：
+
+```python
+>>> result
+[{'label': 'POSITIVE', 'score': 0.9998071789741516}]
+```
+
+
+
+#### 问题 2：如何处理多个输入句子的批处理？
+
+Hugging Face 支持处理多个输入文本，并为每个输入返回一个结果。如下代码展示了如何对多个句子进行情感分析：
+
+```python
+>>> classifier(["I am from India.", "I am from Iraq."])
+[{'label': 'POSITIVE', 'score': 0.9896161556243896},
+ {'label': 'NEGATIVE', 'score': 0.9811071157455444}]
+```
+
+此时可以看到，模型对来自印度的句子有正面评价，而对来自伊拉克的句子有负面评价。
+
+
+
+#### 问题 3：如何应对模型中的偏见（Bias）问题？
+
+如前所述，模型在处理情感分析时可能存在 **偏见**（Bias）。例如，在上述例子中，模型显示对印度的句子有正面偏好，而对伊拉克的句子存在负面偏见。这种偏见通常来自于训练数据中的不平衡，特别是在一些带有争议的历史背景中。
+
+要减少模型偏见，开发者需要：
+- 使用更平衡的训练数据。
+- 在微调时加入额外的中立类。
+- 调整模型的损失函数、正则化方法和优化器，以便减少训练偏差。
+
+
+
+#### 问题 4：如何指定自定义模型进行情感分析或其他任务？
+
+如果需要指定自定义模型而不是使用默认的预训练模型，可以通过 `pipeline` 函数指定模型名称。例如，下面的代码展示了如何使用一个 DistilBERT 模型来进行 **MultiNLI** 任务（多类自然语言推理任务）：
+
+```python
+>>> model_name = "huggingface/distilbert-base-uncased-finetuned-mnli"
+>>> classifier_mnli = pipeline("text-classification", model=model_name)
+>>> classifier_mnli("She loves me. [SEP] She loves me not.")
+[{'label': 'contradiction', 'score': 0.9790192246437073}]
+```
+
+
+
+#### 问题 5：如何使用 **AutoTokenizer** 和 **AutoModel** 来加载模型和分词器？
+
+除了 pipeline，Hugging Face 还提供了更灵活的工具，允许开发者加载任意模型和分词器。如下代码展示了如何使用 `TFAutoModelForSequenceClassification` 和 `AutoTokenizer` 加载一个 DistilBERT 模型和相应的分词器：
+
+```python
+from transformers import AutoTokenizer, TFAutoModelForSequenceClassification
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = TFAutoModelForSequenceClassification.from_pretrained(model_name)
+```
+
+接着，您可以对输入句子进行分词，并指定返回 TensorFlow 的张量格式：
+
+```python
+token_ids = tokenizer(["I like soccer. [SEP] We all love soccer!", 
+                      "Joe lived for a very long time. [SEP] Joe is old."], 
+                      padding=True, return_tensors="tf")
+```
+
+
+
+#### 问题 6：如何解码输出并使用 softmax 激活函数获得预测？
+
+模型输出 logits，必须将它们通过 softmax 激活函数转换为概率，才能得到预测类别。以下是具体的步骤：
+
+- 直接将分词后的输入传入模型：
+   ```python
+   outputs = model(token_ids)
+   ```
+
+- 使用 softmax 激活函数转换为概率：
+   ```python
+   Y_probas = tf.keras.activations.softmax(outputs.logits)
+   ```
+
+- 使用 `argmax` 函数找到预测类别：
+   ```python
+   Y_pred = tf.argmax(Y_probas, axis=1)
+   ```
+
+此时，预测类别的输出结果将会是：
+```python
+>>> Y_pred
+<tf.Tensor: shape=(2,), dtype=int64, numpy=array([2, 1])>
+```
+其中：
+- `0` 代表 **contradiction**（矛盾）
+- `1` 代表 **entailment**（蕴含）
+- `2` 代表 **neutral**（中立）
+
+
+
+#### 问题 7：如何对 Hugging Face 的模型进行微调？
+
+Hugging Face 支持使用 **Keras** 对模型进行微调。以下代码展示了如何使用 DistilBERT 模型的 **logits** 微调模型：
+
+```python
+sentences = [("Sky is blue", "Sky is red"), ("I love her", "She loves me")]
+X_train = tokenizer(sentences, padding=True, return_tensors="tf").data
+y_train = tf.constant([0, 2])  # contradiction, neutral
+loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+model.compile(loss=loss, optimizer="nadam", metrics=["accuracy"])
+history = model.fit(X_train, y_train, epochs=2)
+```
+
+
+
+#### 问题 8：Hugging Face 的 Datasets 库是如何工作的？
+
+Hugging Face 还提供了 **Datasets** 库，便于用户下载标准数据集（如 IMDb）或者使用自定义数据集进行微调。这与 **TensorFlow Datasets** 类似，但它还提供了额外的工具来动态执行预处理任务，如 **掩码**。你可以通过以下地址找到 Hugging Face 提供的数据集：
+- [https://huggingface.co/datasets](https://huggingface.co/datasets)
+
+
+
+#### 总结
+
+**Hugging Face's Transformers Library** 提供了一个完整的生态系统，允许用户下载预训练模型、分词器和数据集，并支持从 TensorFlow 到 PyTorch 的多种框架。你可以轻松加载模型执行诸如情感分析、文本分类等任务，并且可以对模型进行自定义和微调。
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                                                                                                                                   | 中文翻译                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | What are the pros and cons of using a stateful RNN versus a stateless RNN?                                                                                                                                                                 | 使用有状态RNN与无状态RNN的优缺点是什么？                                                          |
+| 2   | Why do people use encoder–decoder RNNs rather than plain sequence-to-sequence RNNs for automatic translation?                                                                                                                              | 为什么人们在自动翻译中使用编码器-解码器RNN，而不是普通的序列到序列RNN？                             |
+| 3   | How can you deal with variable-length input sequences? What about variable-length output sequences?                                                                                                                                        | 你如何处理可变长度的输入序列？可变长度的输出序列呢？                                               |
+| 4   | What is beam search, and why would you use it? What tool can you use to implement it?                                                                                                                                                      | 什么是束搜索？你为什么要使用它？你可以使用什么工具来实现它？                                       |
+| 5   | What is an attention mechanism? How does it help?                                                                                                                                                                                          | 什么是注意力机制？它如何提供帮助？                                                                |
+| 6   | What is the most important layer in the transformer architecture? What is its purpose?                                                                                                                                                     | Transformer架构中最重要的层是什么？它的作用是什么？                                                |
+| 7   | When would you need to use sampled softmax?                                                                                                                                                                                                | 什么时候需要使用采样的softmax？                                                                    |
+| 8   | Embedded Reber grammars were used by Hochreiter and Schmidhuber in their paper about LSTMs. They are artificial grammars that produce strings such as “BPBTSXXVPSEPE”. Check out Jenny Orr’s nice introduction to this topic, then choose a particular embedded Reber grammar (such as the one represented on Orr’s page), then train an RNN to identify whether a string respects that grammar or not. You will first need to write a function capable of generating a training batch containing about 50% strings that respect the grammar, and 50% that don’t. | Hochreiter和Schmidhuber在他们关于LSTM的论文中使用了嵌入式Reber语法。它们是产生诸如“BPBTSXXVPSEPE”之类字符串的人工语法。查看Jenny Orr对该主题的精彩介绍，然后选择一个特定的嵌入式Reber语法（例如Orr页面上表示的那个），然后训练一个RNN来识别字符串是否符合该语法。你首先需要编写一个函数，能够生成一个包含约50%符合语法和50%不符合语法的字符串的训练批次。 |
+| 9   | Train an encoder–decoder model that can convert a date string from one format to another (e.g., from “April 22, 2019” to “2019-04-22”).                                                                                                    | 训练一个编码器-解码器模型，将日期字符串从一种格式转换为另一种格式（例如，从“April 22, 2019”到“2019-04-22”）。 |
+| 10  | Go through the example on the Keras website for “Natural language image search with a Dual Encoder”. You will learn how to build a model capable of representing both images and text within the same embedding space. This makes it possible to search for images using a text prompt, like in the CLIP model by OpenAI.                                      | 查看Keras网站上关于“使用双编码器进行自然语言图像搜索”的示例。你将学习如何构建能够在相同嵌入空间中表示图像和文本的模型。这使得可以使用文本提示搜索图像，就像OpenAI的CLIP模型一样。 |
+| 11  | Use the Hugging Face Transformers library to download a pretrained language model capable of generating text (e.g., GPT), and try generating more convincing Shakespearean text. You will need to use the model’s generate() method—see Hugging Face’s documentation for more details.                                                                           | 使用Hugging Face Transformers库下载一个能够生成文本的预训练语言模型（例如GPT），并尝试生成更具说服力的莎士比亚风格文本。你将需要使用模型的generate()方法——请参阅Hugging Face的文档了解更多详细信息。 |
+
+{.show-header .left-text}
+
+
+
+
+
+
+
+
+
 
 
 
