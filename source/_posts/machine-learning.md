@@ -15,8 +15,6 @@ intro: |
     Hands On Machine Learning with Scikit-Learn Keras and TensorFlow
 ---
 
-
-
 ## Machine Learning Landscape
 
 ### 机器学习是什么？
@@ -22149,7 +22147,7 @@ DeepMind 的研究人员在 2013 年的论文中使用了这种方法，使 agen
 
 为了应对这个问题，Double DQN 提出了一个解决方案：使用**在线模型**选择最佳动作，而使用**目标模型**评估该动作的 Q 值。通过将动作选择和 Q 值评估分开，Double DQN 减少了 Q 值高估的情况。
 
-#### 代码解析： 
+#### 代码解析：
 `training_step()` 函数中，具体实现了这个思想。通过调用 `model.predict()` 获取当前状态下所有动作的 Q 值，并选择最佳动作（即 `argmax` 操作）。然后，目标模型 `target.predict()` 用于估算这些动作的 Q 值，从而减少高估。
 
 ```python
@@ -22459,43 +22457,1433 @@ POET 算法中的每个代理在单一环境中训练后，会定期与其他环
 
 {.show-header .left-text}
 
+## Training and Deploying TensorFlow Models at Scale
+
+### 背景
+
+
+#### 问题1：如何将训练好的模型部署到生产环境？
+
+为了将训练好的模型部署到生产环境，通常的做法包括以下几种步骤：
+
+- **简单方法**：运行模型处理一批数据，或者设置一个脚本定期调用模型进行推断（如每晚运行）。
+- **更复杂的方法**：将模型封装为一个**Web服务**，这样，基础架构中的任意部分都可以通过REST API或其他协议随时访问模型。例如，使用REST API如在**Chapter 2**中讨论过的。
+
+#### 问题2：部署模型时有哪些挑战？
+
+关键挑战包括：
+- **模型版本控制**：需要定期重新训练模型，并推送更新后的版本到生产环境。
+- **模型的优雅切换**：如何从旧模型切换到新模型，同时保证服务的连续性。
+- **A/B 测试**：为了提升模型效果，可能需要同时运行多个模型以执行A/B实验。
+- **高查询负载**：如果模型的服务获得成功，可能会处理大量的每秒查询量（QPS）。需要扩展基础架构来支持这种负载。
+
+#### 问题3：如何扩展模型服务以支持高负载？
+
+为了扩展服务并支持大量查询，可以使用**TensorFlow Serving（TF Serving）**或云平台服务（例如Google Vertex AI）。这些服务可以高效地管理模型的版本、过渡以及监控等功能。
+
+#### 问题4：如何应对模型训练的时间成本？
+
+在大量数据和计算密集型模型的情况下，模型训练的时间可能会非常长。如果业务需要快速适应市场变化，长时间的训练可能会成为瓶颈。因此，使用硬件加速器（如**GPU**或**TPU**）或分布式策略（例如**TensorFlow Distribution Strategies API**）来加速模型训练是必要的。
+
+#### 问题5：如何利用云平台和硬件加速器提升训练效率？
+
+云服务（如**Vertex AI**）和硬件加速器（GPU、TPU等）允许你在多个机器上分布模型训练任务，并提高模型训练的速度，支持快速迭代和实验。
+
+{.marker-none}
+
+### 使用已经训练好的TensorFlow模型
+
+#### 问题1：如何在Python中使用已经训练好的TensorFlow模型？
+
+在Python中使用训练好的TensorFlow模型非常简单。例如：
+- **Keras模型**：只需要调用`predict()`方法即可获取预测结果。可以在任何Python脚本中完成这些操作。
+
+#### 问题2：为什么需要将模型封装为服务，而不是直接在Python脚本中使用？
+
+当你的基础设施逐渐扩大时，直接在Python脚本中调用模型可能不再适用。这时候，更推荐将模型封装为一个独立的**服务**，该服务的唯一职责是进行预测，并让基础设施的其他部分通过REST API或gRPC API来查询这个服务。这样可以：
+- **解耦模型和基础设施**：让模型独立于基础设施的其他部分，这样就可以轻松切换模型版本或者扩展服务的规模。
+- **支持A/B测试**：在生产环境中并行运行多个模型版本，进行A/B测试。
+- **简化测试和开发**：封装为服务后，所有软件组件都可以依赖于相同的模型版本，便于测试和开发。
+
+#### 问题3：如何构建自己的微服务来提供TensorFlow模型？
+
+你可以使用任何你熟悉的技术栈来构建自己的微服务（例如使用Flask库），但是这会增加开发和维护成本。因此，TensorFlow 提供了现成的工具 **TF Serving**，可以避免重复造轮子。
+
+#### 关键点：
+- **模型解耦**：将模型和基础设施解耦，便于扩展和管理。
+- **A/B实验支持**：方便进行实验并提升模型效果。
+- **简化测试和开发**：可以简化模型版本的管理和软件开发过程。
+
+{.marker-none}
+
+### TensorFlow Serving
+
+#### 问题1：什么是TensorFlow Serving，为什么要使用它？
+**TensorFlow Serving** 是一个高效且经过大量测试的模型服务器，使用C++编写。它可以：
+- 处理高负载。
+- 支持多个模型版本的同时运行。
+- 自动部署模型的最新版本![Figure19-1多模型版本的管理和自动部署流程](../assets/attachment/hands_on_machine_learning/Figure19-1多模型版本的管理和自动部署流程.png)（图示：**Figure 19-1** 显示了多模型版本的管理和自动部署流程）。
+
+通过TensorFlow Serving，你可以轻松管理生产环境中的模型版本，并保证系统的可扩展性。
 
 
 
+#### 问题2：如何导出模型以便在TensorFlow Serving中部署？
+在Keras中导出模型很简单，只需要调用 `model.save()` 方法即可。为了支持模型版本管理，你需要为每个版本创建一个子目录，并将模型保存到相应的路径中：
+
+```python
+model_name = "my_mnist_model"
+model_version = "0001"
+model_path = Path(model_name) / model_version
+model.save(model_path, save_format="tf")
+```
+
+确保将所有的预处理步骤也包含在模型中，以避免数据预处理不一致的问题。
+
+**警告**：由于SavedModel保存了计算图，它只能与基于TensorFlow操作的模型一起使用，不能包含任意的Python代码（例如 `tf.py_function()`）。
 
 
 
+#### 问题3：如何检查导出的SavedModel？
+可以使用 `saved_model_cli` 命令行工具检查导出的模型，如下所示：
+
+```bash
+$ saved_model_cli show --dir my_mnist_model/0001
+```
+
+输出的内容包含SavedModel的tag集和signature定义。每个signature包含输入和输出的信息，例如输入张量和输出张量的类型和形状。
 
 
 
+#### 问题4：如何安装和启动TensorFlow Serving？
+可以通过多种方式安装TensorFlow Serving，例如使用Docker、系统包管理器或源代码安装。以下是使用Ubuntu的apt包管理器的安装方式：
+
+```bash
+curl 'https://storage.googleapis.com/tensorflow-serving-apt' > /etc/apt/sources.list.d/tensorflow-serving.list
+curl 'https://tensorflow-serving-release.pub.gpg' | apt-key add -
+apt update && apt install -y tensorflow-model-server
+pip install -U tensorflow-serving-api
+```
+
+安装完成后，可以通过以下命令启动服务器：
+
+```bash
+%%bash --bg
+tensorflow_model_server \
+  --port=8500 \
+  --rest_api_port=8501 \
+  --model_name=my_mnist_model \
+  --model_base_path="${MODEL_DIR}" >my_server.log 2>&1
+```
+
+在Jupyter或Colab中，`%%bash --bg` 可以在后台运行服务。
 
 
 
+#### 问题5：如何使用Docker运行TensorFlow Serving？
+可以通过Docker安装并运行TensorFlow Serving，以下是启动Docker容器的命令：
+
+```bash
+docker run -it --rm -v "/path/to/my_mnist_model:/models/my_mnist_model" \
+-p 8500:8500 -p 8501:8501 -e MODEL_NAME=my_mnist_model tensorflow/serving
+```
+
+- `-p 8500:8500`：将主机的8500端口映射到容器的8500端口（gRPC API）。
+- `-p 8501:8501`：将主机的8501端口映射到容器的8501端口（REST API）。
 
 
 
+#### 问题6：如何通过REST API查询TensorFlow Serving？
+通过REST API，可以使用HTTP请求来查询模型。以下是一个示例代码，将输入数据转换为JSON格式并发送POST请求：
+
+```python
+import json
+X_new = X_test[:3]
+request_json = json.dumps({
+    "signature_name": "serving_default",
+    "instances": X_new.tolist(),
+})
+response = requests.post(server_url, data=request_json)
+y_proba = np.array(response.json()['predictions']).round(2)
+```
+
+REST API适用于较小的输入输出数据，但由于JSON格式的冗长性，传输大数据量时性能较差。
 
 
 
+#### 问题7：如何通过gRPC API查询TensorFlow Serving？
+gRPC是一种更高效的二进制协议，适合大数据量传输。以下是通过gRPC API查询模型的代码示例：
+
+```python
+from tensorflow_serving.apis.predict_pb2 import PredictRequest
+request = PredictRequest()
+request.model_spec.name = model_name
+request.model_spec.signature_name = "serving_default"
+input_name = model.input_names[0]
+request.inputs[input_name].CopyFrom(tf.make_tensor_proto(X_new))
+
+channel = grpc.insecure_channel('localhost:8500')
+predict_service = prediction_service_pb2_grpc.PredictionServiceStub(channel)
+response = predict_service.Predict(request, timeout=10.0)
+```
+
+gRPC协议比REST API更适合大规模数据传输，具有更低的延迟和带宽占用。
 
 
 
+#### 问题8：如何部署新的模型版本？
+在生产环境中，可以随时添加新的模型版本。以下是导出新版本模型的代码：
+
+```python
+model_version = "0002"
+model_path = Path(model_name) / model_version
+model.save(model_path, save_format="tf")
+```
+
+TensorFlow Serving会自动检测新模型版本并平滑地切换到新版本，完成所有挂起的请求后，旧版本会被卸载。你可以通过日志查看切换过程。
+
+现在我已经收到了两次截图，以下是基于“Using TensorFlow Serving”主题的总结与问题驱动解答：
+
+#### 问题1：TensorFlow Serving的自动批处理功能是如何工作的？
+
+TensorFlow Serving 具备**自动批处理**功能，通过在启动时使用 `--enable_batching` 选项启用此功能。当TF Serving在短时间内接收到多个请求时（可以配置延迟时间），它会将这些请求批量处理，以便更好地利用GPU的计算能力。完成批量预测后，TF Serving会将每个预测结果返回给相应的客户端。
+
+可以通过 `--batching_parameters_file` 选项进一步配置批处理行为，允许在性能与延迟之间进行权衡。
 
 
 
+#### 问题2：如何应对高查询负载？
+
+当每秒查询量（QPS）很高时，建议在**多个服务器**上部署TF Serving并使用**负载均衡器**（见**Figure 19-2**），![Figure19-2利用负载平衡扩展TF服务](../assets/attachment/hands_on_machine_learning/Figure19-2利用负载平衡扩展TF服务.png)以分配查询负载。为此，可以采取以下几种方法：
+
+- **Kubernetes**：Kubernetes是一个开源系统，可以简化跨多个服务器的容器编排和管理工作。
+- **云平台**：如果不想购买和维护自己的硬件设备，可以使用云平台，如Amazon AWS、Microsoft Azure、Google Cloud等，这些平台可以帮助管理虚拟机、容器编排以及TF Serving的配置、调优和监控。
 
 
 
+#### 问题3：如何利用Vertex AI在云端部署模型？
+
+Vertex AI 是一个支持**TPU**的云端服务平台，它提供了与TensorFlow 2、Scikit-Learn和XGBoost的深度集成，特别适合在云端进行模型部署和推理。此外，其他云平台如**Amazon AWS SageMaker**和**Microsoft AI Platform** 也可以很好地支持TensorFlow模型的部署。
+
+通过使用Vertex AI，你可以避免管理基础设施的复杂性，让服务提供商来处理TF Serving的调优和管理工作，简化操作流程。
 
 
 
+#### 总结
+
+我们了解了TensorFlow Serving的核心特性、自动批处理功能、如何扩展并管理高查询负载，以及在云平台上部署TensorFlow模型的多种选择。特别是对于高负载的应用场景，可以通过使用负载均衡和多个TF Serving实例来扩展服务，同时借助云平台进一步简化部署和维护工作。
+
+{.marker-none}
+
+### Vertex AI
+
+#### 问题1：什么是Vertex AI？
+
+**Vertex AI** 是Google Cloud Platform（GCP）中的一个平台，提供广泛的AI相关工具和服务。它可以：
+- 上传数据集并使用人类标注数据。
+- 训练模型并在多GPU或TPU服务器上进行模型超参数调优或自动模型结构搜索（AutoML）。
+- 管理已训练的模型，进行大规模批量预测。
+- 支持通过REST或gRPC API在云端提供模型服务。
+- 提供诸如**Matching Engine** 的功能，用于高效地比较向量（例如，近似最近邻搜索）。
+- 其他AI服务，如计算机视觉、翻译、语音转文本等。
+
+
+#### 问题2：在GCP上创建预测服务前的准备工作是什么？
+
+- **登录GCP账号**：如果没有账号需要创建（参见 **Figure 19-3**）。![Figure19-3GoogleCloudPlatformConsole](../assets/attachment/hands_on_machine_learning/Figure19-3GoogleCloudPlatformConsole.png)
+- **接受服务条款**：首次使用时，需阅读并接受GCP的条款，新用户会获得价值$300的免费试用。
+- **设置结算账户**：如果免费试用期结束或使用了超出免费额度的服务，确保结算账户是激活的，以免超出预算。
+- **创建GCP项目**：GCP的每个资源都属于一个项目，创建项目时可以修改项目名称和ID。确保项目的结算已激活。
 
 
 
+#### 问题3：如何在GCP中激活所需的API？
+
+在GCP控制台的导航菜单中，选择 **“API 和服务”**，确保启用了Cloud Storage API和Vertex AI API。
 
 
 
+#### 问题4：如何使用Google Cloud CLI与GCP进行交互？
 
+GCP提供了**命令行接口（CLI）**和**Google Cloud Shell**：
+- CLI可以用来管理几乎所有GCP资源，可以通过`!gcloud`命令访问。
+- **Google Cloud Shell**是一个预配置的Linux VM环境，直接在浏览器中运行，支持使用Google Cloud SDK与GCP进行交互。
+
+在使用CLI或Cloud Shell之前，需要通过以下命令在Colab中进行认证：
+
+```python
+from google.colab import auth
+auth.authenticate_user()
+```
+
+
+
+#### 问题5：如何在GCP上进行身份验证和授权？
+
+使用OAuth 2.0进行认证时，应用程序将请求访问用户的Google账户来访问GCP资源。对于不涉及用户数据的应用程序，通常使用**服务账户**：
+- 在GCP控制台中创建服务账户，并授予该账户访问Vertex AI服务的权限。
+- 服务账户可以附加到VM实例、Kubernetes服务或其他GCP资源上，确保客户端可以自动使用服务账户进行认证。
+
+服务账户的密钥文件需要妥善保管并用于配置环境变量 `GOOGLE_APPLICATION_CREDENTIALS`。
+
+
+
+#### 问题6：如何创建Google Cloud Storage (GCS) 存储桶来存储模型？
+
+GCS 使用全球唯一的命名空间，因此存储桶名称必须是唯一的。以下代码用于创建一个存储桶，并上传模型到GCS：
+
+```python
+from google.cloud import storage
+
+project_id = "my_project"
+bucket_name = "my_bucket"
+location = "us-central1"
+
+storage_client = storage.Client(project=project_id)
+bucket = storage_client.create_bucket(bucket_name, location=location)
+
+def upload_directory(bucket, dirpath):
+    dirpath = Path(dirpath)
+    for filepath in dirpath.glob("**/*"):
+        if filepath.is_file():
+            blob = bucket.blob(filepath.relative_to(dirpath.parent).as_posix())
+            blob.upload_from_filename(filepath)
+
+upload_directory(bucket, "my_mnist_model")
+```
+
+
+#### 问题7：如何在Vertex AI上部署模型？
+
+使用**google-cloud-aiplatform**库来与Vertex AI交互。以下代码展示了如何创建一个新的模型并将其部署到Vertex AI上：
+
+```python
+from google.cloud import aiplatform
+
+server_image = "gcr.io/cloud-aiplatform/prediction/tf2-gpu.2-8:latest"
+aiplatform.init(project=project_id, location=location)
+mnist_model = aiplatform.Model.upload(
+    display_name="mnist",
+    artifact_uri=f"gs://{bucket_name}/my_mnist_model/0001",
+    serving_container_image_uri=server_image,
+)
+```
+
+接下来，可以创建一个端点并部署模型：
+
+```python
+endpoint = aiplatform.Endpoint.create(display_name="mnist-endpoint")
+
+endpoint.deploy(
+    mnist_model,
+    min_replica_count=1,
+    max_replica_count=5,
+    machine_type="n1-standard-4",
+    accelerator_type="NVIDIA_TESLA_K80",
+    accelerator_count=1
+)
+```
+
+
+#### 问题8：如何查询Vertex AI中的预测服务？
+
+部署成功后，可以使用以下代码来查询服务：
+
+```python
+response = endpoint.predict(instances=X_new.tolist())
+y_proba = np.round(response.predictions, 2)
+```
+
+通过`endpoint.undeploy_all()`可以取消部署模型，避免不必要的费用。
+
+
+
+#### 总结
+
+在Vertex AI上创建预测服务需要一系列准备步骤，包括设置GCP账户、激活API、创建存储桶并将模型上传至GCS，最终通过创建端点来部署并查询预测服务。借助Vertex AI，用户可以轻松扩展模型，动态调整计算节点的数量，以应对查询量的变化。
+
+{.marker-none}
+
+### 在Vertex AI上运行批量预测任务
+
+#### 问题1：如何在Vertex AI上运行批量预测任务？
+
+在Vertex AI上运行批量预测任务不需要创建端点，只需要提供一个已部署的模型和一组输入数据。具体步骤如下：
+
+- **准备输入数据**：可以将每个输入数据格式化为一个**JSON Lines**文件，每行对应一个输入实例。以下代码展示了如何创建一个JSON Lines文件并上传到Google Cloud Storage (GCS)：
+
+```python
+batch_path = Path("my_mnist_batch")
+batch_path.mkdir(exist_ok=True)
+with open(batch_path / "my_mnist_batch.jsonl", "w") as jsonl_file:
+    for image in X_test[:100].tolist():
+        jsonl_file.write(json.dumps(image))
+        jsonl_file.write("\n")
+
+upload_directory(bucket, batch_path)
+```
+
+- **启动批量预测任务**：通过指定任务名称、机器类型、加速器类型、输入数据和结果保存路径来启动批量预测：
+
+```python
+batch_prediction_job = mnist_model.batch_predict(
+    job_display_name="my_batch_prediction_job",
+    machine_type="n1-standard-4",
+    starting_replica_count=1,
+    max_replica_count=5,
+    accelerator_type="NVIDIA_TESLA_K80",
+    accelerator_count=1,
+    gcs_source=[f"gs://{bucket_name}/{batch_path.name}/my_mnist_batch.jsonl"],
+    gcs_destination_prefix=f"gs://{bucket_name}/my_mnist_predictions/",
+    sync=True  # 设置为False以异步运行任务
+)
+```
+
+
+
+#### 问题2：如何处理批量预测任务的输出？
+
+批量预测任务的输出会被保存为JSON Lines格式的文件，包含每个实例的预测结果。可以通过以下代码迭代输出文件并读取预测：
+
+```python
+y_probas = []
+for blob in batch_prediction_job.iter_outputs():
+    if "prediction.results" in blob.name:
+        for line in blob.download_as_text().splitlines():
+            y_proba = json.loads(line)["prediction"]
+            y_probas.append(y_proba)
+```
+
+通过这段代码，可以将预测结果存储到 `y_probas` 列表中。然后，你可以计算预测的准确性：
+
+```python
+y_pred = np.argmax(y_probas, axis=1)
+accuracy = np.sum(y_pred == y_test[:100]) / 100
+```
+
+在此示例中，准确率为98%。
+
+
+
+#### 问题3：JSON Lines格式是否适合所有输入数据类型？
+
+默认情况下，Vertex AI的批量预测使用**JSON Lines**格式。然而，对于大型数据（如图像）可能过于冗长。幸运的是，`batch_predict()` 方法支持其他格式，包括 `csv`、`tf-record`、`tf-record-gzip`、`bigquery` 和 `file-list`。对于图像数据，可以使用Base64编码，模型需要在输入层添加解析逻辑（例如 `tf.io.decode_base64()` 或 `tf.io.decode_png()`）。
+
+
+
+#### 问题4：如何删除批量预测任务及相关资源？
+
+在完成批量预测任务后，你可以删除模型、批量预测任务以及相关的GCS资源：
+
+```python
+for prefix in ["my_mnist_model/", "my_mnist_batch/", "my_mnist_predictions/"]:
+    blobs = bucket.list_blobs(prefix=prefix)
+    for blob in blobs:
+        blob.delete()
+
+bucket.delete()  # 如果存储桶为空，删除它
+batch_prediction_job.delete()
+```
+
+
+
+#### 总结
+
+Vertex AI使得批量预测任务的运行非常简单，通过将输入数据上传到GCS，指定机器类型、加速器类型等参数，Vertex AI可以高效地处理大规模的批量预测。批量任务的输出可以在GCS中读取和分析，并且支持多种数据格式和灵活的资源管理。
+
+
+{.marker-none}
+
+### 将机器学习模型部署到移动设备或嵌入式设备
+
+
+#### 问题1：为什么要将机器学习模型部署到移动设备或嵌入式设备？
+
+将模型部署到**边缘设备**（例如用户的移动设备或嵌入式设备）具有以下优势：
+- **降低延迟**：不需要将数据发送到远程服务器，可以本地处理数据。
+- **减少服务器负载**：降低了对中心服务器的负载。
+- **增强隐私**：用户数据可以保留在设备上，而不需要传输到服务器。
+
+
+
+#### 问题2：部署到边缘设备面临哪些挑战？
+
+边缘设备的计算资源（如RAM和CPU）较少，因此大模型可能无法适配。同时，大模型可能会消耗太多电量或导致设备过热。为了避免这些问题，模型需要进行优化，变得更轻量高效。
+
+**TensorFlow Lite (TFLite)** 提供了多种工具来帮助模型在边缘设备上运行，主要目标包括：
+- **减少模型大小**：缩短下载时间并降低RAM占用。
+- **减少计算量**：减少每次预测所需的计算，降低延迟、功耗和设备发热。
+- **适应设备的特定限制**。
+
+
+
+#### 问题3：如何将TensorFlow模型转换为适用于移动设备的格式？
+
+可以使用**TFLite转换器**将一个SavedModel转换为更轻量的**FlatBuffer**格式，适用于移动和嵌入式设备。以下是转换代码示例：
+
+```python
+converter = tf.lite.TFLiteConverter.from_saved_model(str(model_path))
+tflite_model = converter.convert()
+with open("my_converted_savedmodel.tflite", "wb") as f:
+    f.write(tflite_model)
+```
+
+**提示**：你还可以直接将Keras模型转换为FlatBuffer格式，使用 `tf.lite.TFLiteConverter.from_keras_model(model)`。
+
+
+
+#### 问题4：TFLite转换器如何优化模型？
+
+TFLite转换器不仅会减少模型大小，还会优化计算性能以降低延迟。优化手段包括：
+- **剪枝（Pruning）**：移除不必要的操作，例如训练操作。
+- **计算优化**：合并或简化某些操作。例如，公式 `3a + 4a + 5a` 将被优化为 `12a`。
+- **层融合**：例如，批量归一化层可以与前一层的加法和乘法操作进行融合。
+
+通过这些手段，TFLite大大提高了模型在边缘设备上的运行效率。
+
+
+
+#### 问题5：如何进一步减少模型的大小？
+
+- **使用较小的比特宽度**：例如，使用16位浮点数（half-floats）代替32位浮点数，模型大小将缩小一半，尽管精度会有少量下降。
+- **后训练量化**：最简单的方法是将权重从32位浮点数量化为8位整数。以下代码展示了如何添加量化优化：
+
+```python
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+```
+
+![Figure19-5如何将32位浮点数转换为8位整数示意图](../assets/attachment/hands_on_machine_learning/Figure19-5如何将32位浮点数转换为8位整数示意图.png)**图19-5**展示了如何将32位浮点数转换为8位整数，权重从范围 `[-m, +m]` 被映射到 `[-127, +127]` 的整数范围内。
+
+
+
+#### 问题6：如何量化激活函数以进一步减少计算量？
+
+通过量化激活函数，计算可以完全在整数空间内完成，减少对浮点操作的依赖，这会显著减少CPU使用、能耗和发热。如果设备（例如**Google Edge TPU**）只能处理整数，量化激活是必须的。
+
+这个过程包括使用代表性样本来校准激活的绝对值，并通过量化函数自动处理。
+
+
+
+#### 问题7：量化有什么缺点？
+
+量化会引入一定的精度损失，因为它相当于在权重和激活中添加了噪声。如果精度损失不可接受，可以使用**量化感知训练**（Quantization-aware Training），在训练过程中引入量化操作，使模型对量化噪声更加鲁棒。
+
+
+
+#### 总结
+
+TensorFlow Lite 提供了将模型部署到移动设备和嵌入式设备的完整工具链，通过模型剪枝、比特宽度降低以及量化等方法，极大地减少了模型的大小和计算复杂度，适应了边缘设备的资源限制。
+
+{.marker-none}
+
+### 在网页中运行机器学习模型
+
+#### 问题1：在什么场景下需要在网页中运行机器学习模型？
+
+在客户端（用户的浏览器中）运行模型而不是在服务器端，可以在以下几种场景下提供显著优势：
+- **间歇性或慢速网络**：当用户经常处于网络连接不稳定或速度较慢的环境中时，直接在客户端运行模型可以提高网站的可靠性。
+- **实时响应需求**：例如在线游戏等对模型响应速度要求很高的场景，移除服务器查询可以减少延迟，使网站响应更加迅速。
+- **隐私保护**：当模型基于一些用户的私密数据做出预测时，将模型部署到客户端可以保护数据隐私，确保数据不会离开用户的设备。
+
+
+
+#### 问题2：如何在网页中加载并运行TensorFlow模型？
+
+可以使用 **TensorFlow.js (TFJS)** JavaScript库来加载并运行TFLite模型。例如，以下代码展示了如何加载预训练的MobileNet模型并使用它对图像进行分类：
+
+```javascript
+import "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest";
+import "https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0";
+
+const image = document.getElementById("image");
+
+mobilenet.load().then(model => {
+    model.classify(image).then(predictions => {
+        for (var i = 0; i < predictions.length; i++) {
+            let className = predictions[i].className;
+            let proba = (predictions[i].probability * 100).toFixed(1);
+            console.log(className + ": " + proba + "%");
+        }
+    });
+});
+```
+
+该代码使用了两个模块：
+- `@tensorflow/tfjs`：加载TensorFlow.js库。
+- `@tensorflow-models/mobilenet`：加载预训练的MobileNet模型。
+
+图像被从页面的`image`元素中获取，模型进行分类并在控制台输出预测结果及其概率。
+
+
+
+#### 问题3：如何将网页变成渐进式Web应用程序（PWA）？
+
+可以将网页转换为**渐进式Web应用程序（PWA）**，以支持离线运行、安装为独立的移动应用程序等功能。PWA利用了 **service worker**（服务工作线程）来缓存资源，允许应用程序在没有网络连接的情况下运行，甚至可以处理后台任务。
+
+例如，访问 `https://homl.info/tfjswpa`，可以将该网页添加到移动设备的主屏幕，并将其当作常规的移动应用来运行。
+
+
+
+#### 问题4：如何在浏览器中训练模型？
+
+TFJS不仅支持在浏览器中运行模型，还支持在浏览器中训练模型。如果计算机有GPU，TFJS可以通过**WebGL**利用GPU进行加速。
+
+在浏览器中训练模型的一个主要优势是可以确保用户数据保持私密。例如，模型可以在中央服务器上训练，随后在用户的浏览器中根据本地数据进行微调（这种技术称为 **联邦学习**）。
+
+
+
+#### 小结
+
+通过 **TensorFlow.js**，可以轻松地在网页中加载和运行机器学习模型，而不需要依赖服务器。这在网络不稳定或数据隐私要求较高的场景下尤其有用。此外，TFJS还支持将网页应用转换为渐进式Web应用，并能够在浏览器中进行模型训练，这提供了更多的灵活性和可能性。
+
+{.marker-none}
+
+### 使用GPU加速计算
+
+#### 问题1：为什么使用GPU可以显著加速计算？
+
+在深度学习任务中，训练大型神经网络可能需要非常长的时间，特别是在使用单个CPU的情况下，训练过程可能需要数小时、数天甚至数周。而**GPU**能够极大地减少训练时间，通常可以将训练时间缩短到几分钟或几小时。这一优势不仅节省了大量时间，还可以让研究者更频繁地实验和重新训练模型。
+
+
+
+#### 问题2：如何在Google Colab中启用GPU加速？
+
+在Google Colab中启用GPU非常简单，只需要选择 **“Change runtime type”**，然后选择**GPU加速器类型**。TensorFlow会自动检测到GPU，并利用它来加速计算，代码与不使用GPU时完全相同。
+
+
+#### 问题3：如何在Vertex AI上启用GPU加速？
+
+在之前的章节中，我们已经介绍了如何在Vertex AI上部署模型并使用多个启用GPU的计算节点。在创建Vertex AI模型时，只需要选择正确的支持GPU的Docker镜像，并在调用 `endpoint.deploy()` 时选择所需的GPU类型。
+
+
+#### 问题4：如果想要购买自己的GPU设备，该怎么做？
+
+如果你想购买自己的GPU并在本地机器上进行加速计算，还可以将计算分布在**CPU**和**多个GPU设备**之间。![Figure19-6在多个设备(CPU和多个GPU)上并行执行TensorFlow计算图的流程](../assets/attachment/hands_on_machine_learning/Figure19-6在多个设备(CPU和多个GPU)上并行执行TensorFlow计算图的流程.png)
+
+
+#### 总结
+
+利用GPU可以显著加速深度学习模型的训练过程，使研究者能够更快速地进行实验和模型优化。无论是在Google Colab中启用GPU，还是在Vertex AI中使用支持GPU的计算节点，TensorFlow可以无缝地检测和利用GPU设备来提高计算效率。如果你有自己的GPU设备，还可以探索如何在本地设备上分布计算。
+
+{.marker-none}
+
+### 购买自己的GPU
+
+#### 问题 1：为什么购买自己的 GPU 有意义？
+
+当你计划长期大量使用 GPU，尤其是在进行深度学习任务时，购买自己的 GPU 可能比使用云服务更加经济。这样可以避免频繁将数据上传到云端，同时提升工作流的灵活性，尤其是当你希望在本地训练模型时。此外，许多人还可能选择 GPU 兼顾其他需求，比如游戏。
+
+
+
+#### 问题 2：在选择 GPU 卡时需要考虑哪些因素？
+
+选择 GPU 卡时应重点考虑：
+- **内存 (RAM)**：至少 10 GB，以处理大规模任务，例如图像处理或自然语言处理 (NLP)。
+- **带宽**：数据传输速度，影响数据从 GPU 进出速度。
+- **核心数量和散热系统**：对计算性能和 GPU 稳定性至关重要。
+
+对于更具体的建议，可以参考相关资源来详细了解如何根据不同的任务需求选择合适的 GPU。
+
+
+
+#### 问题 3：TensorFlow 支持哪些类型的 GPU？
+
+TensorFlow 当前支持 **Nvidia** 显卡，要求至少具备 **CUDA Compute Capability 3.5+**。其他设备的支持可能会逐步扩大，因此建议查看 **TensorFlow 的文档** 以获取最新的支持设备列表。
+
+
+
+#### 问题 4：安装 Nvidia GPU 后需要配置哪些软件？
+
+安装 Nvidia GPU 卡后，需要配置以下关键组件：
+- **CUDA Toolkit**：提供通用计算功能，允许 GPU 执行高效的并行计算。
+- **cuDNN**：用于深度学习的库，能够加速卷积、池化等操作。
+
+这两者是 GPU 加速深度学习任务的核心工具。
+
+
+
+#### 图解分析：TensorFlow 如何使用 CUDA 和 cuDNN 来管理 GPU（Figure 19-7）
+
+![Figure19-7TensorFlow使用CUDA和cuDNN控制GPU并增强DNN](../assets/attachment/hands_on_machine_learning/Figure19-7TensorFlow使用CUDA和cuDNN控制GPU并增强DNN.png)图 **Figure 19-7** 展示了 TensorFlow 如何与 **CUDA** 和 **cuDNN** 一起工作，以控制 GPU 并加速深度神经网络 (DNN) 的计算。TensorFlow 通过 **CUDA** 处理一般的 GPU 计算任务，而 **cuDNN** 负责对深度学习特定的操作进行优化，如卷积层和池化层。
+
+
+
+#### 问题 5：如何验证 GPU 是否已正确安装？
+
+可以通过 `nvidia-smi` 命令来验证 GPU 是否已正确安装。下方的输出示例展示了安装的 Nvidia Tesla T4 GPU，其拥有约 15 GB 的可用内存，并且当前没有进程在运行：
+
+```bash
+$ nvidia-smi
+Sun Apr 10 04:52:10 2022
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 460.32.03    Driver Version: 460.32.03    CUDA Version: 11.2     |
+|-------------------------------+----------------------+----------------------+
+| GPU Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan   Temp  Perf  Pwr:Usage/Cap|   Memory-Usage   | GPU-Util  Compute M. |
+|                               |                      |                MIG M. |
+|                               |                      |                |
++-------------------------------+----------------------+----------------------+
+|   0 Tesla T4          Off  | 00000000:00:04.0 Off | 0 |
+| N/A 34C P8 9W / 70W | 3MiB / 15109MiB | 0% Default |
+|                               |                      |                |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+| GPU   GI   CI        PID   Type   Process name                  GPU Memory  |
+|=============================================================================|
+| No running processes found                                                  |
++-----------------------------------------------------------------------------+
+```
+
+
+
+#### 问题 6：如何检查 TensorFlow 是否识别到 GPU？
+
+运行以下代码来检查 TensorFlow 是否识别到 GPU：
+
+```python
+physical_gpus = tf.config.list_physical_devices("GPU")
+physical_gpus
+```
+
+如果输出非空，例如：
+
+```python
+[PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+```
+
+则表示 TensorFlow 成功识别到了物理 GPU 设备。
+
+{.marker-none}
+
+### 管理GPU RAM
+
+#### 问题 1：TensorFlow 默认如何管理 GPU RAM？
+
+默认情况下，TensorFlow 在第一次运行计算时会尝试占用所有可用 GPU 的所有 RAM。这样做是为了避免 GPU RAM 的碎片化。但是，这也意味着当你启动第二个 TensorFlow 程序时，可能会因为没有足够的 GPU RAM 而崩溃。因此，如果你需要同时运行多个程序，比如同时训练多个模型，必须合理分配 GPU RAM 资源。
+
+
+
+#### 问题 2：如何将不同的 GPU 分配给不同的进程？
+
+如果你的机器上有多个 GPU，可以通过设置环境变量将每个 GPU 分配给不同的进程。具体来说：
+- 设置 `CUDA_VISIBLE_DEVICES` 环境变量，确保每个进程只能看到指定的 GPU。
+- 设置 `CUDA_DEVICE_ORDER` 环境变量为 `PCI_BUS_ID`，以确保每个 ID 总是对应相同的 GPU 卡。
+
+例如，如果你有 4 个 GPU，可以使用以下命令将两个 GPU 分配给每个进程：
+
+```bash
+$ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0,1 python3 program_1.py
+# 在另一个终端中运行：
+$ CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=3,2 python3 program_2.py
+```
+
+这将确保程序 1 只能看到 GPU 卡 0 和 1，而程序 2 只能看到 GPU 卡 3 和 2，如图 **Figure 19-8** 所示。
+
+
+
+#### 图解分析：每个程序如何获取两块 GPU（Figure 19-8）
+
+![Figure19-8通过设置环境变量来让两个TensorFlow程序分别访问不同的GPU设备](../assets/attachment/hands_on_machine_learning/Figure19-8通过设置环境变量来让两个TensorFlow程序分别访问不同的GPU设备.png)在 **Figure 19-8** 中，展示了如何通过设置环境变量来让两个 TensorFlow 程序分别访问不同的 GPU 设备。Program 1 访问 `/gpu:0` 和 `/gpu:1`，而 Program 2 访问 `/gpu:2` 和 `/gpu:3`。通过这种方式，可以避免多个程序竞争同一块 GPU 的资源，从而提升并行训练的效率。
+
+
+
+#### 问题 3：如何限制 TensorFlow 只占用特定数量的 GPU RAM？
+
+另一种选择是限制 TensorFlow 只使用特定数量的 GPU RAM。例如，你可以设置 TensorFlow 只占用每个 GPU 的 2 GiB RAM。要实现这一点，首先需要为每个物理 GPU 设备创建一个逻辑 GPU 设备，并为其分配内存限制：
+
+```python
+for gpu in physical_gpus:
+    tf.config.set_logical_device_configuration(
+        gpu,
+        [tf.config.LogicalDeviceConfiguration(memory_limit=2048)]
+    )
+```
+
+这种方式允许你为每个物理 GPU 分配一个逻辑 GPU 设备，并限制其内存使用量。
+
+
+
+#### 图解分析：每个程序获取所有 GPU，但只占用 2 GiB RAM（Figure 19-9）
+
+![Figure19-9两个程序可以同时获取所有4块GPU但每个程序只占用每个GPU上的2GiB内存](../assets/attachment/hands_on_machine_learning/Figure19-9两个程序可以同时获取所有4块GPU但每个程序只占用每个GPU上的2GiB内存.png)图 **Figure 19-9** 进一步展示了两个程序可以同时获取所有 4 块 GPU，但每个程序只占用每个 GPU 上的 2 GiB 内存。这种方式在高效利用 GPU 资源的同时，确保多个程序可以并行运行而不会因为 RAM 过度使用而崩溃。
+
+
+
+#### 问题 4：如何动态分配 GPU RAM 以避免占用过多资源？
+
+你可以让 TensorFlow 仅在需要时分配 GPU RAM，而不是一次性占用所有 RAM。这可以通过以下代码实现：
+
+```python
+for gpu in physical_gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+```
+
+设置 `set_memory_growth` 为 `True` 后，TensorFlow 只会在需要时逐渐增加 GPU RAM 的使用量，这样可以避免占用不必要的资源。
+
+
+
+#### 问题 5：如何将一个 GPU 分割成多个逻辑设备？
+
+如果你只有一块物理 GPU，但想模拟多 GPU 的训练场景，可以将该 GPU 分割成多个逻辑设备。以下代码将 GPU 0 分成两个逻辑设备，每个设备限制使用 2 GiB RAM：
+
+```python
+tf.config.set_logical_device_configuration(
+    physical_gpus[0],
+    [tf.config.LogicalDeviceConfiguration(memory_limit=2048),
+     tf.config.LogicalDeviceConfiguration(memory_limit=2048)]
+)
+```
+
+这些逻辑设备会被命名为 `/gpu:0` 和 `/gpu:1`，并且可以像使用正常 GPU 那样使用这些逻辑设备。通过以下代码，你可以列出所有逻辑设备：
+
+```python
+logical_gpus = tf.config.list_logical_devices("GPU")
+logical_gpus
+```
+
+输出示例：
+
+```python
+[LogicalDevice(name='/device:GPU:0', device_type='GPU'),
+ LogicalDevice(name='/device:GPU:1', device_type='GPU')]
+```
+
+{.marker-none}
+
+### 在设备上放置操作和变量
+
+#### 问题 1：如何在设备上放置操作和变量？
+
+默认情况下，Keras 和 `tf.data` 会自动选择合适的设备来放置操作和变量。但是，你也可以手动控制操作和变量的放置，以获得更细致的控制。例如：
+- 通常建议将数据预处理操作放在 **CPU** 上，而将神经网络的计算操作放在 **GPU** 上。
+- **GPU** 的通信带宽相对有限，因此需要避免不必要的数据在 **GPU** 和 **CPU** 之间的传输。
+- **CPU RAM** 的扩展相对简单且成本较低，而 **GPU RAM** 则较为昂贵且有限，因此，如果某个变量在接下来的几步训练中不需要使用，应该将其放置在 **CPU** 上（例如数据集通常放置在 **CPU**）。
+
+
+
+#### 问题 2：TensorFlow 默认如何放置变量和操作？
+
+默认情况下，所有变量和操作都会被放置在第一个 GPU（即名为 `"/gpu:0"` 的设备）上，除非某些变量和操作没有 GPU 内核（例如整数变量）。没有 GPU 内核的变量和操作将放置在 **CPU**（即 `"/cpu:0"`）上。
+
+**代码示例：**
+
+```python
+a = tf.Variable([1., 2., 3.])  # float32 变量会被放在 GPU 上
+a.device
+```
+
+输出：
+
+```
+'/job:localhost/replica:0/task:0/device:GPU:0'
+```
+
+```python
+b = tf.Variable([1, 2, 3])  # int32 变量会被放在 CPU 上
+b.device
+```
+
+输出：
+
+```
+'/job:localhost/replica:0/task:0/device:CPU:0'
+```
+
+第一个变量 `a` 被放置在 **GPU** 上，而第二个变量 `b` 被放置在 **CPU** 上，因为 **GPU** 没有适用于整数变量的内核。
+
+
+
+#### 问题 3：如何手动将操作放置在特定设备上？
+
+如果你想手动控制操作放置的设备，可以使用 `tf.device()` 上下文。例如，将操作显式放置在 **CPU** 上：
+
+**代码示例：**
+
+```python
+with tf.device("/cpu:0"):
+    c = tf.Variable([1., 2., 3.])
+c.device
+```
+
+输出：
+
+```
+'/job:localhost/replica:0/task:0/device:CPU:0'
+```
+
+注意，即使你的机器有多个 CPU 核心，**CPU** 总是被视为单一设备 `"/cpu:0"`。在 **CPU** 上放置的操作可以在多个核心上并行运行，前提是它具备多线程内核。
+
+
+
+#### 问题 4：如果将操作或变量放置在不存在的设备上会发生什么？
+
+如果你尝试将操作或变量放置在不存在的设备上，或者没有内核支持该设备，TensorFlow 会静默地回退到默认设备。这意味着，即使你的代码指定了某个设备，TensorFlow 也会选择最合适的设备来执行操作，以保证代码在不同 GPU 数量的机器上都能运行。
+
+你可以通过以下代码来关闭这种自动回退行为，以便在设备不存在时抛出异常：
+
+```python
+tf.config.set_soft_device_placement(False)
+```
+
+{.marker-none}
+
+### 在多个设备上并行执行操作
+
+#### 问题 1：TensorFlow 如何在多个设备上并行执行操作？
+
+当 TensorFlow 运行一个函数时，它会分析图中的操作列表，并计算每个操作的依赖关系。TensorFlow 将所有没有依赖关系的操作（即源操作）添加到各自设备的执行队列中。然后，每个操作被依次执行，执行完成后，其依赖的其他操作的依赖计数器减少。一旦某个操作的依赖计数器变为零，便被推送到相应设备的执行队列中，直至所有输出被计算完毕。
+
+#### 图解分析：并行化的 TensorFlow 图执行（Figure 19-10）
+
+![Figure19-10ParallelizedExecutionOfATensorFlow](../assets/attachment/hands_on_machine_learning/Figure19-10ParallelizedExecutionOfATensorFlow.png)图 **Figure 19-10** 展示了如何在 CPU 和 GPU 上并行执行操作。图中的操作 A、B、C 是源操作，它们可以立即被评估。A 和 B 被放置在 **CPU** 上，C 则被分配到 **GPU** #0。图中展示了 **CPU** 的两个线程池：
+- **Inter-op 线程池** 负责在多个 CPU 核心之间分配操作。
+- **Intra-op 线程池** 用于在多线程的内核中并行执行操作的子操作。
+
+对于 **GPU**，操作在其队列中按顺序执行，而依赖 **CUDA** 和 **cuDNN** 实现的多线程内核可以并行运行许多 GPU 线程。因此，不需要为 **GPU** 创建 inter-op 线程池。
+
+
+
+#### 问题 2：如何确保操作执行顺序？
+
+即使没有显式依赖关系，TensorFlow 仍然会确保状态资源的操作按代码顺序执行。比如，如果一个函数包含 `v.assign_add(1)` 和 `v.assign(v * 2)`，TensorFlow 将确保它们按照正确的顺序执行。
+
+
+
+#### 问题 3：如何控制线程池的并行性？
+
+你可以通过以下代码控制 **inter-op** 和 **intra-op** 线程池中的线程数量：
+
+```python
+tf.config.threading.set_inter_op_parallelism_threads(n)
+tf.config.threading.set_intra_op_parallelism_threads(n)
+```
+
+这在某些情况下非常有用，比如你不希望 TensorFlow 使用所有 CPU 核心或希望设置单线程时。
+
+
+
+#### 问题 4：如何在不同设备上并行训练模型？
+
+以下是一些利用多设备并行执行的方式：
+- **并行训练多个模型**：可以为每个模型分配一个单独的 GPU，并在不同的进程中运行训练脚本。通过设置 `CUDA_DEVICE_ORDER` 和 `CUDA_VISIBLE_DEVICES` 环境变量，确保每个脚本只看到一个 GPU。
+
+- **在 GPU 上训练模型，CPU 上进行预处理**：可以利用 CPU 来并行进行数据的预处理，使用 `prefetch()` 函数来准备下一批数据。
+
+- **多输入卷积神经网络并行执行**：当模型需要处理两个输入图像时，可以将不同的卷积神经网络放在不同的 GPU 上并行执行，以提高速度。
+
+- **高效集成模型**：你可以在多个 GPU 上放置不同的训练模型，以加快生成集成模型最终预测的速度。
+
+{.marker-none}
+
+### 模型并行化
+
+#### 问题 1：什么是模型并行化（Model Parallelism）？
+
+模型并行化指的是将一个神经网络分割成多个部分，每个部分在不同的设备上运行。与数据并行化不同，模型并行化并不是在不同设备上训练同一个模型的多个副本，而是将模型本身拆分到多个设备上。然而，模型并行化通常比较复杂，效果也取决于神经网络的架构。对于全连接网络来说，模型并行化的收益较少。
+
+#### 图解分析：将全连接神经网络分割到多个设备上的问题（Figure 19-11）
+
+![Figure19-11两种模型并行化的尝试](../assets/attachment/hands_on_machine_learning/Figure19-11两种模型并行化的尝试.png)在 **Figure 19-11** 中，我们可以看到两种模型并行化的尝试：
+- **每层分配到一个设备**：这是一个糟糕的选择，因为每一层需要等待前一层的输出，导致串行执行而无法利用并行的优势。
+- **垂直分割每一层**：虽然每一层的左右两部分可以在不同设备上并行执行，但下层需要等待上层的输出，设备之间的通信开销可能会抵消并行计算带来的好处。
+
+#### 问题 2：哪些神经网络架构更适合模型并行化？
+
+某些神经网络架构，如卷积神经网络（CNN），其层与下层部分连接较少，因此可以更有效地分块并分配到不同的设备上。![Figure19-12部分连接的神经网络如何进行垂直分割](../assets/attachment/hands_on_machine_learning/Figure19-12部分连接的神经网络如何进行垂直分割.png)**Figure 19-12** 展示了部分连接的神经网络如何进行垂直分割，从而更有效地进行并行化。
+
+#### 图解分析：分割部分连接的神经网络（Figure 19-12）
+
+对于部分连接的神经网络，垂直分割的效果相对较好，因为层之间的通信量较少，减少了跨设备通信的开销。
+
+#### 问题 3：如何对深度循环神经网络（RNN）进行模型并行化？
+
+深度循环神经网络（RNN）可以通过水平分割来并行化。通过将每一层放在不同的设备上，模型可以在多个时间步上同时激活多个设备。虽然这种方法仍然涉及较多的设备间通信，但并行化多个单元的好处可能会超过通信带来的开销。
+
+#### 图解分析：分割深度循环神经网络（Figure 19-13）
+
+![Figure19-13分割部分连接的神经网络](../assets/attachment/hands_on_machine_learning/Figure19-13分割部分连接的神经网络.png)**Figure 19-13** 展示了如何将 RNN 水平分割，每一层的输出传递到下一层。每个时间步的数据可以在不同的设备上并行计算，尽管仍需要设备之间大量的通信。
+
+#### 问题 4：模型并行化的实际效果如何？
+
+虽然模型并行化在某些情况下可以加速模型的训练或推理，但它需要对神经网络架构进行细致的调整和优化。跨设备通信的开销可能会抵消并行化带来的优势，因此需要确保高频通信的设备位于同一台机器上。
+
+{.marker-none}
+
+### 数据并行化
+
+#### 问题 1：什么是数据并行化（Data Parallelism）？
+
+数据并行化是一种通过在每个设备上复制神经网络，并在所有副本上同时运行训练步骤的方式来并行化神经网络训练的技术。每个副本使用不同的 mini-batch，计算得到的梯度被平均后用于更新模型参数。这个过程称为数据并行化（data parallelism），也被称为单程序多数据（SPMD，Single Program Multiple Data）。
+
+
+
+#### 问题 2：如何使用镜像策略进行数据并行化？
+
+镜像策略是最简单的数据并行化方法。它将所有模型参数完全镜像到每个 GPU 上，并且在所有 GPU 上执行完全相同的参数更新。通过这种方式，所有副本保持完全一致。这在单机多 GPU 训练中尤其有效。
+
+**图解分析：使用镜像策略的数据并行化（Figure 19-14）**
+
+![Figure19-14镜像策略的工作流程](../assets/attachment/hands_on_machine_learning/Figure19-14镜像策略的工作流程.png)图 **Figure 19-14** 展示了镜像策略的工作流程。在每个设备（GPU）上分别计算梯度，然后通过协作操作（如 `AllReduce` 算法）计算所有梯度的平均值，接着将平均结果应用于所有副本以更新参数。
+
+
+
+#### 问题 3：什么是集中参数策略的数据并行化？
+
+另一种数据并行化方法是将模型参数存储在 **GPU** 之外的设备上，称为参数服务器（parameter server）。在这种集中式方法中，每个设备计算其梯度，并将其发送到参数服务器，服务器会更新全局参数并将更新后的参数分发回各个设备。
+
+**图解分析：使用集中参数的数据并行化（Figure 19-15）**
+
+![Figure19-15集中参数的数据并行化策略的流程](../assets/attachment/hands_on_machine_learning/Figure19-15集中参数的数据并行化策略的流程.png)图 **Figure 19-15** 展示了这种策略的流程。每个设备计算梯度，并发送给参数服务器。服务器计算梯度的平均值后更新参数，并将更新后的参数分发给所有设备。
+
+
+
+#### 问题 4：同步更新与异步更新的区别是什么？
+
+- **同步更新**：所有设备在计算完梯度后，等待其他设备的梯度，然后计算平均值并更新参数。这种方式的缺点是慢速设备会拖慢整个训练过程，因为快速设备需要等待慢速设备。
+
+- **异步更新**：每个设备在完成梯度计算后立即更新参数，而不等待其他设备。这种方式没有同步延迟，因此可以加快训练速度。然而，由于不同步，设备可能会使用过期的参数，导致收敛速度减慢，甚至会引入**陈旧梯度**的问题。
+
+**图解分析：异步更新中的陈旧梯度问题（Figure 19-16）**
+
+![Figure19-16异步更新可能带来的问题](../assets/attachment/hands_on_machine_learning/Figure19-16异步更新可能带来的问题.png)图 **Figure 19-16** 展示了异步更新可能带来的问题。设备使用的梯度可能基于陈旧的参数计算，导致模型的更新方向不正确，可能会导致训练不稳定甚至发散。
+
+
+
+#### 问题 5：如何缓解带宽饱和问题？
+
+无论是同步还是异步更新，使用集中参数策略时都会面临带宽饱和问题。模型参数需要在训练过程中频繁在参数服务器和每个设备之间传输，这会消耗大量带宽。当设备数量增加时，带宽瓶颈可能会限制训练速度。
+
+一些缓解带宽饱和的方法包括：
+- 使用稀疏模型：稀疏模型的参数较少，带宽需求较小，因此在分布式环境中表现更好。
+- 采用更小的数据类型：将浮点精度从 32 位（`tf.float32`）降低到 16 位（`tf.bfloat16`），减少数据传输量。
+- 采用更强大的 GPU 并减少设备数量：可以使用少量的高性能 GPU 代替大量的低性能 GPU，减少带宽需求。
+
+**图解分析：流水线并行化（Figure 19-17）**
+
+![Figure19-17通过流水线并行化](../assets/attachment/hands_on_machine_learning/Figure19-17通过流水线并行化.png)图 **Figure 19-17** 展示了通过流水线并行化（pipeline parallelism）结合模型并行化和数据并行化的方式来缓解带宽饱和问题。模型被分割为不同的阶段，每个阶段在不同的机器上并行处理，减少了数据在设备之间的来回传输。
+
+
+{.marker-none}
+
+### TensorFlow的分布式策略API进行大规模训练
+
+#### 问题 1：如何使用 TensorFlow 的分布式策略 API 进行大规模训练？
+
+TensorFlow 提供了分布式策略 API，可以简化在多设备和多机器上分布模型训练的复杂性。为了使用数据并行化（data parallelism）进行大规模训练，你可以使用 `MirroredStrategy`。这是最常见的分布式策略，适用于在单个机器上使用多个 GPU 的场景。
+
+
+#### 问题 2：如何使用 `MirroredStrategy` 进行 Keras 模型的训练？
+
+你可以通过以下步骤使用 `MirroredStrategy` 进行 Keras 模型的训练：
+- 创建一个 `MirroredStrategy` 对象。
+- 在 `strategy.scope()` 下创建并编译 Keras 模型。
+- 使用正常的 `fit()` 方法训练模型。
+
+**代码示例：**
+
+```python
+strategy = tf.distribute.MirroredStrategy()
+
+with strategy.scope():
+    model = tf.keras.Sequential([...])  # 创建 Keras 模型
+    model.compile([...])  # 编译模型
+
+batch_size = 100  # 建议使用可以被副本数量整除的 batch size
+model.fit(X_train, y_train, epochs=10, validation_data=(X_valid, y_valid), batch_size=batch_size)
+```
+
+在这个上下文中，Keras 会自动意识到这是一个分布式环境，并将所有变量和操作复制到所有可用的 GPU 设备上。
+
+
+
+#### 问题 3：如何查看模型的权重类型？
+
+在分布式环境下，模型的权重类型将会变成 `MirroredVariable`，你可以通过以下代码查看模型的权重类型：
+
+```python
+type(model.weights[0])
+```
+
+输出示例：
+
+```
+tensorflow.python.distribute.values.MirroredVariable
+```
+
+
+
+#### 问题 4：如何使用 `MirroredStrategy` 来进行预测或保存模型？
+
+- **预测**：调用 `predict()` 方法时，模型会自动并行地在所有副本上进行预测，batch 大小也需要被副本数量整除。
+- **保存模型**：调用 `save()` 方法保存的模型是一个普通模型，不是多副本模型。当你加载模型时，它会在单个设备上运行（默认在 `GPU #0` 或没有 GPU 时在 CPU 上）。如果你想让加载的模型在多个设备上运行，你需要在分布式上下文中调用 `tf.keras.models.load_model()`。
+
+**代码示例：**
+
+```python
+with strategy.scope():
+    model = tf.keras.models.load_model("my_mirrored_model")
+```
+
+---
+
+#### 问题 5：如何仅使用部分 GPU 进行训练？
+
+如果你只想使用部分 GPU，可以将这些 GPU 的列表传递给 `MirroredStrategy` 的构造函数。例如，以下代码只使用 `"/gpu:0"` 和 `"/gpu:1"`：
+
+```python
+strategy = tf.distribute.MirroredStrategy(devices=["/gpu:0", "/gpu:1"])
+```
+
+
+
+#### 问题 6：如何使用不同的 AllReduce 算法？
+
+默认情况下，`MirroredStrategy` 使用 **NVIDIA Collective Communications Library (NCCL)** 来执行 AllReduce 操作（即计算所有 GPU 上的梯度平均值）。你可以通过 `cross_device_ops` 参数更改 AllReduce 的实现。例如：
+
+```python
+strategy = tf.distribute.MirroredStrategy(
+    cross_device_ops=tf.distribute.HierarchicalCopyAllReduce()
+)
+```
+
+
+
+#### 问题 7：如何使用集中参数策略？
+
+如果想尝试使用集中参数策略，可以将 `MirroredStrategy` 替换为 `CentralStorageStrategy`，这会将参数存储在中央设备（如 CPU）上，而计算仍然在多个 GPU 上进行。
+
+**代码示例：**
+
+```python
+strategy = tf.distribute.experimental.CentralStorageStrategy()
+```
+
+你还可以通过 `compute_devices` 参数指定要用作 workers 的设备列表，或通过 `parameter_device` 参数指定用于存储参数的设备。
+
+{.marker-none}
+
+### TensorFlow Cluster集群
+
+#### 问题 1：什么是 TensorFlow 集群（TensorFlow Cluster）？
+
+TensorFlow 集群是由多个 TensorFlow 进程组成的一个组，这些进程通常运行在不同的机器上，彼此协作以完成某些工作（例如训练或执行神经网络模型）。集群中的每个 TensorFlow 进程被称为任务（task）或 TF 服务器，它有一个 IP 地址、端口和类型。任务类型包括：
+- **Worker**：执行计算，通常运行在有 GPU 的机器上。
+- **Chief**：也是一个 Worker，但它负责一些额外的工作，例如记录 TensorBoard 日志或保存检查点。一个集群中只有一个 Chief。
+- **Parameter Server (ps)**：负责跟踪变量值，通常运行在只有 CPU 的机器上。
+- **Evaluator**：执行模型评估，通常只需要一个 Evaluator。
+
+
+
+#### 问题 2：如何定义 TensorFlow 集群的结构？
+
+为了启动一个 TensorFlow 集群，首先需要定义集群的结构（cluster specification）。集群结构是一个字典，键是任务类型，值是任务地址（IP:port）的列表。以下是一个包含两个 Worker 和一个 Parameter Server 的集群结构示例：
+
+```python
+cluster_spec = {
+    "worker": [
+        "machine-a.example.com:2222",  # job:worker/task:0
+        "machine-b.example.com:2222"   # job:worker/task:1
+    ],
+    "ps": ["machine-a.example.com:2221"]  # job:ps/task:0
+}
+```
+
+**图解分析：TensorFlow 集群结构（Figure 19-18）**
+
+![Figure19-18一个TensorFlowCluster的例子](../assets/attachment/hands_on_machine_learning/Figure19-18一个TensorFlowCluster的例子.png)图 **Figure 19-18** 展示了一个典型的 TensorFlow 集群结构。Machine A 上有一个 Parameter Server 和一个 Worker，而 Machine B 上只有一个 Worker。每个 Worker 通常有自己的 GPU，Parameter Server 负责管理模型参数。
+
+
+
+#### 问题 3：如何启动 TensorFlow 集群中的任务？
+
+在启动任务时，你需要提供集群结构，并指定该任务的类型和索引。最简单的方式是通过环境变量 `TF_CONFIG` 来指定集群结构和当前任务的类型与索引。例如，以下代码为 `worker:0` 配置 `TF_CONFIG` 环境变量：
+
+```python
+import os
+import json
+
+os.environ["TF_CONFIG"] = json.dumps({
+    "cluster": cluster_spec,
+    "task": {"type": "worker", "index": 0}
+})
+```
+
+
+
+#### 问题 4：如何在集群上训练模型？
+
+使用集群训练模型时，可以使用分布式策略。例如，以下代码使用 `MultiWorkerMirroredStrategy` 在集群中训练一个 Keras 模型：
+
+```python
+import tempfile
+import tensorflow as tf
+
+strategy = tf.distribute.MultiWorkerMirroredStrategy()
+
+with strategy.scope():
+    model = tf.keras.Sequential([...])  # 创建 Keras 模型
+    model.compile([...])  # 编译模型
+
+model.fit(X_train, y_train, validation_data=(X_valid, y_valid), epochs=10)
+```
+
+在 Chief 节点上，模型的保存和日志记录会被处理，而其他 Worker 节点只参与训练过程。
+
+
+
+#### 问题 5：有哪些 AllReduce 实现可用于分布式策略？
+
+`MultiWorkerMirroredStrategy` 使用 **AllReduce** 算法来计算所有 Worker 上梯度的平均值。TensorFlow 提供了两种 AllReduce 实现：
+- **基于 gRPC 的环形 AllReduce**：适用于网络通信。
+- **NCCL 实现**：通常适用于 GPU 较多的情况，因为 NCCL 在 GPU 上的表现通常更好。
+
+你可以通过以下代码强制使用特定的 AllReduce 实现：
+
+```python
+strategy = tf.distribute.MultiWorkerMirroredStrategy(
+    communication_options=tf.distribute.experimental.CommunicationOptions(
+        implementation=tf.distribute.experimental.CollectiveCommunication.NCCL
+    )
+)
+```
+
+
+
+#### 问题 6：如何使用 TPU 进行分布式训练？
+
+如果你在 Google Cloud 上有 TPU 资源，可以使用 `TPUStrategy` 来进行分布式训练。以下是使用 TPU 的策略创建代码：
+
+```python
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver()
+tf.tpu.experimental.initialize_tpu_system(resolver)
+strategy = tf.distribute.experimental.TPUStrategy(resolver)
+```
+
+运行上述代码后，你可以像在 GPU 上那样使用 TPU 进行训练。
+
+{.marker-none}
+
+### 在Vertex AI上运行大规模训练任务
+
+#### 问题 1：如何在 Vertex AI 上运行大规模训练任务？
+
+Vertex AI 允许你使用自定义的训练代码创建训练任务。你可以使用几乎相同的代码来运行训练作业，就像你在自己的 TensorFlow 集群上所做的一样。唯一需要改变的是 Chief 节点如何保存模型、检查点和 TensorBoard 日志。
+
+- **模型路径**：Chief 节点必须将模型保存到 GCS（Google Cloud Storage）上，而不是本地目录。路径通过环境变量 `AIP_MODEL_DIR` 提供。
+- **检查点路径和日志路径**：检查点和 TensorBoard 日志的路径分别由 `AIP_CHECKPOINT_DIR` 和 `AIP_TENSORBOARD_LOG_DIR` 环境变量提供。
+
+
+
+#### 问题 2：如何配置 Chief 和其他 Worker 的路径？
+
+在训练过程中，你可以通过以下代码区分 Chief 和其他 Worker：
+
+```python
+import os
+[...]
+
+if resolver.task_type == "chief":
+    model_dir = os.getenv("AIP_MODEL_DIR")  # Chief 节点使用 Vertex AI 提供的路径
+    tensorboard_log_dir = os.getenv("AIP_TENSORBOARD_LOG_DIR")
+    checkpoint_dir = os.getenv("AIP_CHECKPOINT_DIR")
+else:
+    tmp_dir = Path(tempfile.mkdtemp())  # 其他 Worker 使用临时路径
+    model_dir = tmp_dir / "model"
+    tensorboard_log_dir = tmp_dir / "logs"
+    checkpoint_dir = tmp_dir / "ckpt"
+
+callbacks = [tf.keras.callbacks.TensorBoard(tensorboard_log_dir),
+             tf.keras.callbacks.ModelCheckpoint(checkpoint_dir)]
+model.fit(X_train, y_train, validation_data=(X_valid, y_valid), epochs=10, callbacks=callbacks)
+model.save(model_dir, save_format="tf")
+```
+
+
+#### 问题 3：如何在 Vertex AI 上创建自定义训练作业？
+
+通过 Vertex AI，你可以创建自定义训练作业。你需要指定作业名称、训练脚本路径、用于训练的 Docker 镜像等。例如：
+
+```python
+custom_training_job = aiplatform.CustomTrainingJob(
+    display_name="my_custom_training_job",
+    script_path="my_vertex_ai_training_task.py",
+    container_uri="gcr.io/cloud-aiplatform/training/tf-gpu.2-4:latest",
+    model_serving_container_image_uri=server_image,
+    requirements=["gcsfs==2022.3.0"],  # 需要的依赖
+    staging_bucket="gs://{bucket_name}/staging"
+)
+```
+
+然后，可以通过 `run()` 方法运行训练任务，指定需要的机器类型和 GPU：
+
+```python
+mnist_model2 = custom_training_job.run(
+    machine_type="n1-standard-4",
+    replica_count=2,
+    accelerator_type="NVIDIA_TESLA_K80",
+    accelerator_count=2,
+)
+```
+
+Vertex AI 会根据你指定的计算节点自动配置和运行训练脚本，完成后返回一个训练好的模型。
+
+
+
+#### 问题 4：如何查看 Vertex AI 训练任务的日志？
+
+你可以通过 Vertex AI 控制台查看日志。点击**Training**，找到你的训练作业，点击 **VIEW LOGS**。你也可以在 **CUSTOM JOBS** 标签中找到作业 ID，然后在 **Logging** 菜单中查询日志。
+
+
+
+#### 问题 5：如何在 Vertex AI 上调整超参数？
+
+你可以通过 `run()` 方法的 `args` 参数传递超参数，或者通过 `environment_variables` 参数将超参数作为环境变量传递。
+
+{.marker-none}
+
+### 在Vertex AI上进行超参数调优
+
+#### 问题 1：如何在 Vertex AI 上进行超参数调优？
+
+Vertex AI 提供基于贝叶斯优化算法的超参数调优服务，它能够快速找到超参数的最佳组合。为了使用该服务，首先需要创建一个训练脚本，允许通过命令行参数传递超参数。例如，可以使用 `argparse` 标准库接收超参数：
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--n_hidden", type=int, default=2)
+parser.add_argument("--n_neurons", type=int, default=256)
+parser.add_argument("--learning_rate", type=float, default=1e-2)
+parser.add_argument("--optimizer", default="adam")
+args = parser.parse_args()
+```
+
+超参数调优服务将多次调用你的脚本，每次使用不同的超参数值。每次运行称为一个 trial，而一组运行称为一个 study。
+
+#### 问题 2：如何构建和编译模型，使用传入的超参数？
+
+在你的训练脚本中，可以使用超参数构建和编译模型。你可以使用 TensorFlow 的 MirroredStrategy 来确保每次 trial 在多 GPU 机器上运行。例如：
+
+```python
+import tensorflow as tf
+
+def build_model(args):
+    with tf.distribute.MirroredStrategy().scope():
+        model = tf.keras.Sequential()
+        model.add(tf.keras.layers.Flatten(input_shape=[28, 28], dtype=tf.uint8))
+        for _ in range(args.n_hidden):
+            model.add(tf.keras.layers.Dense(args.n_neurons, activation="relu"))
+        model.add(tf.keras.layers.Dense(10, activation="softmax"))
+        opt = tf.keras.optimizers.get(args.optimizer)
+        opt.learning_rate = args.learning_rate
+        model.compile(loss="sparse_categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+    return model
+    
+[...] # load the dataset
+model = build_model(args)
+history = model.fit([...])   
+```
+
+#### 问题 3：如何报告模型的性能给 Vertex AI 的超参数调优服务？
+
+在每次 trial 运行结束时，你需要将模型的性能报告给 Vertex AI 超参数调优服务，以便它决定接下来要尝试的超参数组合。你可以使用 `hypertune` 库来报告性能，该库已预装在 Vertex AI 的训练虚拟机上：
+
+```python
+import hypertune
+
+hpt = hypertune.HyperTune()
+hpt.report_hyperparameter_tuning_metric(
+    hyperparameter_metric_tag="accuracy",
+    metric_value=max(history.history["val_accuracy"]),
+    global_step=model.optimizer.iterations.numpy(),
+)
+```
+
+#### 问题 4：如何定义超参数调优任务并运行它？
+
+首先，你需要定义一个训练任务模板，它将用于每个 trial。可以这样定义：
+
+```python
+trial_job = aiplatform.CustomJob.from_local_script(
+    display_name="my_search_trial_job",
+    script_path="my_vertex_ai_trial.py",  # 指定你的训练脚本
+    container_uri="gcr.io/cloud-aiplatform/training/tf-gpu.2-4:latest",
+    staging_bucket="gs://{bucket_name}/staging",
+    accelerator_type="NVIDIA_TESLA_K80",
+    accelerator_count=2,  # 每个 trial 使用 2 个 GPU
+)
+```
+
+然后，定义并运行超参数调优任务：
+
+```python
+from google.cloud.aiplatform import hyperparameter_tuning as hpt
+
+hp_job = aiplatform.HyperparameterTuningJob(
+    display_name="my_hp_search_job",
+    custom_job=trial_job,
+    metric_spec={"accuracy": "maximize"},
+    parameter_spec={
+        "learning_rate": hpt.DoubleParameterSpec(min=1e-3, max=10, scale="log"),
+        "n_neurons": hpt.IntegerParameterSpec(min=1, max=300, scale="linear"),
+        "n_hidden": hpt.IntegerParameterSpec(min=1, max=10, scale="linear"),
+        "optimizer": hpt.CategoricalParameterSpec(["sgd", "adam"]),
+    },
+    max_trial_count=100,
+    parallel_trial_count=20,
+)
+
+hp_job.run()
+```
+
+#### 问题 5：如何提取超参数调优的结果并找到最佳 trial？
+
+当超参数调优任务完成后，你可以使用以下代码提取试验结果：
+
+```python
+def get_final_metric(trial, metric_id):
+    for metric in trial.final_measurement.metrics:
+        if metric.metric_id == metric_id:
+            return metric.value
+
+trials = hp_job.trials
+trial_accuracies = [get_final_metric(trial, "accuracy") for trial in trials]
+best_trial = trials[np.argmax(trial_accuracies)]
+```
+
+然后，你可以打印出最佳 trial 的结果：
+
+```python
+print(max(trial_accuracies))  # 打印出最高准确率
+print(best_trial.id)  # 打印出最佳 trial 的 ID
+print(best_trial.parameters)  # 打印出最佳超参数组合
+```
+
+#### 结论：
+
+通过使用 Vertex AI 的超参数调优服务，你可以大规模地优化模型超参数设置，并快速找到最优的超参数组合，以提高模型性能。
+
+{.marker-none}
+
+### exercise {.col-span-3}
+
+| ID  | Question                                                                                                                                                                                                                                   | 中文翻译                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | What does a SavedModel contain? How do you inspect its content?                                                                                                                                                                            | SavedModel包含什么？你如何检查其内容？                                                             |
+| 2   | When should you use TF Serving? What are its main features? What are some tools you can use to deploy it?                                                                                                                                  | 什么时候应该使用TF Serving？它的主要功能是什么？你可以使用哪些工具来部署它？                        |
+| 3   | How do you deploy a model across multiple TF Serving instances?                                                                                                                                                                            | 你如何将模型部署到多个TF Serving实例中？                                                           |
+| 4   | When should you use the gRPC API rather than the REST API to query a model served by TF Serving?                                                                                                                                           | 什么时候应该使用gRPC API而不是REST API来查询由TF Serving提供的模型？                                |
+| 5   | What are the different ways TFLite reduces a model’s size to make it run on a mobile or embedded device?                                                                                                                                   | TFLite有哪些不同的方式来减小模型的大小，使其可以在移动设备或嵌入式设备上运行？                      |
+| 6   | What is quantization-aware training, and why would you need it?                                                                                                                                                                            | 什么是量化感知训练？你为什么需要它？                                                               |
+| 7   | What are model parallelism and data parallelism? Why is the latter generally recommended?                                                                                                                                                  | 什么是模型并行和数据并行？为什么通常推荐后者？                                                     |
+| 8   | When training a model across multiple servers, what distribution strategies can you use? How do you choose which one to use?                                                                                                               | 在跨多个服务器训练模型时，你可以使用哪些分布策略？你如何选择要使用哪一个？                         |
+| 9   | Train a model (any model you like) and deploy it to TF Serving or Google Vertex AI. Write the client code to query it using the REST API or the gRPC API. Update the model and deploy the new version. Your client code will now query the new version. Roll back to the first version. | 训练一个模型（任何你喜欢的模型）并将其部署到TF Serving或Google Vertex AI。编写客户端代码使用REST API或gRPC API查询模型。更新模型并部署新版本。你的客户端代码现在将查询新版本。回滚到第一个版本。 |
+| 10  | Train any model across multiple GPUs on the same machine using the MirroredStrategy (if you do not have access to GPUs, you can use Google Colab with a GPU runtime and create two logical GPUs). Train the model again using the CentralStorageStrategy and compare the training time. | 使用MirroredStrategy在同一台机器上的多个GPU上训练任何模型（如果你没有GPU，可以使用带有GPU运行时的Google Colab并创建两个逻辑GPU）。再次使用CentralStorageStrategy训练模型并比较训练时间。|
+| 11  | Fine-tune a model of your choice on Vertex AI, using either Keras Tuner or Vertex AI’s hyperparameter tuning service.                                                                                                                      | 在Vertex AI上微调你选择的模型，使用Keras Tuner或Vertex AI的超参数调优服务。                         |
+
+{.show-header .left-text}
 
 
 ## Machine Learning Project CheckList 
