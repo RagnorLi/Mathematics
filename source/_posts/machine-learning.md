@@ -3461,7 +3461,7 @@ theta_best_svd, residuals, rank, s = np.linalg.lstsq(X_b, y, rcond=1e-6)
 
 **警告：** 当使用梯度下降时，确保所有特征的尺度相似（例如使用 `Scikit-Learn` 的 `StandardScaler` 类），否则算法将会收敛得非常慢。
 
-{.marker-none}GD
+{.marker-none}
 
 ### 批量梯度下降BGD
 
