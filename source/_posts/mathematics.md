@@ -1044,6 +1044,11 @@ Ax = b \implies A^T Ax = A^T b \implies x = (A^T A)^{-1} A^T b
 
 **解释**：这个表达式表示，对于集合 `KaTeX:G` 中的任意两个元素 `KaTeX:x` 和 `KaTeX:y`，运算 `KaTeX:\otimes` 满足交换律，即 `KaTeX:x \otimes y` 等于 `KaTeX:y \otimes x`。这意味着无论你先计算 `KaTeX:x` 再计算 `KaTeX:y`，还是先计算 `KaTeX:y` 再计算 `KaTeX:x`，结果都是一样的。
 
+#### 巧记运算的交换律与结合律的不同
+
+**交换律** 说明改变操作数的**顺序**不影响结果（如 `KaTeX:a + b = b + a`），而 **结合律** 则说明改变操作数的**分组**不影响结果（如 `KaTeX:(a + b) + c = a + (b + c)`）。
+
+
 ### 向量空间
 
 **向量空间（Vector Space）** 是由一个集合 `KaTeX:V` 和两个运算（向量加法和标量乘法）组成的数学结构，满足以下条件：
@@ -1097,6 +1102,8 @@ Ax = b \implies A^T Ax = A^T b \implies x = (A^T A)^{-1} A^T b
 
 一组线性相关的向量意味着这些向量中至少有一个向量可以由其他向量通过线性组合得到。
 [向量线性组合](/mathematics.html#向量线性组合) {.link-arrow}
+
+{.marker-none}
 
 ### 向量线性无关(线性独立)
 
