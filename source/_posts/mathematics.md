@@ -906,15 +906,25 @@ A = \begin{bmatrix}
 
 - 为了得到`0`，第二列就是 3 乘以 column 1 - column 2 其余column为 0
 
-- 第五列就是 3 乘以 column 1 + 9 乘以 column 3 - 4 乘以 column 4 - column 5即可 其余column为 0
+- 第五列就是 9 乘以 column 1 + 9 乘以 column 3 - 4 乘以 column 4 - column 5即可 其余column为 0
 
 因此，`KaTeX:Ax = 0`，`KaTeX:x \in \mathbb{R}^5` 的所有解都由下式给出：
 
 ```KaTeX
 \left\{
-x \in \mathbb{R}^5 : x = \lambda_1 \begin{pmatrix} 3 \\ -1 \\ 0 \\ 0 \\ 0 \end{pmatrix} + \lambda_2 \begin{pmatrix} 3 \\ 0 \\ 9 \\ -4 \\ -1 \end{pmatrix}, \quad \lambda_1, \lambda_2 \in \mathbb{R}
+x \in \mathbb{R}^5 : x = \lambda_1 \begin{pmatrix} 3 \\ -1 \\ 0 \\ 0 \\ 0 \end{pmatrix} + \lambda_2 \begin{pmatrix} 9 \\ 0 \\ 9 \\ -4 \\ -1 \end{pmatrix}, \quad \lambda_1, \lambda_2 \in \mathbb{R}
 \right\}
 ```
+
+注意下面的解也是等价的，因为在解线性方程组时，通解的形式可以有不同的表现形式，只要它们的线性组合关系保持不变。你提到的情况中，两个向量相差一个整体的符号，即整个解向量乘以 -1，这不会改变解的本质，因为它们仍然是在相同的线性空间中。
+
+```KaTeX
+\left\{
+x \in \mathbb{R}^5 : x = \lambda_1 \begin{pmatrix} -3 \\ 1 \\ 0 \\ 0 \\ 0 \end{pmatrix} + \lambda_2 \begin{pmatrix} -9 \\ 0 \\ -9 \\ 4 \\ 1 \end{pmatrix}, \quad \lambda_1, \lambda_2 \in \mathbb{R}
+\right\}
+```
+
+
 
 ### Minus-1 Trick
 
