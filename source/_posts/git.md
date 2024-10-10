@@ -568,14 +568,26 @@ $ git checkout <commit_or_branch_hash>
 
    ```bash
    git filter-repo --commit-callback '
-   if commit.author_email == b"旧的错误邮箱地址":
-       commit.author_email = b"正确的邮箱地址"
-       commit.author_name = b"RagnorLixiaomeng"
-   if commit.committer_email == b"旧的错误邮箱地址":
-       commit.committer_email = b"正确的邮箱地址"
-       commit.committer_name = b"RagnorLixiaomeng"
-   '
+    if commit.author_email == b"lixiaomeng@archeros.com":
+    commit.author_email = b"ragnor.li@outlook.com"
+    commit.author_name = b"RagnorLixiaomeng"
+    if commit.committer_email == b"lixiaomeng@archeros.com":
+    commit.committer_email = b"ragnor.li@outlook.com"
+    commit.committer_name = b"RagnorLixiaomeng"
+    '
    ```
 
    替换 `"旧的错误邮箱地址和用户名"` 和 `"正确的邮箱地址及用户名"` 为实际的。
 
+
+
+    清除 reflog 和执行垃圾收集
+    ```bash
+    git reflog expire --expire=now --all
+    git gc --prune=now --aggressive
+    ```
+
+    强制推送到远程仓库
+    ```bash
+    git push origin --force
+    ```
