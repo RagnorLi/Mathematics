@@ -26,8 +26,8 @@
 This repository serves as my structured knowledge base for mathematical concepts in machine learning, based on the book "Mathematics for Machine Learning". It aims to:
 
 <p align="center">
-  <img src="https://github.com/RagnorLi/Mathematics/blob/main/Mathematic_0.png" alt="Image 1" width="45%" style="margin-right: 10px;">
-  <img src="https://github.com/RagnorLi/Mathematics/blob/main/Mathematics_1.png" alt="Image 2" width="45%">
+  <img src="Mathematic_0.png" alt="Image 1" width="50%" style="margin-right: 10px;">
+  <img src="Mathematics_1.png" alt="Image 2" width="40%">
 </p>
 
 - 📚 Provide clear, concise explanations of mathematical concepts
