@@ -1,8 +1,16 @@
 <div align="center">
 
-# 📖 Mathematics for Machine Learning - Ragnor's Cheat Sheets
+# 📖 Mathematics Reference Guide
 
-> A comprehensive collection of mathematical foundations for machine learning, based on "Mathematics for Machine Learning"
+> A structured compilation of mathematical foundations for machine learning, with clear explanations and practical insights.
+> 
+> *Inspired by [Fechin/reference](https://github.com/Fechin/reference), rebuilt as a personal knowledge base.*
+
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-brightgreen?style=for-the-badge" />
+  <img alt="Hexo" src="https://img.shields.io/badge/hexo-5.4.2-blue?style=for-the-badge" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
+</p>
 
 <p align="center">
   <a><img alt="Clear" src="https://img.shields.io/badge/Clear-Clear_Your_Mind-green?style=for-the-badge" /></a>
@@ -11,133 +19,96 @@
   <a><img alt="Practice" src="https://img.shields.io/badge/Practice-Iterative_Learning-darkblue?style=for-the-badge" /></a>
 </p>
 
+</div>
+
+## 🎯 Purpose
+
+This repository serves as my structured knowledge base for mathematical concepts in machine learning, based on the book "Mathematics for Machine Learning". It aims to:
+
+- 📚 Provide clear, concise explanations of mathematical concepts
+- 🔗 Connect theoretical foundations with practical applications
+- 🎓 Share personal insights and learning experiences
+- 🛠️ Offer practical examples and implementations
+
+## 📋 Core Contents
+
+### Mathematics Foundations
+1. **Linear Algebra**
+   - Vector Spaces & Operations
+   - Matrix Transformations
+   - Eigendecomposition
+   - Principal Component Analysis
+
+2. **Analytic Geometry**
+   - Vectors in Space
+   - Geometric Transformations
+   - Quadratic Forms & Surfaces
+
+3. **Probability & Statistics**
+   - Probability Theory
+   - Statistical Inference
+   - Distribution Types
+   - Hypothesis Testing
+
+4. **Optimization**
+   - Gradient Methods
+   - Convex Optimization
+   - Constrained Optimization
+
+### Learning Approach
 <div align="center">
-  <p align="center">
-    <a href="#mindset">🧠 Clear Mind</a> •
-    <a href="#content">🏃 Full Energy</a> •
-    <a href="#practice">🏖 Inner Peace</a>
-  </p>
+<p align="center">
+  <a href="#mind">🧠 Clear Understanding</a> •
+  <a href="#focus">🎯 Problem Focus</a> •
+  <a href="#practice">📝 Regular Practice</a>
+</p>
 </div>
 
-</div>
+## 🔧 Technical Details
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js (v14 or higher)
-- npm (v6 or higher)
-- Hexo CLI (`npm install -g hexo-cli`)
-
-### Installation
 ```bash
-# Clone the repository
-git clone https://github.com/RagnorLi/mathematics.git
-cd mathematics
+# Start local development
+npm run dev    # Runs on http://localhost:4567
 
-# Install dependencies
-npm install
-```
-
-### Development
-```bash
-# Start development server
-npm run dev
-```
-This will:
-- Clean Hexo cache
-- Start Hexo server on port 4567
-- Watch and compile Tailwind CSS
-
-### Build
-```bash
-# Build for production
+# Build for deployment
 npm run build
 ```
-This will:
-- Clean Hexo cache
-- Remove db.json if exists
-- Compile Tailwind CSS
-- Generate static files
-- Run Gulp tasks
 
-### Available Scripts
-- `npm run dev` - Start development environment
-- `npm run build` - Build for production
-- `npm run format` - Format code using Prettier
+<details>
+<summary>Project Structure</summary>
 
-### Project Structure
 ```
 .
+├── content/              # Main content files
+│   ├── linear-algebra/
+│   ├── geometry/
+│   ├── probability/
+│   └── optimization/
 ├── themes/
-│   └── coo/
-│       └── source/
-│           └── css/
-│               ├── style.tailwindcss
-│               └── style.css
-├── package.json
-└── _config.yml
+│   └── coo/             # Custom theme
+└── package.json
 ```
+</details>
 
-## 📚 Contents
+## 🙏 Acknowledgments
 
-### 1. Linear Algebra
-- Vector Spaces
-- Linear Transformations
-- Eigenvalues and Eigenvectors
-- Matrix Decompositions
+- Original template inspiration: [Fechin/reference](https://github.com/Fechin/reference)
+- Book reference: "Mathematics for Machine Learning" by Marc Peter Deisenroth, A. Aldo Faisal, and Cheng Soon Ong
 
-### 2. Analytic Geometry
-- Vectors and Spaces
-- Matrix Transformations
-- Quadratic Forms
+## 📝 Notes
 
-### 3. Probability and Statistics
-- Probability Basics
-- Random Variables
-- Statistical Inference
-
-### 4. Optimization
-- Gradient Descent
-- Convex Optimization
-- Lagrange Multipliers
-
-## 🎯 Learning Philosophy
-
-<div align="center">
-
-```mermaid
-graph TD
-    A[Clear Mind] --> B[Focus Problem]
-    B --> C[Find Root Cause]
-    C --> D[Practice & Iterate]
-    D --> A
-```
-
-</div>
-
-## 🔧 Technical Stack
-
-- Hexo v5.4.2
-- TailwindCSS
-- PostCSS
-- Gulp
-- npm-run-all
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to:
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- This is a personal knowledge base, reflecting my understanding and learning journey
+- Content is continuously updated as I learn and explore more
+- Feedback and discussions are welcome through issues
 
 ## 📃 License
 
-This project is licensed under the [MIT License](LICENSE) and is maintained by [Ragnor](https://github.com/RagnorLi).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 <div align="center">
 
-*Last updated: 2024-02-19 09:12:14 UTC*
+---
+
+*Maintained by [@RagnorLi](https://github.com/RagnorLi) | Last Updated: 2025-02-19 09:40:48 UTC*
 
 </div>
