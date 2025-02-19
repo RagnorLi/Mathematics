@@ -27,7 +27,7 @@ This repository serves as my structured knowledge base for mathematical concepts
 
 <p align="center">
   <img src="Mathematic_0.png" alt="Image 1" width="50%" style="margin-right: 10px;">
-  <img src="Mathematics_1.png" alt="Image 2" width="40%">
+  <img src="Mathematics_1.png" alt="Image 2" width="45%">
 </p>
 
 - 📚 Provide clear, concise explanations of mathematical concepts
