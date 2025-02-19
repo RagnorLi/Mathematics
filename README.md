@@ -25,6 +25,8 @@
 
 This repository serves as my structured knowledge base for mathematical concepts in machine learning, based on the book "Mathematics for Machine Learning". It aims to:
 
+![Mathematics for machine learning](https://github.com/RagnorLi/Mathematics/blob/main/Mathematic_0.png)
+
 - 📚 Provide clear, concise explanations of mathematical concepts
 - 🔗 Connect theoretical foundations with practical applications
 - 🎓 Share personal insights and learning experiences
@@ -103,12 +105,10 @@ npm run build
 
 ## 📃 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. | Maintained by [@RagnorLi](https://github.com/RagnorLi) 
 
 <div align="center">
 
 ---
-
-*Maintained by [@RagnorLi](https://github.com/RagnorLi) | Last Updated: 2025-02-19 09:40:48 UTC*
 
 </div>
